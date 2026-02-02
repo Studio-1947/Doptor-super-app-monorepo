@@ -1,0 +1,21 @@
+{
+  "name": "doptor-super-app",
+  "private": true,
+  "workspaces": [
+    "frontend/*",
+    "backend/*",
+    "infra/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "turbo": "latest",
+    "prettier": "latest"
+  },
+  "packageManager": "npm@10.0.0"
+}
