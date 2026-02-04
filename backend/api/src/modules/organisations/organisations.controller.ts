@@ -50,4 +50,26 @@ export class OrganisationsController {
   remove(@Param("id") id: string) {
     return this.organisationsService.remove(id);
   }
+
+  @Post(":id/verticals/:vertical/enable")
+  enableVertical(@Param("id") id: string, @Param("vertical") vertical: string) {
+    return this.organisationsService.enableVertical(id, vertical);
+  }
+
+  @Post(":id/verticals/:vertical/disable")
+  disableVertical(
+    @Param("id") id: string,
+    @Param("vertical") vertical: string,
+  ) {
+    return this.organisationsService.disableVertical(id, vertical);
+  }
+
+  @Patch(":id/verticals/:vertical/config")
+  updateVerticalConfig(
+    @Param("id") id: string,
+    @Param("vertical") vertical: string,
+    @Body("config") config: any,
+  ) {
+    return this.organisationsService.updateVerticalConfig(id, vertical, config);
+  }
 }

@@ -20,7 +20,7 @@ export function ApprovalDetail() {
                     <Button variant="primary" className="flex-1 bg-green-600 hover:bg-green-700 border-green-600">
                         <Check size={18} className="mr-2" /> Approve
                     </Button>
-                    <Button variant="outline" className="flex-1 text-red-600 border-red-200 hover:bg-red-50">
+                    <Button variant="secondary" className="flex-1 text-red-600 border-red-200 hover:bg-red-50">
                         <X size={18} className="mr-2" /> Reject
                     </Button>
                     <Button variant="ghost" className="text-slate-500">
@@ -127,8 +127,8 @@ function TimelineItem({ status, title, user, date, note }: any) {
     return (
         <div className="flex gap-4 relative z-10">
             <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 shrink-0 ${isApproved ? 'bg-green-500 border-green-500 text-white' :
-                    isCurrent ? 'bg-white border-primary-500 text-primary-600' :
-                        'bg-slate-100 border-slate-200 text-slate-300'
+                isCurrent ? 'bg-white border-primary-500 text-primary-600' :
+                    'bg-slate-100 border-slate-200 text-slate-300'
                 }`}>
                 {isApproved ? <Check size={16} strokeWidth={3} /> : <User size={16} />}
             </div>

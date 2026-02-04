@@ -1,8 +1,7 @@
-"use client";
-
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
+import { VerticalSwitcher } from './VerticalSwitcher';
 
 interface AppShellProps {
     children: React.ReactNode;
@@ -11,6 +10,11 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
     return (
         <div className="flex min-h-screen bg-slate-50">
+            {/* Context Switcher Rail */}
+            <div className="hidden md:block">
+                <VerticalSwitcher />
+            </div>
+
             {/* Desktop Sidebar */}
             <div className="hidden md:block">
                 <Sidebar />

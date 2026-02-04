@@ -25,8 +25,8 @@ export function AttendanceCheckIn() {
                     <button
                         onClick={() => setIsCheckedIn(!isCheckedIn)}
                         className={`w-48 h-48 rounded-full flex flex-col items-center justify-center gap-2 border-8 transition-all shadow-lg active:scale-95 ${isCheckedIn
-                                ? 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100/50'
-                                : 'bg-primary-50 border-primary-100 text-primary-600 hover:bg-primary-100/50 hover:shadow-primary-500/20'
+                            ? 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100/50'
+                            : 'bg-primary-50 border-primary-100 text-primary-600 hover:bg-primary-100/50 hover:shadow-primary-500/20'
                             }`}
                     >
                         {isCheckedIn ? <XCircle size={48} /> : <ShieldCheck size={48} />}
@@ -71,7 +71,7 @@ export function AttendanceHistory() {
                     <History size={18} />
                     <h3>Attendance History</h3>
                 </div>
-                <Button variant="outline" size="sm">View Calendar</Button>
+                <Button variant="secondary" size="sm">View Calendar</Button>
             </div>
 
             <div className="divide-y divide-slate-100 overflow-y-auto">
@@ -80,8 +80,8 @@ export function AttendanceHistory() {
                         <div className="flex items-center justify-between mb-2">
                             <span className="font-medium text-slate-900">{item.date}</span>
                             <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${item.status === 'Present' ? 'bg-green-100 text-green-700' :
-                                    item.status === 'Weekly Off' ? 'bg-slate-100 text-slate-500' :
-                                        'bg-amber-100 text-amber-700'
+                                item.status === 'Weekly Off' ? 'bg-slate-100 text-slate-500' :
+                                    'bg-amber-100 text-amber-700'
                                 }`}>{item.status}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm text-slate-500">

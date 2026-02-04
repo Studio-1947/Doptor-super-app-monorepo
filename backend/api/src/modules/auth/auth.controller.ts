@@ -9,7 +9,7 @@ import {
   HttpStatus,
 } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { RegisterDto, LoginDto } from "./dto";
+import { RegisterDto, LoginDto, RegisterOrganisationDto } from "./dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 
 @Controller("auth")
@@ -19,6 +19,11 @@ export class AuthController {
   @Post("register")
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Post("register-organisation")
+  async registerOrganisation(@Body() dto: RegisterOrganisationDto) {
+    return this.authService.registerOrganisation(dto);
   }
 
   @Post("login")

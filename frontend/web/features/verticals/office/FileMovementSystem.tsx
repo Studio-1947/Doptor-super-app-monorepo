@@ -20,7 +20,7 @@ export function FileMovementSystem() {
                     <p className="text-slate-500">Track and manage the movement of physical files.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2">
+                    <Button variant="secondary" className="gap-2">
                         <History size={16} />
                         History
                     </Button>
@@ -74,8 +74,8 @@ export function FileMovementSystem() {
                                         <p className="font-medium text-slate-900 line-clamp-1">{file.subject}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <span className={`text-[10px] px-1.5 py-0.5 rounded border ${file.priority === 'Critical' ? 'bg-red-50 text-red-700 border-red-100' :
-                                                    file.priority === 'High' ? 'bg-orange-50 text-orange-700 border-orange-100' :
-                                                        'bg-slate-50 text-slate-600 border-slate-100'
+                                                file.priority === 'High' ? 'bg-orange-50 text-orange-700 border-orange-100' :
+                                                    'bg-slate-50 text-slate-600 border-slate-100'
                                                 }`}>{file.priority}</span>
                                             <span className="text-xs text-slate-400 flex items-center gap-1">
                                                 <User size={10} /> From: {file.sender}
@@ -84,12 +84,12 @@ export function FileMovementSystem() {
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${file.status === 'Pending' ? 'bg-amber-50 text-amber-700' :
-                                                file.status === 'Processed' ? 'bg-green-50 text-green-700' :
-                                                    'bg-blue-50 text-blue-700'
+                                            file.status === 'Processed' ? 'bg-green-50 text-green-700' :
+                                                'bg-blue-50 text-blue-700'
                                             }`}>
                                             <span className={`w-1.5 h-1.5 rounded-full ${file.status === 'Pending' ? 'bg-amber-500' :
-                                                    file.status === 'Processed' ? 'bg-green-500' :
-                                                        'bg-blue-500'
+                                                file.status === 'Processed' ? 'bg-green-500' :
+                                                    'bg-blue-500'
                                                 }`}></span>
                                             {file.status}
                                         </span>
@@ -109,7 +109,7 @@ export function FileMovementSystem() {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-right">
-                                        <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button variant="secondary" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                                             Forward <ArrowRight size={14} className="ml-1" />
                                         </Button>
                                     </td>

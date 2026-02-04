@@ -9,13 +9,13 @@ export function TaskDetail() {
             {/* Header */}
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="h-8 w-8 p-0 md:hidden">
+                    <Button variant="secondary" size="sm" className="h-8 w-8 p-0 md:hidden">
                         <X size={18} />
                     </Button>
                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">TASK-1023</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm">Mark Complete</Button>
+                    <Button variant="secondary" size="sm">Mark Complete</Button>
                     <button className="p-2 text-slate-400 hover:text-slate-600">
                         <MoreHorizontal size={18} />
                     </button>

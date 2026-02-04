@@ -42,4 +42,17 @@ export class RolesController {
   remove(@Param("id") id: string) {
     return this.rolesService.remove(id);
   }
+
+  @Post(":id/permissions")
+  assignPermissions(
+    @Param("id") id: string,
+    @Body("permission_ids") permissionIds: string[],
+  ) {
+    return this.rolesService.assignPermissions(id, permissionIds);
+  }
+
+  @Get(":id/permissions")
+  getRolePermissions(@Param("id") id: string) {
+    return this.rolesService.getRolePermissions(id);
+  }
 }

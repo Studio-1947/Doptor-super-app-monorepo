@@ -1,9 +1,45 @@
 "use client";
 
 import { Card } from '@doptor/shared';
-import { BarChart3, TrendingUp, Users, DollarSign, Calendar, ArrowUpRight, ArrowDownRight, PieChart } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, DollarSign, Calendar, ArrowUpRight, ArrowDownRight, PieChart, Activity } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+// Define proper types for the API response
+interface AnalyticsData {
+    totalUsers: number;
+    totalFiles: number;
+    totalMessages: number;
+    activeSessions: number;
+    revenue: number;
+}
 
 export function AnalyticsDashboard() {
+    const [data, setData] = useState<AnalyticsData | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchAnalytics() {
+            try {
+                // In production, use env variable for base URL
+                const response = await fetch('http://localhost:3000/analytics/overview');
+                if (response.ok) {
+                    const jsonData = await response.json();
+                    setData(jsonData);
+                }
+            } catch (error) {
+                console.error("Failed to fetch analytics:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchAnalytics();
+    }, []);
+
+    if (loading) {
+        return <div className="p-8 text-center text-slate-500 animate-pulse">Loading analytics...</div>;
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -19,10 +55,42 @@ export function AnalyticsDashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard title="Total Revenue" value="$45,231" trend="+20.1%" trendUp icon={DollarSign} color="text-green-600" bg="bg-green-100" />
-                <StatCard title="Active Users" value="2,345" trend="+15.2%" trendUp icon={Users} color="text-blue-600" bg="bg-blue-100" />
-                <StatCard title="New Signups" value="+573" trend="-5.4%" trendUp={false} icon={TrendingUp} color="text-purple-600" bg="bg-purple-100" />
-                <StatCard title="Avg. Visit Time" value="4m 12s" trend="+2.3%" trendUp icon={Calendar} color="text-orange-600" bg="bg-orange-100" />
+                <StatCard
+                    title="Total Revenue"
+                    value={`$${(data?.revenue || 0).toLocaleString()}`}
+                    trend="+20.1%"
+                    trendUp
+                    icon={DollarSign}
+                    color="text-green-600"
+                    bg="bg-green-100"
+                />
+                <StatCard
+                    title="Total Users"
+                    value={data?.totalUsers.toLocaleString() || "0"}
+                    trend="+15.2%"
+                    trendUp
+                    icon={Users}
+                    color="text-blue-600"
+                    bg="bg-blue-100"
+                />
+                <StatCard
+                    title="Total Files"
+                    value={data?.totalFiles.toLocaleString() || "0"}
+                    trend="+5.4%"
+                    trendUp
+                    icon={BarChart3} // Replaced TrendingUp with generic chart icon for files
+                    color="text-purple-600"
+                    bg="bg-purple-100"
+                />
+                <StatCard
+                    title="Total Messages"
+                    value={data?.totalMessages.toLocaleString() || "0"}
+                    trend="+2.3%"
+                    trendUp
+                    icon={Activity}
+                    color="text-orange-600"
+                    bg="bg-orange-100"
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -31,7 +99,7 @@ export function AnalyticsDashboard() {
                         <h3 className="font-semibold text-slate-900">Revenue Growth</h3>
                         <button className="text-slate-400 hover:text-primary-600"><BarChart3 size={18} /></button>
                     </div>
-                    {/* Placeholder for Chart */}
+                    {/* Placeholder for Chart - kept static as chart data isn't in MVP backend scope yet */}
                     <div className="h-64 flex items-end justify-between gap-2 px-4">
                         {[40, 65, 45, 90, 75, 55, 80, 95, 60, 70, 85, 50].map((h, i) => (
                             <div key={i} className="w-full bg-primary-100 rounded-t-sm hover:bg-primary-500 transition-colors relative group" style={{ height: `${h}%` }}>

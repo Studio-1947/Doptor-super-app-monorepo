@@ -1,57 +1,119 @@
-"use client";
-
+'use client';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, FileText, Settings, Bell, ChevronLeft, Menu, ClipboardList, CheckSquare, MessageSquare, Calendar, BarChart3, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, Bell, ChevronLeft, Menu, ClipboardList, CheckSquare, MessageSquare, Calendar, BarChart3, Building2, Shield, GraduationCap, Globe2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useRole, UserRole } from '@/features/auth/RoleContext';
+import { useVertical, VerticalType } from '@/contexts/VerticalContext';
 
-const roleMenus: Record<UserRole, { icon: any, label: string, href: string }[]> = {
-    super_admin: [
-        { icon: LayoutDashboard, label: 'Overview', href: '/' },
-        { icon: Building2, label: 'Organisations', href: '/organisations' },
-        { icon: Users, label: 'Users', href: '/users' },
-        { icon: FileText, label: 'e-Dak Files', href: '/office/files' },
-        { icon: Settings, label: 'System', href: '/system' },
-    ],
-    org_admin: [
-        { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
-        { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
-        { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
-        { icon: FileText, label: 'Documents', href: '/documents' },
-        { icon: Users, label: 'Staff', href: '/office/registry' },
-        { icon: FileText, label: 'e-Dak Files', href: '/office/files' },
-        { icon: Settings, label: 'Settings', href: '/settings' },
-    ],
-    manager: [
-        { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
-        { icon: ClipboardList, label: 'Team Tasks', href: '/tasks' },
-        { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
-        { icon: FileText, label: 'e-Dak Files', href: '/office/files' },
-        { icon: Calendar, label: 'Attendance', href: '/attendance' },
-        { icon: BarChart3, label: 'Reports', href: '/reports' },
-    ],
-    staff: [
-        { icon: LayoutDashboard, label: 'My Dashboard', href: '/' },
-        { icon: ClipboardList, label: 'My Tasks', href: '/tasks' },
-        { icon: MessageSquare, label: 'Chat', href: '/chat' },
-        { icon: Calendar, label: 'Attendance', href: '/attendance' },
-    ],
-    student: [
-        { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
-        { icon: FileText, label: 'Assignments', href: '/assignments' },
-        { icon: MessageSquare, label: 'Notices', href: '/notices' },
-    ]
+// Define menus for each vertical and role
+const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, label: string, href: string }[]>> = {
+    core: {
+        all: [
+            { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+            { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
+            { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
+            { icon: MessageSquare, label: 'Communication', href: '/communication' },
+            { icon: Calendar, label: 'Attendance', href: '/attendance' },
+            { icon: Settings, label: 'Settings', href: '/settings' },
+        ],
+        super_admin: [],
+        org_admin: [],
+        manager: [],
+        staff: [],
+        student: []
+    },
+    office: {
+        all: [],
+        super_admin: [
+            { icon: Building2, label: 'Office Admin', href: '/office/admin' },
+            { icon: FileText, label: 'e-Dak Files', href: '/office/files' },
+            { icon: Users, label: 'Employee Registry', href: '/office/registry' },
+        ],
+        org_admin: [
+            { icon: Building2, label: 'Office Dashboard', href: '/office' },
+            { icon: FileText, label: 'e-Dak Files', href: '/office/files' },
+            { icon: Users, label: 'Staff Registry', href: '/office/registry' },
+            { icon: BarChart3, label: 'Reports', href: '/office/reports' },
+        ],
+        manager: [
+            { icon: FileText, label: 'My Files', href: '/office/files' },
+            { icon: Users, label: 'Team', href: '/office/team' },
+        ],
+        staff: [
+            { icon: FileText, label: 'My Files', href: '/office/files' },
+        ],
+        student: []
+    },
+    campus: {
+        all: [],
+        super_admin: [
+            { icon: GraduationCap, label: 'Campus Admin', href: '/campus/admin' },
+        ],
+        org_admin: [
+            { icon: GraduationCap, label: 'Campus Dashboard', href: '/campus' },
+            { icon: Users, label: 'Students', href: '/campus/students' },
+            { icon: Users, label: 'Faculty', href: '/campus/faculty' },
+            { icon: FileText, label: 'Academics', href: '/campus/academics' },
+        ],
+        manager: [
+            { icon: GraduationCap, label: 'Department', href: '/campus/department' },
+        ],
+        staff: [
+            { icon: GraduationCap, label: 'Classes', href: '/campus/classes' },
+        ],
+        student: [
+            { icon: FileText, label: 'My Courses', href: '/campus/courses' },
+            { icon: Calendar, label: 'Timetable', href: '/campus/timetable' },
+            { icon: FileText, label: 'Results', href: '/campus/results' },
+        ]
+    },
+    network: {
+        all: [],
+        super_admin: [
+            { icon: Globe2, label: 'Network Admin', href: '/network/admin' },
+        ],
+        org_admin: [
+            { icon: Globe2, label: 'Network Dashboard', href: '/network' },
+            { icon: Users, label: 'Volunteers', href: '/network/volunteers' },
+            { icon: MessageSquare, label: 'Campaigns', href: '/network/campaigns' },
+        ],
+        manager: [
+            { icon: Users, label: 'Local Group', href: '/network/group' },
+        ],
+        staff: [],
+        student: [
+            { icon: Globe2, label: 'Volunteer Feed', href: '/network/feed' },
+            { icon: CheckSquare, label: 'Opportunities', href: '/network/opportunities' },
+        ]
+    }
 };
+
+const adminMenus = [
+    { icon: Building2, label: 'Organisation', href: '/admin/settings' },
+    { icon: Shield, label: 'Roles', href: '/admin/roles' },
+    { icon: Users, label: 'Departments', href: '/admin/departments' },
+];
 
 export function Sidebar() {
     const [collapsed, setCollapsed] = useState(false);
     const pathname = usePathname();
     const { role } = useRole();
+    const { activeVertical } = useVertical();
 
-    const menuItems = roleMenus[role] || roleMenus['student'];
+    // Combine 'all' menus with role-specific menus for the active vertical
+    const verticalSpecific = verticalMenus[activeVertical];
+    const roleSpecific = verticalSpecific[role] || [];
+    const commonMenus = verticalSpecific['all'] || [];
+
+    let menuItems = [...commonMenus, ...roleSpecific];
+
+    // Add Admin links if in Core vertical and user is admin
+    if (activeVertical === 'core' && (role === 'super_admin' || role === 'org_admin')) {
+        menuItems = [...menuItems, ...adminMenus];
+    }
 
     return (
         <motion.div
@@ -66,9 +128,9 @@ export function Sidebar() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="text-xl font-bold bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent"
+                            className="text-xl font-bold bg-gradient-to-r from-primary-500 to-primary-700 bg-clip-text text-transparent capitalize"
                         >
-                            Doptor
+                            {activeVertical === 'core' ? 'Doptor' : activeVertical}
                         </motion.h1>
                     )}
                 </AnimatePresence>

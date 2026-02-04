@@ -20,7 +20,7 @@ export function EmployeeRegistry() {
                     <p className="text-slate-500">Centralized database of all staff and faculty members.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="gap-2">
+                    <Button variant="secondary" className="gap-2">
                         <Download size={16} />
                         Export
                     </Button>
@@ -94,12 +94,12 @@ export function EmployeeRegistry() {
 
                             <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
                                 <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide ${employee.status === 'Active' ? 'bg-green-50 text-green-700' :
-                                        employee.status === 'On Leave' ? 'bg-amber-50 text-amber-700' :
-                                            'bg-slate-100 text-slate-500'
+                                    employee.status === 'On Leave' ? 'bg-amber-50 text-amber-700' :
+                                        'bg-slate-100 text-slate-500'
                                     }`}>
                                     {employee.status}
                                 </span>
-                                <Button variant="outline" size="sm">View Profile</Button>
+                                <Button variant="secondary" size="sm">View Profile</Button>
                             </div>
                         </div>
                     ))}

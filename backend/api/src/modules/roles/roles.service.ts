@@ -1,6 +1,13 @@
-import { Injectable, NotFoundException, Inject } from "@nestjs/common";
-import { eq } from "drizzle-orm";
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+} from "@nestjs/common";
+import { eq, and } from "drizzle-orm";
 import { roles } from "../../database/drizzle/schema/role.schema";
+import { rolePermissions } from "../../database/drizzle/schema/role-permission.schema";
+import { permissions } from "../../database/drizzle/schema/permission.schema";
 import { CreateRoleDto, UpdateRoleDto } from "./dto";
 import { DRIZZLE } from "../../database/drizzle/database.module";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -70,5 +77,39 @@ export class RolesService {
     }
 
     return { message: "Role deleted successfully", role: deletedRole };
+  }
+
+  async assignPermissions(roleId: string, permissionIds: string[]) {
+    // Verify role exists
+    await this.findOne(roleId);
+
+    // Remove existing permissions
+    await this.db
+      .delete(rolePermissions)
+      .where(eq(rolePermissions.role_id, roleId));
+
+    // Add new permissions
+    if (permissionIds.length > 0) {
+      const values = permissionIds.map((permissionId) => ({
+        role_id: roleId,
+        permission_id: permissionId,
+      }));
+
+      await this.db.insert(rolePermissions).values(values);
+    }
+
+    return { message: "Permissions assigned successfully" };
+  }
+
+  async getRolePermissions(roleId: string) {
+    const result = await this.db
+      .select({
+        permission: permissions,
+      })
+      .from(rolePermissions)
+      .innerJoin(permissions, eq(rolePermissions.permission_id, permissions.id))
+      .where(eq(rolePermissions.role_id, roleId));
+
+    return result.map((r) => r.permission);
   }
 }

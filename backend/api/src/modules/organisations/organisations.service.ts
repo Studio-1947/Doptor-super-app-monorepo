@@ -123,4 +123,50 @@ export class OrganisationsService {
       organisation: deletedOrganisation,
     };
   }
+
+  async enableVertical(id: string, vertical: string) {
+    const org = await this.findOne(id);
+    const enabledVerticals = (org.enabled_verticals as string[]) || [];
+
+    if (!enabledVerticals.includes(vertical)) {
+      enabledVerticals.push(vertical);
+    }
+
+    const [updated] = await this.db
+      .update(organisations)
+      .set({ enabled_verticals: enabledVerticals, updated_at: new Date() })
+      .where(eq(organisations.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  async disableVertical(id: string, vertical: string) {
+    const org = await this.findOne(id);
+    const enabledVerticals = ((org.enabled_verticals as string[]) || []).filter(
+      (v) => v !== vertical,
+    );
+
+    const [updated] = await this.db
+      .update(organisations)
+      .set({ enabled_verticals: enabledVerticals, updated_at: new Date() })
+      .where(eq(organisations.id, id))
+      .returning();
+
+    return updated;
+  }
+
+  async updateVerticalConfig(id: string, vertical: string, config: any) {
+    const org = await this.findOne(id);
+    const verticalConfig = (org.vertical_config as any) || {};
+    verticalConfig[vertical] = config;
+
+    const [updated] = await this.db
+      .update(organisations)
+      .set({ vertical_config: verticalConfig, updated_at: new Date() })
+      .where(eq(organisations.id, id))
+      .returning();
+
+    return updated;
+  }
 }
