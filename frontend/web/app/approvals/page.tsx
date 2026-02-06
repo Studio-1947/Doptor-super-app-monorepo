@@ -1,5 +1,5 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { ApprovalsDashboard } from '@/features/approvals/ApprovalsDashboard';
 
 export default function ApprovalsPage() {
-    return <ComingSoon title="Approvals" moduleName="Core" />;
+    return <ApprovalsDashboard />;
 }

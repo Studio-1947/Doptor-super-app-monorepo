@@ -1,5 +1,5 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { CommunicationDashboard } from '@/features/communication/CommunicationDashboard';
 
 export default function CommunicationPage() {
-    return <ComingSoon title="Communication" moduleName="Core" />;
+    return <CommunicationDashboard />;
 }

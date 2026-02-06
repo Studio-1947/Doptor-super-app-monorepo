@@ -88,9 +88,9 @@ export function CampusDashboard() {
                         <h3 className="font-semibold text-lg mb-4">Quick Actions</h3>
                         <div className="space-y-2">
                             <ActionButton label="Mark Attendance" onClick={() => router.push('/campus/attendance')} />
-                            <ActionButton label="Manage Courses" onClick={() => router.push('/campus/academics/courses')} />
-                            <ActionButton label="View Faculty" onClick={() => router.push('/campus/academics/faculty')} />
-                            <ActionButton label="Manage Classes" onClick={() => router.push('/campus/academics/classes')} />
+                            <ActionButton label="Student Directory" onClick={() => router.push('/campus/students')} />
+                            <ActionButton label="Faculty Directory" onClick={() => router.push('/campus/faculty')} />
+                            <ActionButton label="Attendance Reports" onClick={() => router.push('/campus/attendance/reports')} />
                         </div>
                     </Card>
 
