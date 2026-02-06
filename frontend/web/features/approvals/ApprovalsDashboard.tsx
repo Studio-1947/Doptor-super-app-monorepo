@@ -80,7 +80,7 @@ function PendingRequests() {
                                     <Button size="sm" className="h-8 text-xs bg-slate-900 text-white hover:bg-slate-800">
                                         View Details
                                     </Button>
-                                    <Button size="sm" variant="outline" className="h-8 text-xs text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300">
+                                    <Button size="sm" variant="secondary" className="h-8 text-xs text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300">
                                         Withdraw
                                     </Button>
                                 </div>

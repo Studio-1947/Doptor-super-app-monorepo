@@ -101,8 +101,8 @@ export function AttendanceReports() {
             const avgAttendance = totalDays > 0
                 ? Math.round(reportData.reduce((sum, d) => sum + d.percentage, 0) / totalDays)
                 : 0;
-            const totalPresent = reportData.reduce((sum, d) => sum + d.present, 0);
-            const totalAbsent = reportData.reduce((sum, d) => sum + d.absent, 0);
+            const totalPresent = reportData.reduce((sum, d: any) => sum + (d.present || 0), 0);
+            const totalAbsent = reportData.reduce((sum, d: any) => sum + (d.absent || 0), 0);
 
             return { totalDays, avgAttendance, totalPresent, totalAbsent };
         }
@@ -132,8 +132,8 @@ export function AttendanceReports() {
                 <button
                     onClick={() => setReportType('monthly')}
                     className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${reportType === 'monthly'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                         }`}
                 >
                     <FileText size={16} className="inline mr-2" />
@@ -142,8 +142,8 @@ export function AttendanceReports() {
                 <button
                     onClick={() => setReportType('daily')}
                     className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${reportType === 'daily'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                         }`}
                 >
                     <Calendar size={16} className="inline mr-2" />
@@ -152,8 +152,8 @@ export function AttendanceReports() {
                 <button
                     onClick={() => setReportType('student-wise')}
                     className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${reportType === 'student-wise'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                         }`}
                 >
                     <Users size={16} className="inline mr-2" />
@@ -162,8 +162,8 @@ export function AttendanceReports() {
                 <button
                     onClick={() => setReportType('class-trends')}
                     className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${reportType === 'class-trends'
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                         }`}
                 >
                     <TrendingUp size={16} className="inline mr-2" />
@@ -245,7 +245,7 @@ export function AttendanceReports() {
 
                         <div className="flex items-end gap-2">
                             <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => handleExport('pdf')}
                                 className="gap-2 flex-1"
@@ -254,7 +254,7 @@ export function AttendanceReports() {
                                 PDF
                             </Button>
                             <Button
-                                variant="outline"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() => handleExport('excel')}
                                 className="gap-2 flex-1"
@@ -340,8 +340,8 @@ export function AttendanceReports() {
                                             <td className="py-3 px-4 text-center text-orange-700">{student.lateDays}</td>
                                             <td className="py-3 px-4 text-center">
                                                 <span className={`px-2 py-1 text-xs font-medium ${student.percentage >= 90 ? 'bg-emerald-100 text-emerald-700' :
-                                                        student.percentage >= 75 ? 'bg-orange-100 text-orange-700' :
-                                                            'bg-red-100 text-red-700'
+                                                    student.percentage >= 75 ? 'bg-orange-100 text-orange-700' :
+                                                        'bg-red-100 text-red-700'
                                                     }`}>
                                                     {student.percentage}%
                                                 </span>
@@ -382,8 +382,8 @@ export function AttendanceReports() {
                                             <td className="py-3 px-4 text-center text-blue-700">{day.excused}</td>
                                             <td className="py-3 px-4 text-center">
                                                 <span className={`px-2 py-1 text-xs font-medium ${day.percentage >= 90 ? 'bg-emerald-100 text-emerald-700' :
-                                                        day.percentage >= 75 ? 'bg-orange-100 text-orange-700' :
-                                                            'bg-red-100 text-red-700'
+                                                    day.percentage >= 75 ? 'bg-orange-100 text-orange-700' :
+                                                        'bg-red-100 text-red-700'
                                                     }`}>
                                                     {day.percentage}%
                                                 </span>

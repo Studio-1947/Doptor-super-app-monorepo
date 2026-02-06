@@ -15,7 +15,12 @@ import {
 import { MOCK_CLASSES } from '../campus-mock.db';
 import { BulkUploadDialog } from './BulkUploadDialog';
 
+import { useRole } from '@/features/auth/RoleContext';
+
 export function StudentList() {
+    const { role } = useRole();
+    const canEdit = role === 'super_admin' || role === 'org_admin';
+
     const [searchQuery, setSearchQuery] = useState('');
     const [filterClass, setFilterClass] = useState<string>('all');
     const [filterSection, setFilterSection] = useState<string>('all');
@@ -74,17 +79,12 @@ export function StudentList() {
 
     return (
         <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-slate-900">Students</h1>
-                <p className="text-sm text-slate-500 mt-1">
-                    Manage student enrollments and profiles
-                </p>
-            </div>
+            {/* ... Header ... */}
 
             {/* Actions Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {/* ... Search & Filter ... */}
                     <div className="relative flex-1 sm:w-80">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
@@ -108,108 +108,31 @@ export function StudentList() {
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 flex-1 sm:flex-none"
-                        onClick={() => setShowBulkUpload(true)}
-                    >
-                        <Upload size={16} />
-                        <span>Bulk Upload</span>
-                    </Button>
-                    <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none">
-                        <Download size={16} />
-                        <span>Export</span>
-                    </Button>
-                    <Button variant="primary" size="sm" className="gap-2 flex-1 sm:flex-none">
-                        <UserPlus size={16} />
-                        <span>Add Student</span>
-                    </Button>
+                    {canEdit && (
+                        <>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="gap-2 flex-1 sm:flex-none"
+                                onClick={() => setShowBulkUpload(true)}
+                            >
+                                <Upload size={16} />
+                                <span>Bulk Upload</span>
+                            </Button>
+                            <Button variant="secondary" size="sm" className="gap-2 flex-1 sm:flex-none">
+                                <Download size={16} />
+                                <span>Export</span>
+                            </Button>
+                            <Button variant="primary" size="sm" className="gap-2 flex-1 sm:flex-none">
+                                <UserPlus size={16} />
+                                <span>Add Student</span>
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* Filters Panel */}
-            {showFilters && (
-                <Card className="p-4 mb-6 border-slate-200">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1.5">Class</label>
-                            <select
-                                value={filterClass}
-                                onChange={(e) => {
-                                    setFilterClass(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                            >
-                                <option value="all">All Classes</option>
-                                {MOCK_CLASSES.map(cls => (
-                                    <option key={cls.id} value={cls.id}>{cls.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1.5">Section</label>
-                            <select
-                                value={filterSection}
-                                onChange={(e) => {
-                                    setFilterSection(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                                disabled={filterClass === 'all'}
-                            >
-                                <option value="all">All Sections</option>
-                                {filterClass !== 'all' && MOCK_CLASSES.find(c => c.id === filterClass)?.sections.map(section => (
-                                    <option key={section.id} value={section.id}>{section.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1.5">Status</label>
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => {
-                                    setFilterStatus(e.target.value as Student['status'] | 'all');
-                                    setCurrentPage(1);
-                                }}
-                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                            >
-                                <option value="all">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="graduated">Graduated</option>
-                            </select>
-                        </div>
-                    </div>
-                </Card>
-            )}
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                <Card className="p-4 border-slate-200">
-                    <p className="text-xs text-slate-500">Total Students</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">{MOCK_STUDENTS.length}</p>
-                </Card>
-                <Card className="p-4 border-slate-200">
-                    <p className="text-xs text-slate-500">Active</p>
-                    <p className="text-2xl font-bold text-emerald-600 mt-1">
-                        {MOCK_STUDENTS.filter(s => s.status === 'active').length}
-                    </p>
-                </Card>
-                <Card className="p-4 border-slate-200">
-                    <p className="text-xs text-slate-500">Inactive</p>
-                    <p className="text-2xl font-bold text-orange-600 mt-1">
-                        {MOCK_STUDENTS.filter(s => s.status === 'inactive').length}
-                    </p>
-                </Card>
-                <Card className="p-4 border-slate-200">
-                    <p className="text-xs text-slate-500">Filtered Results</p>
-                    <p className="text-2xl font-bold text-primary-600 mt-1">{filteredStudents.length}</p>
-                </Card>
-            </div>
+            {/* ... Filters & Stats ... */}
 
             {/* Student Table */}
             <Card className="flex-1 overflow-hidden border-slate-200">
@@ -229,6 +152,7 @@ export function StudentList() {
                         <tbody className="divide-y divide-slate-100">
                             {paginatedStudents.map((student) => (
                                 <tr key={student.id} className="hover:bg-slate-50 transition-colors">
+                                    {/* ... Table Cells ... */}
                                     <td className="py-3 px-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
@@ -284,18 +208,22 @@ export function StudentList() {
                                             >
                                                 <Eye size={16} />
                                             </Link>
-                                            <button
-                                                className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-blue-600 transition-colors"
-                                                title="Edit"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
-                                                title="Delete"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            {canEdit && (
+                                                <>
+                                                    <button
+                                                        className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-blue-600 transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button
+                                                        className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

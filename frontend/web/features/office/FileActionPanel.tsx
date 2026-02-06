@@ -43,9 +43,9 @@ export function FileActionPanel({
                 <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-500">Current Status:</span>
                     <span className={`font-medium px-2.5 py-0.5 rounded-full text-xs ${file.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                            file.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                file.status === 'closed' ? 'bg-slate-200 text-slate-700' :
-                                    'bg-blue-100 text-blue-700'
+                        file.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                            file.status === 'closed' ? 'bg-slate-200 text-slate-700' :
+                                'bg-blue-100 text-blue-700'
                         }`}>
                         {file.status.charAt(0).toUpperCase() + file.status.slice(1)}
                     </span>
@@ -78,7 +78,7 @@ export function FileActionPanel({
                 </Button>
 
                 <Button
-                    variant="outline"
+                    variant="secondary"
                     onClick={onReturn}
                     className="w-full justify-center gap-2 text-slate-700 border-slate-300 hover:bg-slate-50"
                 >
@@ -87,7 +87,7 @@ export function FileActionPanel({
                 </Button>
 
                 <Button
-                    variant="outline"
+                    variant="secondary"
                     onClick={onApprove}
                     className="w-full justify-center gap-2 text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300"
                 >
@@ -96,7 +96,7 @@ export function FileActionPanel({
                 </Button>
 
                 <Button
-                    variant="outline"
+                    variant="secondary"
                     onClick={onReject}
                     className="w-full justify-center gap-2 text-red-700 border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-300"
                 >

@@ -26,7 +26,7 @@ export function StudentProfile() {
         return (
             <div className="flex flex-col items-center justify-center h-full">
                 <p className="text-slate-500 mb-4">Student not found</p>
-                <Button variant="outline" onClick={() => router.push('/campus/students')}>
+                <Button variant="secondary" onClick={() => router.push('/campus/students')}>
                     Back to Students
                 </Button>
             </div>
@@ -64,7 +64,7 @@ export function StudentProfile() {
                                 <h1 className="text-2xl font-bold text-slate-900">{getStudentFullName(student)}</h1>
                                 <p className="text-sm text-slate-500 mt-1">Roll Number: {student.rollNumber}</p>
                             </div>
-                            <Button variant="outline" size="sm" className="gap-2 self-start">
+                            <Button variant="secondary" size="sm" className="gap-2 self-start">
                                 <Edit2 size={16} />
                                 Edit Profile
                             </Button>
@@ -97,7 +97,7 @@ export function StudentProfile() {
 
                             <div className="flex items-center gap-2 text-sm">
                                 <div className={`w-3 h-3 rounded-full ${student.status === 'active' ? 'bg-emerald-500' :
-                                        student.status === 'inactive' ? 'bg-orange-500' : 'bg-slate-400'
+                                    student.status === 'inactive' ? 'bg-orange-500' : 'bg-slate-400'
                                     }`} />
                                 <div>
                                     <p className="text-slate-500 text-xs">Status</p>
@@ -121,8 +121,8 @@ export function StudentProfile() {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
                         className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === tab.id
-                                ? 'border-primary-600 text-primary-600'
-                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                            ? 'border-primary-600 text-primary-600'
+                            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                             }`}
                     >
                         <tab.icon size={16} />
@@ -280,7 +280,7 @@ function DocumentsTab({ student }: { student: Student }) {
             <Card className="p-6 border-slate-200">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-slate-900">Uploaded Documents</h3>
-                    <Button variant="outline" size="sm" className="gap-2">
+                    <Button variant="secondary" size="sm" className="gap-2">
                         <Upload size={16} />
                         Upload Document
                     </Button>

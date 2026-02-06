@@ -85,15 +85,15 @@ const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, 
             { icon: Calendar, label: 'Attendance', href: '/campus/attendance/calendar' },
         ],
         manager: [
-            // { icon: GraduationCap, label: 'Department', href: '/campus/department' },
+            { icon: Users, label: 'Students', href: '/campus/students' },
+            { icon: Users, label: 'Faculty', href: '/campus/faculty' },
+            { icon: BarChart3, label: 'Reports', href: '/campus/attendance/reports' },
         ],
         staff: [
-            // { icon: GraduationCap, label: 'Classes', href: '/campus/classes' },
+            { icon: Calendar, label: 'Mark Attendance', href: '/campus/attendance/mark' },
         ],
         student: [
-            // { icon: FileText, label: 'My Courses', href: '/campus/courses' },
-            // { icon: Calendar, label: 'Timetable', href: '/campus/timetable' },
-            // { icon: FileText, label: 'Results', href: '/campus/results' },
+            // Student navigation is primarily via Dashboard
         ]
     },
     network: {

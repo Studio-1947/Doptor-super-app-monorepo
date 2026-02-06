@@ -62,7 +62,7 @@ export function FileDashboard() {
                 </div>
                 <div className="flex gap-3">
                     <Button
-                        variant="outline"
+                        variant="secondary"
                         onClick={() => router.push('/office/files')}
                         className="gap-2"
                     >

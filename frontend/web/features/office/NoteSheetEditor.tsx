@@ -178,7 +178,7 @@ export function NoteSheetEditor({
 
                     <div className="flex gap-2">
                         <Button
-                            variant="outline"
+                            variant="secondary"
                             size="sm"
                             onClick={() => handleSave(false)}
                             disabled={isSaving || !newNoteContent.trim()}

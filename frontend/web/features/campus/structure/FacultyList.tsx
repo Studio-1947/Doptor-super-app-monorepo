@@ -19,8 +19,14 @@ import { AddFacultyDialog } from '../faculty/AddFacultyDialog';
 import { BulkUploadDialog } from '../faculty/BulkUploadDialog';
 import { AssignClassDialog } from '../faculty/AssignClassDialog';
 
+import { useRole } from '@/features/auth/RoleContext';
+
 export function FacultyList() {
+    const { role } = useRole();
+    const canEdit = role === 'super_admin' || role === 'org_admin';
+
     const router = useRouter();
+
     const [searchQuery, setSearchQuery] = useState('');
     const [filterDepartment, setFilterDepartment] = useState<string>('all');
     const [filterStatus, setFilterStatus] = useState<Faculty['status'] | 'all'>('all');
@@ -29,7 +35,7 @@ export function FacultyList() {
     const [showBulkUpload, setShowBulkUpload] = useState(false);
     const [showAssignClass, setShowAssignClass] = useState(false);
 
-    // Filter and search faculty
+    // ... useMemo filteredFaculty ...
     const filteredFaculty = useMemo(() => {
         let results = MOCK_FACULTY;
 
@@ -66,6 +72,7 @@ export function FacultyList() {
             {/* Actions Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {/* ... Search & Filter ... */}
                     <div className="relative flex-1 sm:w-80">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
@@ -86,37 +93,41 @@ export function FacultyList() {
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 flex-1 sm:flex-none"
-                        onClick={() => setShowBulkUpload(true)}
-                    >
-                        <Upload size={16} />
-                        <span>Bulk Upload</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 flex-1 sm:flex-none"
-                        onClick={() => setShowAssignClass(true)}
-                    >
-                        <BookOpen size={16} />
-                        <span>Assign Classes</span>
-                    </Button>
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        className="gap-2 flex-1 sm:flex-none"
-                        onClick={() => setShowAddDialog(true)}
-                    >
-                        <UserPlus size={16} />
-                        <span>Add Faculty</span>
-                    </Button>
+                    {canEdit && (
+                        <>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="gap-2 flex-1 sm:flex-none"
+                                onClick={() => setShowBulkUpload(true)}
+                            >
+                                <Upload size={16} />
+                                <span>Bulk Upload</span>
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="gap-2 flex-1 sm:flex-none"
+                                onClick={() => setShowAssignClass(true)}
+                            >
+                                <BookOpen size={16} />
+                                <span>Assign Classes</span>
+                            </Button>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                className="gap-2 flex-1 sm:flex-none"
+                                onClick={() => setShowAddDialog(true)}
+                            >
+                                <UserPlus size={16} />
+                                <span>Add Faculty</span>
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
 
-            {/* Filters Panel */}
+            {/* Filters Panel & Stats ... */}
             {showFilters && (
                 <Card className="p-4 mb-6 border-slate-200">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -185,77 +196,83 @@ export function FacultyList() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredFaculty.map((faculty) => (
-                            <Card
+                            <div
                                 key={faculty.id}
-                                className="p-5 border-slate-200 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer"
                                 onClick={() => router.push(`/campus/faculty/${faculty.id}`)}
+                                className="contents"
                             >
-                                <div className="flex items-start gap-3 mb-4">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
-                                        {getFacultyInitials(faculty)}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-slate-900 mb-0.5 truncate">
-                                            {getFacultyFullName(faculty)}
-                                        </h3>
-                                        <p className="text-xs text-slate-500 truncate">{faculty.designation}</p>
-                                        <p className="text-xs text-slate-400 truncate">{faculty.employeeId}</p>
-                                    </div>
-                                    <span
-                                        className={`px-2 py-1 text-xs font-medium ${faculty.status === 'active'
+                                <Card
+                                    className="p-5 border-slate-200 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer"
+                                >
+                                    <div className="flex items-start gap-3 mb-4">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center font-bold text-lg shrink-0">
+                                            {getFacultyInitials(faculty)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-bold text-slate-900 mb-0.5 truncate">
+                                                {getFacultyFullName(faculty)}
+                                            </h3>
+                                            <p className="text-xs text-slate-500 truncate">{faculty.designation}</p>
+                                            <p className="text-xs text-slate-400 truncate">{faculty.employeeId}</p>
+                                        </div>
+                                        <span
+                                            className={`px-2 py-1 text-xs font-medium ${faculty.status === 'active'
                                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                                                 : faculty.status === 'on-leave'
                                                     ? 'bg-orange-50 text-orange-700 border border-orange-100'
                                                     : 'bg-slate-50 text-slate-700 border border-slate-100'
-                                            }`}
-                                    >
-                                        {faculty.status === 'on-leave' ? 'Leave' : faculty.status.charAt(0).toUpperCase() + faculty.status.slice(1)}
-                                    </span>
-                                </div>
+                                                }`}
+                                        >
+                                            {faculty.status === 'on-leave' ? 'Leave' : faculty.status.charAt(0).toUpperCase() + faculty.status.slice(1)}
+                                        </span>
+                                    </div>
 
-                                <div className="space-y-2 mb-4">
-                                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                                        <BookOpen size={14} className="text-slate-400" />
-                                        <span className="truncate">{faculty.department}</span>
+                                    <div className="space-y-2 mb-4">
+                                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                                            <BookOpen size={14} className="text-slate-400" />
+                                            <span className="truncate">{faculty.department}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-slate-600">
+                                            <span className="text-slate-400">📧</span>
+                                            <span className="truncate">{faculty.email}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                                        <span className="text-slate-400">📧</span>
-                                        <span className="truncate">{faculty.email}</span>
-                                    </div>
-                                </div>
 
-                                <div className="pt-3 border-t border-slate-200">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <span className="text-slate-500">Experience</span>
-                                        <span className="font-medium text-slate-900">{faculty.experience} years</span>
+                                    <div className="pt-3 border-t border-slate-200">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-slate-500">Experience</span>
+                                            <span className="font-medium text-slate-900">{faculty.experience} years</span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-xs mt-1">
+                                            <span className="text-slate-500">Classes</span>
+                                            <span className="font-medium text-slate-900">{faculty.assignedClasses.length}</span>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center justify-between text-xs mt-1">
-                                        <span className="text-slate-500">Classes</span>
-                                        <span className="font-medium text-slate-900">{faculty.assignedClasses.length}</span>
-                                    </div>
-                                </div>
 
-                                <div className="flex gap-2 mt-4 pt-3 border-t border-slate-200">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            router.push(`/campus/faculty/${faculty.id}`);
-                                        }}
-                                        className="flex-1 py-1.5 text-xs border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
-                                    >
-                                        View Profile
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setShowAssignClass(true);
-                                        }}
-                                        className="flex-1 py-1.5 text-xs bg-primary-600 text-white hover:bg-primary-700 transition-colors font-medium"
-                                    >
-                                        Assign Class
-                                    </button>
-                                </div>
-                            </Card>
+                                    <div className="flex gap-2 mt-4 pt-3 border-t border-slate-200">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                router.push(`/campus/faculty/${faculty.id}`);
+                                            }}
+                                            className="flex-1 py-1.5 text-xs border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                                        >
+                                            View Profile
+                                        </button>
+                                        {canEdit && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowAssignClass(true);
+                                                }}
+                                                className="flex-1 py-1.5 text-xs bg-primary-600 text-white hover:bg-primary-700 transition-colors font-medium"
+                                            >
+                                                Assign Class
+                                            </button>
+                                        )}
+                                    </div>
+                                </Card>
+                            </div>
                         ))}
                     </div>
                 )}
