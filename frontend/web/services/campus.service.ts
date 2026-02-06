@@ -1,17 +1,34 @@
 import apiClient from "../lib/api-client";
 
+export interface Instructor {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+}
+
+export interface Course {
+  id: string;
+  code: string;
+  name: string;
+  credits: number;
+}
+
+export interface ScheduleItem {
+  day: string;
+  startTime: string;
+  endTime: string;
+  roomId?: string; // Optional if not assigned
+}
+
 export interface CampusClass {
   id: string;
-  course: {
-    name: string;
-    code: string;
-  };
-  schedule: Array<{
-    day: string;
-    startTime: string;
-    endTime: string;
-  }>;
+  course: Course;
+  instructor?: Instructor;
+  schedule: ScheduleItem[];
   location: string;
+  studentCount?: number;
 }
 
 export interface StudentAttendance {

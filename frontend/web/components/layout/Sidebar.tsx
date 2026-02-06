@@ -11,7 +11,8 @@ import { useVertical, VerticalType } from '@/contexts/VerticalContext';
 // Define menus for each vertical and role
 const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, label: string, href: string }[]>> = {
     core: {
-        all: [
+        all: [],
+        super_admin: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
             { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
@@ -19,11 +20,35 @@ const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, 
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
             { icon: Settings, label: 'Settings', href: '/settings' },
         ],
-        super_admin: [],
-        org_admin: [],
-        manager: [],
-        staff: [],
-        student: []
+        org_admin: [
+            { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+            { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
+            { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
+            { icon: MessageSquare, label: 'Communication', href: '/communication' },
+            { icon: Calendar, label: 'Attendance', href: '/attendance' },
+            { icon: Settings, label: 'Settings', href: '/settings' },
+        ],
+        manager: [
+            { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+            { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
+            { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
+            { icon: MessageSquare, label: 'Communication', href: '/communication' },
+            { icon: Calendar, label: 'Attendance', href: '/attendance' },
+            { icon: Settings, label: 'Settings', href: '/settings' },
+        ],
+        staff: [
+            { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+            { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
+            { icon: MessageSquare, label: 'Communication', href: '/communication' },
+            { icon: Calendar, label: 'Attendance', href: '/attendance' },
+            { icon: Settings, label: 'Settings', href: '/settings' },
+        ],
+        student: [
+            { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+            { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
+            { icon: MessageSquare, label: 'Communication', href: '/communication' },
+            { icon: Settings, label: 'Settings', href: '/settings' },
+        ]
     },
     office: {
         all: [],
@@ -56,19 +81,19 @@ const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, 
             { icon: GraduationCap, label: 'Campus Dashboard', href: '/campus' },
             { icon: Users, label: 'Students', href: '/campus/students' },
             { icon: Users, label: 'Faculty', href: '/campus/faculty' },
-            { icon: FileText, label: 'Academics', href: '/campus/academics' },
+            // { icon: FileText, label: 'Academics', href: '/campus/academics' },
             { icon: Calendar, label: 'Attendance', href: '/campus/attendance/calendar' },
         ],
         manager: [
-            { icon: GraduationCap, label: 'Department', href: '/campus/department' },
+            // { icon: GraduationCap, label: 'Department', href: '/campus/department' },
         ],
         staff: [
-            { icon: GraduationCap, label: 'Classes', href: '/campus/classes' },
+            // { icon: GraduationCap, label: 'Classes', href: '/campus/classes' },
         ],
         student: [
-            { icon: FileText, label: 'My Courses', href: '/campus/courses' },
-            { icon: Calendar, label: 'Timetable', href: '/campus/timetable' },
-            { icon: FileText, label: 'Results', href: '/campus/results' },
+            // { icon: FileText, label: 'My Courses', href: '/campus/courses' },
+            // { icon: Calendar, label: 'Timetable', href: '/campus/timetable' },
+            // { icon: FileText, label: 'Results', href: '/campus/results' },
         ]
     },
     network: {

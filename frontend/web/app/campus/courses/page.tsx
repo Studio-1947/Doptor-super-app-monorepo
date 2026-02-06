@@ -1,5 +1,5 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { redirect } from 'next/navigation';
 
-export default function CoursesPage() {
-    return <ComingSoon title="Courses" moduleName="Campus" />;
+export default function RedirectToDashboard() {
+    redirect('/campus');
 }

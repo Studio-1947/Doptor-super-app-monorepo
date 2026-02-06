@@ -6,6 +6,7 @@ import TimeTable from './TimeTable';
 import { useState, useEffect } from 'react';
 import { CampusClass, campusService } from '../../services/campus.service';
 import { useRouter } from 'next/navigation';
+import { useRole } from '@/features/auth/RoleContext';
 
 // Mock data for display until connected to real backend
 const MOCK_CLASSES: CampusClass[] = [
