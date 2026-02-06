@@ -120,7 +120,7 @@ export function Sidebar() {
         <motion.div
             initial={{ width: 240 }}
             animate={{ width: collapsed ? 80 : 240 }}
-            className="h-screen bg-white border-r border-slate-200 flex flex-col relative z-20 shadow-sm transition-all duration-300"
+            className="h-full bg-white border-r border-slate-200 flex flex-col relative z-20 shadow-sm transition-all duration-300"
         >
             <div className="p-4 flex items-center justify-between">
                 <AnimatePresence>

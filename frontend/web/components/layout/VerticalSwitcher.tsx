@@ -21,7 +21,7 @@ export function VerticalSwitcher() {
     ];
 
     return (
-        <div className="flex flex-col items-center w-16 py-4 bg-white border-r border-slate-200 z-30 h-screen sticky top-0">
+        <div className="flex flex-col items-center w-16 py-4 bg-white border-r border-slate-200 z-30 h-full">
             <div className="mb-6">
                 <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
                     <span className="text-white font-bold text-xl">D</span>
