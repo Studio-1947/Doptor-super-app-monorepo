@@ -18,17 +18,9 @@ interface VerticalContextType {
 const VerticalContext = createContext<VerticalContextType | undefined>(undefined);
 
 export function VerticalProvider({ children }: { children: React.ReactNode }) {
-    const { user } = useAuth();
-    const [activeVertical, setActiveVertical] = useState<VerticalType>('office'); // Default to office
-    const [enabledVerticals, setEnabledVerticals] = useState<VerticalType[]>(['core', 'office', 'campus', 'network']);
-    const [isLoading, setIsLoading] = useState(false);
-
-    // Todo: Fetch User's Organisation Config to set enabledVerticals
-    // useEffect(() => {
-    //   if (user?.organisation_id) {
-    //      loadOrgConfig(user.organisation_id);
-    //   }
-    // }, [user]);
+    const [activeVertical, setActiveVertical] = useState<VerticalType>('core');
+    const [enabledVerticals] = useState<VerticalType[]>(['core', 'office', 'campus', 'network']);
+    const [isLoading] = useState(false);
 
     const value = {
         activeVertical,

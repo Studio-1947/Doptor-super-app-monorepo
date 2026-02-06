@@ -1,0 +1,129 @@
+"use client";
+
+import { useState } from 'react';
+import { Card, Button } from '@doptor/shared';
+import { Plus, Users, GraduationCap, ChevronDown, UserPlus } from 'lucide-react';
+import { MOCK_CLASSES, CampusClass } from '../campus-mock.db';
+import { CreateClassDialog } from './dialogs/CreateClassDialog';
+import { MapTeacherDialog } from './dialogs/MapTeacherDialog';
+import { EnrollStudentDialog } from './dialogs/EnrollStudentDialog';
+
+export function ClassManager() {
+    const [classes, setClasses] = useState<CampusClass[]>(MOCK_CLASSES);
+    const [isCreateClassOpen, setIsCreateClassOpen] = useState(false);
+    const [mapTeacherSection, setMapTeacherSection] = useState<{ isOpen: boolean, sectionName: string }>({ isOpen: false, sectionName: '' });
+    const [enrollSection, setEnrollSection] = useState<{ isOpen: boolean, sectionId: string, sectionName: string }>({
+        isOpen: false,
+        sectionId: '',
+        sectionName: ''
+    });
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Classes & Sections</h2>
+                    <p className="text-slate-500">Manage hierarchy, sections and class teachers.</p>
+                </div>
+                <Button
+                    className="bg-primary-600 hover:bg-primary-700 text-white gap-2"
+                    onClick={() => setIsCreateClassOpen(true)}
+                >
+                    <Plus size={18} /> New Class
+                </Button>
+            </div>
+
+            <div className="space-y-4">
+                {classes.map((cls) => (
+                    <Card key={cls.id} className="overflow-hidden">
+                        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600">
+                                    <GraduationCap size={20} />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900">{cls.name}</h3>
+                                <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded text-xs font-bold">
+                                    {cls.sections.length} Sections
+                                </span>
+                            </div>
+                            <Button variant="secondary" size="sm" className="gap-2">
+                                <Plus size={16} /> Add Section
+                            </Button>
+                        </div>
+
+                        <div className="divide-y divide-slate-100">
+                            {cls.sections.map((section) => (
+                                <div key={section.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+                                            {section.name.charAt(section.name.length - 1)}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-slate-900">{section.name}</h4>
+                                            <p className="text-sm text-slate-500">{section.studentCount} Students</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-6">
+                                        {/* Teacher Mapping UI */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-right">
+                                                <p className="text-xs text-slate-400">Class Teacher</p>
+                                                {section.teacherId ? (
+                                                    <p className="text-sm font-medium text-slate-900">Mr. Anderson</p>
+                                                ) : (
+                                                    <p className="text-sm text-orange-600 italic">Not Assigned</p>
+                                                )}
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-primary-600 hover:bg-primary-50"
+                                                onClick={() => setMapTeacherSection({ isOpen: true, sectionName: section.name })}
+                                            >
+                                                <UserPlus size={18} />
+                                            </Button>
+                                        </div>
+
+                                        {/* Enroll Student Button */}
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            className="gap-2"
+                                            onClick={() => setEnrollSection({
+                                                isOpen: true,
+                                                sectionId: section.id,
+                                                sectionName: `${cls.name} - ${section.name}`
+                                            })}
+                                        >
+                                            <Users size={16} />
+                                            Enroll Student
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                ))}
+            </div>
+
+            <CreateClassDialog
+                isOpen={isCreateClassOpen}
+                onClose={() => setIsCreateClassOpen(false)}
+            />
+
+            <MapTeacherDialog
+                isOpen={mapTeacherSection.isOpen}
+                onClose={() => setMapTeacherSection({ ...mapTeacherSection, isOpen: false })}
+                sectionName={mapTeacherSection.sectionName}
+            />
+
+            <EnrollStudentDialog
+                isOpen={enrollSection.isOpen}
+                onClose={() => setEnrollSection({ ...enrollSection, isOpen: false })}
+                classId={enrollSection.sectionId}
+                className={enrollSection.sectionName}
+            />
+        </div>
+    );
+}

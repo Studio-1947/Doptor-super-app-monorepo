@@ -4,7 +4,7 @@ const cn = (...classes: (string | undefined | null | false)[]) => classes.filter
 
 export const Card = ({ className, children }: { className?: string; children: React.ReactNode }) => {
     return (
-        <div className={cn('bg-white border border-slate-200 rounded-2xl p-6 shadow-sm', className)}>
+        <div className={cn('bg-white border border-slate-200 rounded-none p-6 shadow-sm', className)}>
             {children}
         </div>
     );

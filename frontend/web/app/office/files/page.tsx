@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, Filter, Inbox, Send, Activity, Clock, AlertCircle } from 'lucide-react';
 import { filesService, File } from '@/services/files.service';
 import FileList from '@/features/office/FileList';
@@ -15,11 +15,7 @@ export default function OfficeFilesPage() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
 
-    useEffect(() => {
-        loadFiles();
-    }, [activeTab]);
-
-    async function loadFiles() {
+    const loadFiles = useCallback(async () => {
         try {
             setLoading(true);
             const data = activeTab === 'inbox'
@@ -32,7 +28,11 @@ export default function OfficeFilesPage() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [activeTab]);
+
+    useEffect(() => {
+        loadFiles();
+    }, [loadFiles]);
 
     const filteredFiles = files.filter(f =>
         f.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||

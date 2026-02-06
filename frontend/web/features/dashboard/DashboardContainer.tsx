@@ -22,6 +22,6 @@ export function DashboardContainer() {
         case 'student':
             return <StudentDashboard />;
         default:
-            return <div>Unknown Role</div>;
+            return <OrgAdminDashboard />;
     }
 }

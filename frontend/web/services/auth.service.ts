@@ -1,8 +1,16 @@
 import apiClient from "../lib/api-client";
 
+export type UserRole =
+  | "super_admin"
+  | "org_admin"
+  | "manager"
+  | "staff"
+  | "student";
+
 export interface User {
   id: string;
   email: string;
+  role: UserRole;
   organisation_id: string;
   created_at?: string;
   updated_at?: string;

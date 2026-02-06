@@ -1,7 +1,5 @@
-"use client";
-
-import { CommunicationHub } from '@/features/communication/CommunicationHub';
+import { ComingSoon } from '@/components/ComingSoon';
 
 export default function CommunicationPage() {
-    return <CommunicationHub />;
+    return <ComingSoon title="Communication" moduleName="Core" />;
 }

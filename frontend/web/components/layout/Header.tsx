@@ -3,6 +3,7 @@
 import { Search, Bell, ChevronDown, Building2, Shield } from 'lucide-react';
 import { Button } from '@doptor/shared';
 import { useRole, UserRole } from '@/features/auth/RoleContext';
+import Image from 'next/image';
 
 export function Header() {
     const { role, setRole } = useRole();
@@ -63,8 +64,13 @@ export function Header() {
                     <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 border-2 border-white"></span>
                 </button>
 
-                <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden border border-slate-300">
-                    <img src="https://ui-avatars.com/api/?name=John+Doe&background=random" alt="Profile" className="w-full h-full object-cover" />
+                <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden border border-slate-300 relative">
+                    <Image
+                        src="https://ui-avatars.com/api/?name=John+Doe&background=random"
+                        alt="Profile"
+                        fill
+                        className="object-cover"
+                    />
                 </div>
             </div>
         </header>

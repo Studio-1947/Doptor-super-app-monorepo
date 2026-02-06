@@ -1,7 +1,5 @@
-"use client";
+import { ComingSoon } from '@/components/ComingSoon';
 
-import { EmployeeRegistry } from '@/features/verticals/office/EmployeeRegistry';
-
-export default function EmployeeRegistryPage() {
-    return <EmployeeRegistry />;
+export default function RegistryPage() {
+    return <ComingSoon title="Registry" moduleName="Office" />;
 }

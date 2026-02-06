@@ -1,8 +1,10 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/services/auth.service';
 
-export type UserRole = 'super_admin' | 'org_admin' | 'manager' | 'staff' | 'student';
+export { type UserRole };
 
 interface RoleContextType {
     role: UserRole;
@@ -17,8 +19,16 @@ interface RoleContextType {
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
-    // Default to super_admin for development
+    const { user, isAuthenticated } = useAuth();
+    // Default to 'super_admin' if not authenticated or role is missing (fallback/dev mode)
+    // In production, this should likely default to a 'guest' state or redirect
     const [role, setRole] = useState<UserRole>('super_admin');
+
+    useEffect(() => {
+        if (user?.role) {
+            setRole(user.role);
+        }
+    }, [user]);
 
     const value = {
         role,
