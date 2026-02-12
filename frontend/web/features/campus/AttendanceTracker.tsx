@@ -50,6 +50,7 @@ export default function AttendanceTracker({ classId, className, onClose }: Atten
 
             await campusService.markAttendance({
                 classId,
+                date: new Date().toISOString(),
                 updates
             });
 

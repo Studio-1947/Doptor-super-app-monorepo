@@ -1,26 +1,46 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogFooter, Button } from '@doptor/shared';
-import { MOCK_DEPARTMENTS } from '../../campus-mock.db';
+import { campusService, Department } from '../../../../services/campus.service';
+import { toast } from 'sonner';
 
 interface CreateClassDialogProps {
     isOpen: boolean;
     onClose: () => void;
+    onSuccess?: () => void;
 }
 
-export function CreateClassDialog({ isOpen, onClose }: CreateClassDialogProps) {
+export function CreateClassDialog({ isOpen, onClose, onSuccess }: CreateClassDialogProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [formData, setFormData] = useState({
+        name: '',
+        departmentId: ''
+    });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    useEffect(() => {
+        if (isOpen) {
+            campusService.getDepartments().then(setDepartments).catch(console.error);
+        }
+    }, [isOpen]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
+
+        try {
+            await campusService.createClass(formData);
+            toast.success('Class created successfully');
+            if (onSuccess) onSuccess();
             onClose();
-            // In a real app, this would refresh the list
-        }, 1000);
+            setFormData({ name: '', departmentId: '' });
+        } catch (e) {
+            toast.error('Failed to create class');
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -30,6 +50,8 @@ export function CreateClassDialog({ isOpen, onClose }: CreateClassDialogProps) {
                     <label className="block text-sm font-medium text-slate-700 mb-1">Class Name</label>
                     <input
                         type="text"
+                        value={formData.name}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
                         placeholder="e.g. Class 10, Semester 1"
                         className="w-full px-3 py-2 border border-slate-300 rounded-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                         required
@@ -38,9 +60,13 @@ export function CreateClassDialog({ isOpen, onClose }: CreateClassDialogProps) {
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Department (Optional)</label>
-                    <select className="w-full px-3 py-2 border border-slate-300 rounded-none focus:outline-none focus:ring-2 focus:ring-primary-500/50">
+                    <select
+                        value={formData.departmentId}
+                        onChange={e => setFormData({ ...formData, departmentId: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                    >
                         <option value="">Select Department...</option>
-                        {MOCK_DEPARTMENTS.map(dept => (
+                        {departments.map(dept => (
                             <option key={dept.id} value={dept.id}>{dept.name}</option>
                         ))}
                     </select>

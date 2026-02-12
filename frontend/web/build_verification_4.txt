@@ -1,0 +1,79 @@
+
+> @doptor/web@0.1.0 build
+> next build
+
+   ▲ Next.js 14.1.0
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/49) ...
+   Generating static pages (12/49) 
+   Generating static pages (24/49) 
+   Generating static pages (36/49) 
+ ✓ Generating static pages (49/49) 
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    3.54 kB         152 kB
+├ ○ /_not-found                          0 B                0 B
+├ ○ /admin/departments                   2.29 kB        86.5 kB
+├ ○ /admin/roles                         2.29 kB        86.5 kB
+├ ○ /admin/settings                      2.29 kB        86.5 kB
+├ ○ /analytics                           3.97 kB        88.2 kB
+├ ○ /approvals                           3.21 kB        87.5 kB
+├ ○ /attendance                          2.29 kB        86.5 kB
+├ ○ /campus                              1.8 kB          128 kB
+├ ○ /campus/academics                    167 B          84.4 kB
+├ ○ /campus/academics/classes            5.28 kB         120 kB
+├ ○ /campus/academics/courses            4.74 kB         116 kB
+├ ○ /campus/academics/departments        4.48 kB         115 kB
+├ ○ /campus/academics/faculty            154 B           126 kB
+├ ○ /campus/academics/years              3.1 kB         87.3 kB
+├ ○ /campus/admin                        167 B          84.4 kB
+├ ○ /campus/attendance                   167 B          84.4 kB
+├ ○ /campus/attendance/calendar          3.88 kB        91.7 kB
+├ ○ /campus/attendance/mark              4.67 kB          97 kB
+├ ○ /campus/attendance/reports           4.99 kB        92.8 kB
+├ ○ /campus/classes                      167 B          84.4 kB
+├ ○ /campus/courses                      167 B          84.4 kB
+├ ○ /campus/department                   167 B          84.4 kB
+├ ○ /campus/faculty                      155 B           126 kB
+├ λ /campus/faculty/[id]                 4.72 kB         101 kB
+├ ○ /campus/results                      167 B          84.4 kB
+├ ○ /campus/students                     6.37 kB         127 kB
+├ λ /campus/students/[id]                4.92 kB        99.6 kB
+├ ○ /campus/timetable                    167 B          84.4 kB
+├ ○ /communication                       3.94 kB        88.2 kB
+├ ○ /documents                           4.05 kB        88.3 kB
+├ ○ /login                               3.02 kB         155 kB
+├ ○ /network                             2.29 kB        86.5 kB
+├ ○ /network/admin                       2.29 kB        86.5 kB
+├ ○ /network/campaigns                   2.29 kB        86.5 kB
+├ ○ /network/feed                        2.29 kB        86.5 kB
+├ ○ /network/group                       2.29 kB        86.5 kB
+├ ○ /network/opportunities               2.29 kB        86.5 kB
+├ ○ /network/volunteers                  2.29 kB        86.5 kB
+├ ○ /office                              5.13 kB        89.4 kB
+├ ○ /office/admin                        2.29 kB        86.5 kB
+├ ○ /office/files                        4.5 kB          130 kB
+├ λ /office/files/[id]                   1.23 kB         104 kB
+├ ○ /office/registry                     2.29 kB        86.5 kB
+├ ○ /office/reports                      2.29 kB        86.5 kB
+├ ○ /office/team                         2.29 kB        86.5 kB
+├ ○ /onboarding                          2.1 kB         93.2 kB
+├ ○ /register                            4.41 kB         157 kB
+├ ○ /settings                            3.85 kB        92.6 kB
+└ ○ /tasks                               5.83 kB        94.6 kB
++ First Load JS shared by all            84.2 kB
+  ├ chunks/8069-0b0a9ec1d703d55a.js      28.9 kB
+  ├ chunks/fd9d1056-20b837d670faf23d.js  53.4 kB
+  └ other shared chunks (total)          1.97 kB
+
+
+○  (Static)   prerendered as static content
+λ  (Dynamic)  server-rendered on demand using Node.js
+

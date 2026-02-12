@@ -12,6 +12,7 @@ import { useRole } from '@/features/auth/RoleContext';
 const MOCK_CLASSES: CampusClass[] = [
     {
         id: '1',
+        name: 'Intro to Computer Science',
         course: { id: 'c1', code: 'CS101', name: 'Intro to Computer Science', credits: 3 },
         instructor: { id: 'i1', first_name: 'Dr.', last_name: 'Smith', email: 'smith@uni.edu', role: 'staff' },
         schedule: [
@@ -23,6 +24,7 @@ const MOCK_CLASSES: CampusClass[] = [
     },
     {
         id: '2',
+        name: 'Calculus II',
         course: { id: 'c2', code: 'MATH201', name: 'Calculus II', credits: 4 },
         instructor: { id: 'i2', first_name: 'Prof.', last_name: 'Johnson', email: 'johnson@uni.edu', role: 'staff' },
         schedule: [

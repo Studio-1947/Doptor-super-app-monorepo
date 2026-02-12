@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Card, Button } from '@doptor/shared';
-import { Plus, BookOpen, Search } from 'lucide-react';
+import { Plus, BookOpen, Search, Trash2 } from 'lucide-react';
 import { campusService } from '../../../services/campus.service';
 import { CreateCourseDialog } from './dialogs/CreateCourseDialog';
+import { toast } from 'sonner';
 
 interface Course {
     id: string;
@@ -31,8 +32,22 @@ export function CourseList() {
             setCourses(data);
         } catch (error) {
             console.error("Failed to load courses", error);
+            toast.error("Failed to load courses");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this course?")) return;
+
+        try {
+            await campusService.deleteCourse(id);
+            toast.success("Course deleted");
+            loadCourses();
+        } catch (error) {
+            console.error("Failed to delete course", error);
+            toast.error("Failed to delete course");
         }
     };
 
@@ -74,7 +89,17 @@ export function CourseList() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredCourses.map((course) => (
-                        <Card key={course.id} className="p-5 hover:shadow-md transition-shadow">
+                        <Card key={course.id} className="p-5 hover:shadow-md transition-shadow group relative">
+                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                    onClick={() => handleDelete(course.id)}
+                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                    title="Delete Course"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
+
                             <div className="flex items-start gap-3">
                                 <div className="p-2.5 bg-indigo-50 rounded-lg text-indigo-600">
                                     <BookOpen size={20} />
