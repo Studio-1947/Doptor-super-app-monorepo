@@ -1,18 +1,29 @@
 import apiClient from "../lib/api-client";
 
+export interface Department {
+  id: string;
+  name: string;
+  code?: string;
+  headOfDept?: string;
+  description?: string;
+}
+
 export interface Instructor {
   id: string;
   first_name: string;
   last_name: string;
   email: string;
   role: string;
-  department?: string;
-  status?: "active" | "on-leave" | "inactive";
+  department?: string; // Flattened for table
+  department_data?: Department; // Full object
+  status?: string;
   designation?: string;
   phone?: string;
   joinDate?: string;
   address?: string;
   specialization?: string;
+  classesTaught?: any[]; // To be typed better if needed
+  [key: string]: any;
 }
 
 export interface Course {
@@ -22,14 +33,7 @@ export interface Course {
   credits: number;
   description?: string;
   departmentId?: string;
-}
-
-export interface Department {
-  id: string;
-  name: string;
-  code: string;
-  headOfDept?: string;
-  description?: string;
+  department?: Department;
 }
 
 export interface ScheduleItem {
@@ -49,7 +53,7 @@ export interface CampusClass {
   studentCount?: number;
   academicYearId?: string;
   semester?: string;
-  sections?: any[]; // Keep flexible for now
+  sections?: any[];
 }
 
 export interface Student {
@@ -57,15 +61,34 @@ export interface Student {
   first_name: string;
   last_name: string;
   email: string;
-  enrollmentNo: string;
+  role: string;
+  department?: Department | string;
+  rollNumber?: string;
   rollNo?: string;
-  department?: string;
-  batch?: string;
-  status: "active" | "graduated" | "dropped" | "inactive";
-  phone?: string;
+  className?: string; // Derived from enrollments
+  classId?: string;
+  sectionId?: string;
+  parentName?: string;
   guardianName?: string;
+  parentPhone?: string;
   guardianPhone?: string;
+  parentEmail?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  bloodGroup?: string;
+  address?: string;
+  previousSchool?: string;
+  enrollmentDate?: string;
+  created_at?: string;
+  status?: string;
+  phone?: string;
+  attendanceStats?: any[];
+  [key: string]: any;
 }
+
+// ... (other interfaces)
+
+// ... (CampusService class methods)
 
 export interface StudentAttendance {
   student: {
@@ -82,57 +105,17 @@ class CampusService {
   // --- Faculty ---
 
   async getFacultyList(): Promise<Instructor[]> {
-    try {
-      const response = await apiClient.get("/campus/faculty");
-      return response.data;
-    } catch (e) {
-      console.warn("Failed to fetch faculty, using mock");
-      return [
-        {
-          id: "f1",
-          first_name: "Sarah",
-          last_name: "Smith",
-          email: "sarah.smith@uni.edu",
-          department: "Science",
-          role: "Professor",
-          status: "active",
-          designation: "HOD",
-          joinDate: "2020-01-15",
-        },
-        {
-          id: "f2",
-          first_name: "John",
-          last_name: "Doe",
-          email: "john.doe@uni.edu",
-          department: "Commerce",
-          role: "Lecturer",
-          status: "active",
-          designation: "Assistant Professor",
-          joinDate: "2021-06-01",
-        },
-        {
-          id: "f3",
-          first_name: "Jane",
-          last_name: "Doe",
-          email: "jane.doe@uni.edu",
-          department: "Arts",
-          role: "Assistant Professor",
-          status: "on-leave",
-          designation: "Lecturer",
-          joinDate: "2022-03-10",
-        },
-      ];
-    }
+    const response = await apiClient.get("/campus/faculty");
+    // Normalize department if needed, backend returns object
+    return response.data.map((f: any) => ({
+      ...f,
+      department: f.department?.name || "Unknown", // Flatten for UI if needed, or keep object
+    }));
   }
 
   async getFaculty(id: string): Promise<Instructor | null> {
-    try {
-      const response = await apiClient.get(`/campus/faculty/${id}`);
-      return response.data;
-    } catch (e) {
-      const all = await this.getFacultyList();
-      return all.find((f) => f.id === id) || null;
-    }
+    const response = await apiClient.get(`/campus/faculty/${id}`);
+    return response.data;
   }
 
   async createFaculty(data: any): Promise<void> {
@@ -147,47 +130,50 @@ class CampusService {
     await apiClient.delete(`/campus/faculty/${id}`);
   }
 
+  async getFacultyById(id: string): Promise<Instructor> {
+    const response = await apiClient.get(`/campus/faculty/${id}`);
+    const f = response.data;
+    return {
+      ...f,
+      department: f.department?.name || "Unknown",
+      department_data: f.department,
+      phone: f.phone || "N/A",
+      address: f.address || "N/A",
+      designation: f.designation || "Faculty",
+      qualification: f.qualification || "N/A",
+      specialization: f.specialization || "N/A",
+      experience: f.experience || 0,
+      joinDate: f.created_at,
+      status: "active", // Defaulting for now
+      emergencyContact: {
+        name: "N/A",
+        relation: "N/A",
+        phone: "N/A",
+      },
+      subjects: [],
+      assignedClasses:
+        f.classesTaught?.map((c: any) => ({
+          classId: c.id,
+          sectionId: "N/A", // Backend doesn't have sections yet
+          subject: c.course?.name || "Unknown",
+        })) || [],
+      schedule: [],
+    };
+  }
+
   // --- Students ---
 
   async getStudentList(): Promise<Student[]> {
-    try {
-      const response = await apiClient.get("/campus/students");
-      return response.data;
-    } catch (e) {
-      console.warn("Using mock students");
-      return [
-        {
-          id: "s1",
-          first_name: "Alice",
-          last_name: "Johnson",
-          email: "alice@test.com",
-          enrollmentNo: "EN2024001",
-          department: "Science",
-          status: "active",
-          batch: "2024-2028",
-        },
-        {
-          id: "s2",
-          first_name: "Bob",
-          last_name: "Smith",
-          email: "bob@test.com",
-          enrollmentNo: "EN2024002",
-          department: "Commerce",
-          status: "active",
-          batch: "2024-2028",
-        },
-      ];
-    }
+    const response = await apiClient.get("/campus/students");
+    return response.data.map((s: any) => ({
+      ...s,
+      department: s.department?.name || "Unknown",
+    }));
   }
 
   async getStudent(id: string): Promise<Student | null> {
-    try {
-      const response = await apiClient.get(`/campus/students/${id}`);
-      return response.data;
-    } catch (e) {
-      const all = await this.getStudentList();
-      return all.find((s) => s.id === id) || null;
-    }
+    const response = await apiClient.get(`/campus/students/${id}`);
+    return response.data;
   }
 
   async createStudent(data: any): Promise<void> {
@@ -202,41 +188,36 @@ class CampusService {
     await apiClient.delete(`/campus/students/${id}`);
   }
 
-  // --- Courses ---
+  async getStudentById(id: string): Promise<Student> {
+    const response = await apiClient.get(`/campus/students/${id}`);
+    const s = response.data;
+
+    // Transform backend data to match UI expectations where needed
+    return {
+      ...s,
+      firstName: s.first_name, // UI uses camelCase
+      lastName: s.last_name,
+      department: s.department?.name || "Unknown",
+      rollNumber: s.rollNo || "N/A", // Mapping rollNo to rollNumber if UI uses rollNumber
+      dateOfBirth: s.dateOfBirth || "2000-01-01", // Placeholder if missing
+      gender: s.gender || "Not Specified",
+      bloodGroup: s.bloodGroup || "O+",
+      address: s.address || "N/A",
+      parentName: s.guardianName || "N/A",
+      parentPhone: s.guardianPhone || "N/A",
+      enrollmentDate: s.created_at,
+      previousSchool: s.previousSchool || "N/A",
+      status: "active",
+      classId: s.enrollments?.[0]?.class_id, // Taking first class enrollment as main class
+      sectionId: s.enrollments?.[0]?.class?.section_id,
+      className: s.enrollments?.[0]?.class?.course?.name,
+      attendanceStats: s.attendance || [],
+    };
+  }
 
   async getCourses(): Promise<Course[]> {
-    try {
-      const response = await apiClient.get("/campus/courses");
-      return response.data;
-    } catch (e) {
-      console.warn("Failed to fetch courses, using mock");
-      return [
-        {
-          id: "1",
-          code: "CS101",
-          name: "Intro to Computer Science",
-          description: "Basics of CS",
-          credits: 3,
-          departmentId: "dept1",
-        },
-        {
-          id: "2",
-          code: "MATH201",
-          name: "Calculus II",
-          description: "Advanced Calculus",
-          credits: 4,
-          departmentId: "dept1",
-        },
-        {
-          id: "3",
-          code: "ENG101",
-          name: "English Literature",
-          description: "Introduction to Literature",
-          credits: 3,
-          departmentId: "dept3",
-        },
-      ];
-    }
+    const response = await apiClient.get("/campus/courses");
+    return response.data;
   }
 
   async createCourse(data: any): Promise<void> {
@@ -253,13 +234,8 @@ class CampusService {
     role: "faculty" | "student";
     classes: CampusClass[];
   }> {
-    // Mock return for now if API fails or for dev
-    console.log("Fetching my classes...");
-    // In real app, determine role from token/context
-    return {
-      role: "faculty",
-      classes: [], // will be populated by real API or component mock fallback
-    };
+    const response = await apiClient.get("/campus/my-classes");
+    return response.data;
   }
 
   async getClasses(): Promise<CampusClass[]> {
@@ -271,49 +247,43 @@ class CampusService {
     await apiClient.post("/campus/classes", data);
   }
 
+  async updateClass(id: string, data: any): Promise<void> {
+    await apiClient.put(`/campus/classes/${id}`, data);
+  }
+
   async deleteClass(id: string): Promise<void> {
     await apiClient.delete(`/campus/classes/${id}`);
   }
 
-  async getClassAttendance(classId: string): Promise<StudentAttendance[]> {
-    try {
-      const response = await apiClient.get(`/campus/attendance/${classId}`);
-      return response.data;
-    } catch (error) {
-      // Mock data
-      return [
-        {
-          student: {
-            id: "s1",
-            first_name: "Alice",
-            last_name: "Wonder",
-            email: "alice@test.com",
-          },
-          status: "present",
-          date: new Date().toISOString().split("T")[0],
-        },
-        {
-          student: {
-            id: "s2",
-            first_name: "Bob",
-            last_name: "Builder",
-            email: "bob@test.com",
-          },
-          status: "absent",
-          date: new Date().toISOString().split("T")[0],
-        },
-        {
-          student: {
-            id: "s3",
-            first_name: "Charlie",
-            last_name: "Chaplin",
-            email: "charlie@test.com",
-          },
-          status: "present",
-          date: new Date().toISOString().split("T")[0],
-        },
-      ];
-    }
+  async getClassAttendance(
+    classId: string,
+    date?: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<StudentAttendance[] | any[]> {
+    const params: any = {};
+    if (date) params.date = date;
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+
+    const response = await apiClient.get(`/campus/attendance/${classId}`, {
+      params,
+    });
+    return response.data;
+  }
+
+  async getAttendanceReport(
+    startDate: string,
+    endDate: string,
+    classId?: string,
+  ): Promise<any[]> {
+    const params: any = { startDate, endDate };
+    if (classId && classId !== "all") params.classId = classId;
+
+    const response = await apiClient.get("/campus/reports/attendance", {
+      params,
+    });
+    return response.data;
   }
 
   async markAttendance(data: {
@@ -334,26 +304,8 @@ class CampusService {
   }
 
   async getDepartments(): Promise<Department[]> {
-    try {
-      const response = await apiClient.get("/campus/departments");
-      return response.data;
-    } catch (e) {
-      return [
-        {
-          id: "dept1",
-          name: "Science",
-          code: "SCI",
-          headOfDept: "Dr. Sarah Smith",
-        },
-        {
-          id: "dept2",
-          name: "Commerce",
-          code: "COM",
-          headOfDept: "Mr. John Doe",
-        },
-        { id: "dept3", name: "Arts", code: "ART", headOfDept: "Mrs. Jane Doe" },
-      ];
-    }
+    const response = await apiClient.get("/campus/departments");
+    return response.data;
   }
 
   async createDepartment(data: any): Promise<void> {

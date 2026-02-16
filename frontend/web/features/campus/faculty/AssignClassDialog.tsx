@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
-import { MOCK_FACULTY, getFacultyFullName } from './faculty-mock.db';
-import { MOCK_CLASSES } from '../campus-mock.db';
+import { campusService, Instructor, CampusClass } from '../../../services/campus.service';
+// Remove mock imports
 
 interface AssignClassDialogProps {
     isOpen: boolean;
@@ -24,9 +24,35 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
     });
 
     const [assigning, setAssigning] = useState(false);
+    const [facultyList, setFacultyList] = useState<Instructor[]>([]);
+    const [classesList, setClassesList] = useState<CampusClass[]>([]);
+    const [loadingData, setLoadingData] = useState(false);
 
-    const selectedClass = MOCK_CLASSES.find(c => c.id === formData.classId);
-    const selectedFaculty = MOCK_FACULTY.find(f => f.id === formData.facultyId);
+    useEffect(() => {
+        if (isOpen) {
+            loadData();
+        }
+    }, [isOpen]);
+
+    const loadData = async () => {
+        setLoadingData(true);
+        try {
+            const [faculty, classes] = await Promise.all([
+                campusService.getFacultyList(),
+                campusService.getClasses()
+            ]);
+            setFacultyList(faculty);
+            setClassesList(classes);
+        } catch (error) {
+            console.error("Failed to load data", error);
+            toast.error("Failed to load initial data");
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    const selectedClass = classesList.find(c => c.id === formData.classId);
+    const selectedFaculty = facultyList.find(f => f.id === formData.facultyId);
 
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -50,8 +76,8 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.facultyId || !formData.classId || !formData.sectionId || !formData.subject) {
-            toast.error('Please fill in all required fields');
+        if (!formData.facultyId || !formData.classId) {
+            toast.error('Please select Faculty and Class');
             return;
         }
 
@@ -67,24 +93,41 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
 
         setAssigning(true);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        try {
+            // Construct schedule object
+            const schedule = formData.days.map(day => ({
+                day,
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+                roomId: 'TBD' // or add room selection
+            }));
 
-        toast.success(`Class assigned to ${getFacultyFullName(selectedFaculty!)} successfully`);
-        setAssigning(false);
-        onClose();
-        if (onSuccess) onSuccess();
+            await campusService.updateClass(formData.classId, {
+                instructorId: formData.facultyId,
+                schedule: schedule
+            });
 
-        // Reset form
-        setFormData({
-            facultyId: '',
-            classId: '',
-            sectionId: '',
-            subject: '',
-            days: [],
-            startTime: '',
-            endTime: '',
-        });
+            toast.success(`Class assigned to ${selectedFaculty?.first_name} successfully`);
+            setAssigning(false);
+            onClose();
+            if (onSuccess) onSuccess();
+
+            // Reset form
+            setFormData({
+                facultyId: '',
+                classId: '',
+                sectionId: '',
+                subject: '',
+                days: [],
+                startTime: '',
+                endTime: '',
+            });
+
+        } catch (error) {
+            console.error("Failed to assign class", error);
+            toast.error("Failed to assign class");
+            setAssigning(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -110,162 +153,153 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
-                    <div className="space-y-6">
-                        {/* Faculty Selection */}
-                        <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                Select Faculty <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                name="facultyId"
-                                value={formData.facultyId}
-                                onChange={handleChange}
-                                required
-                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                            >
-                                <option value="">Choose a faculty member</option>
-                                {MOCK_FACULTY.filter(f => f.status === 'active').map(faculty => (
-                                    <option key={faculty.id} value={faculty.id}>
-                                        {getFacultyFullName(faculty)} - {faculty.department}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Class & Section Selection */}
-                        <div className="grid grid-cols-2 gap-4">
+                    {loadingData ? (
+                        <div className="text-center py-12 text-slate-500">Loading data...</div>
+                    ) : (
+                        <div className="space-y-6">
+                            {/* Faculty Selection */}
                             <div>
                                 <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    Class <span className="text-red-500">*</span>
+                                    Select Faculty <span className="text-red-500">*</span>
                                 </label>
                                 <select
-                                    name="classId"
-                                    value={formData.classId}
+                                    name="facultyId"
+                                    value={formData.facultyId}
                                     onChange={handleChange}
                                     required
                                     className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                 >
-                                    <option value="">Select Class</option>
-                                    {MOCK_CLASSES.map(cls => (
-                                        <option key={cls.id} value={cls.id}>{cls.name}</option>
+                                    <option value="">Choose a faculty member</option>
+                                    {facultyList.map(faculty => (
+                                        <option key={faculty.id} value={faculty.id}>
+                                            {faculty.first_name} {faculty.last_name} - {faculty.department}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    Section <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    name="sectionId"
-                                    value={formData.sectionId}
-                                    onChange={handleChange}
-                                    required
-                                    disabled={!formData.classId}
-                                    className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:bg-slate-50 disabled:cursor-not-allowed"
-                                >
-                                    <option value="">Select Section</option>
-                                    {selectedClass?.sections.map(section => (
-                                        <option key={section.id} value={section.id}>{section.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Subject */}
-                        <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                Subject <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                name="subject"
-                                value={formData.subject}
-                                onChange={handleChange}
-                                required
-                                disabled={!formData.facultyId}
-                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:bg-slate-50 disabled:cursor-not-allowed"
-                            >
-                                <option value="">Select Subject</option>
-                                {selectedFaculty?.subjects.map((subject, idx) => (
-                                    <option key={idx} value={subject}>{subject}</option>
-                                ))}
-                            </select>
-                            {!formData.facultyId && (
-                                <p className="text-xs text-slate-400 mt-1">Select a faculty member first</p>
-                            )}
-                        </div>
-
-                        {/* Schedule */}
-                        <div>
-                            <label className="block text-xs font-medium text-slate-700 mb-2">
-                                Days <span className="text-red-500">*</span>
-                            </label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {weekDays.map(day => (
-                                    <button
-                                        key={day}
-                                        type="button"
-                                        onClick={() => handleDayToggle(day)}
-                                        className={`py-2 px-3 text-sm font-medium border transition-colors ${formData.days.includes(day)
-                                                ? 'bg-primary-600 text-white border-primary-600'
-                                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                                            }`}
+                            {/* Class & Section Selection */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                        Class <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        name="classId"
+                                        value={formData.classId}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     >
-                                        {day.slice(0, 3)}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                                        <option value="">Select Class</option>
+                                        {classesList.map(cls => (
+                                            <option key={cls.id} value={cls.id}>{cls.name} ({cls.course?.code})</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                        {/* Time */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    Start Time <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="time"
-                                    name="startTime"
-                                    value={formData.startTime}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    End Time <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="time"
-                                    name="endTime"
-                                    value={formData.endTime}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Summary */}
-                        {formData.facultyId && formData.classId && formData.sectionId && formData.subject && (
-                            <div className="p-4 bg-blue-50 border border-blue-100">
-                                <p className="text-sm font-medium text-blue-900 mb-2">Assignment Summary</p>
-                                <div className="text-xs text-blue-700 space-y-1">
-                                    <p><strong>Faculty:</strong> {getFacultyFullName(selectedFaculty!)}</p>
-                                    <p><strong>Class:</strong> {selectedClass?.name} - Section {selectedClass?.sections.find(s => s.id === formData.sectionId)?.name}</p>
-                                    <p><strong>Subject:</strong> {formData.subject}</p>
-                                    {formData.days.length > 0 && (
-                                        <p><strong>Days:</strong> {formData.days.join(', ')}</p>
-                                    )}
-                                    {formData.startTime && formData.endTime && (
-                                        <p><strong>Time:</strong> {formData.startTime} - {formData.endTime}</p>
-                                    )}
+                                {/* Section - Disabled for now as backend Class doesn't have sections array structure exposed easily yet */}
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                        Section <span className="text-slate-400">(Optional)</span>
+                                    </label>
+                                    <select
+                                        name="sectionId"
+                                        value={formData.sectionId}
+                                        onChange={handleChange}
+                                        disabled
+                                        className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:bg-slate-50 disabled:cursor-not-allowed"
+                                    >
+                                        <option value="">-</option>
+                                    </select>
                                 </div>
                             </div>
-                        )}
-                    </div>
+
+                            {/* Subject */}
+                            {/* Subject is derived from Class->Course in new model, so maybe just show it? */}
+                            {selectedClass && (
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                        Subject
+                                    </label>
+                                    <div className="w-full border border-slate-200 py-2 px-3 text-sm bg-slate-50 text-slate-600 rounded">
+                                        {selectedClass.course?.name || "Unknown Subject"}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Schedule */}
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-2">
+                                    Days <span className="text-red-500">*</span>
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {weekDays.map(day => (
+                                        <button
+                                            key={day}
+                                            type="button"
+                                            onClick={() => handleDayToggle(day)}
+                                            className={`py-2 px-3 text-sm font-medium border transition-colors ${formData.days.includes(day)
+                                                ? 'bg-primary-600 text-white border-primary-600'
+                                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                                }`}
+                                        >
+                                            {day.slice(0, 3)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Time */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                        Start Time <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="time"
+                                        name="startTime"
+                                        value={formData.startTime}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                                        End Time <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="time"
+                                        name="endTime"
+                                        value={formData.endTime}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Summary */}
+                            {formData.facultyId && formData.classId && (
+                                <div className="p-4 bg-blue-50 border border-blue-100">
+                                    <p className="text-sm font-medium text-blue-900 mb-2">Assignment Summary</p>
+                                    <div className="text-xs text-blue-700 space-y-1">
+                                        <p><strong>Faculty:</strong> {selectedFaculty?.first_name} {selectedFaculty?.last_name}</p>
+                                        <p><strong>Class:</strong> {selectedClass?.name}</p>
+                                        <p><strong>Subject:</strong> {selectedClass?.course?.name}</p>
+                                        {formData.days.length > 0 && (
+                                            <p><strong>Days:</strong> {formData.days.join(', ')}</p>
+                                        )}
+                                        {formData.startTime && formData.endTime && (
+                                            <p><strong>Time:</strong> {formData.startTime} - {formData.endTime}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </form>
 
                 {/* Footer */}
@@ -279,7 +313,7 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={assigning}
+                        disabled={assigning || loadingData}
                         className="flex-1 px-4 py-2.5 bg-primary-600 text-white hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {assigning ? 'Assigning...' : 'Assign Class'}

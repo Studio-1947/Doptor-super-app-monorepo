@@ -16,6 +16,7 @@ export const courses = pgTable("courses", {
   organisation_id: uuid("organisation_id")
     .references(() => organisations.id)
     .notNull(),
+  department_id: uuid("department_id"),
   code: text("code").notNull(), // e.g. CS101
   name: text("name").notNull(),
   description: text("description"),

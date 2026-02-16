@@ -15,3 +15,4 @@ export * from "./audit.schema";
 export * from "./files.schema";
 export * from "./campus.schema";
 export * from "./communication.schema";
+export * from "./relations";

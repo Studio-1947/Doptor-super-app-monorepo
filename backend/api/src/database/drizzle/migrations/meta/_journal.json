@@ -8,6 +8,13 @@
       "when": 1770103450601,
       "tag": "0000_narrow_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1771215242930,
+      "tag": "0001_rapid_zeigeist",
+      "breakpoints": true
     }
   ]
 }

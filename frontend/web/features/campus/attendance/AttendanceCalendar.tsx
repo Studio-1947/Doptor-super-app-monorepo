@@ -1,30 +1,81 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, User } from 'lucide-react';
 import { Card } from '@doptor/shared';
-import { MOCK_STUDENTS, getStudentFullName } from '../students/student-mock.db';
-import { getMonthlyAttendance, AttendanceRecord } from './attendance-mock.db';
+import { campusService, Student } from '../../../services/campus.service';
+import { toast } from 'sonner';
 
 export function AttendanceCalendar() {
     const today = new Date();
     const [selectedMonth, setSelectedMonth] = useState(today.getMonth());
     const [selectedYear, setSelectedYear] = useState(today.getFullYear());
-    const [selectedStudent, setSelectedStudent] = useState<string>(MOCK_STUDENTS[0]?.id || '');
+    const [students, setStudents] = useState<Student[]>([]);
+    const [selectedStudentId, setSelectedStudentId] = useState<string>('');
+    const [studentData, setStudentData] = useState<Student | null>(null);
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-    const student = MOCK_STUDENTS.find(s => s.id === selectedStudent);
+    // Load students on mount
+    useEffect(() => {
+        loadStudents();
+    }, []);
 
-    // Get monthly attendance data
+    // Load selected student details when ID changes
+    useEffect(() => {
+        if (selectedStudentId) {
+            loadStudentDetails(selectedStudentId);
+        } else {
+            setStudentData(null);
+        }
+    }, [selectedStudentId]);
+
+    const loadStudents = async () => {
+        try {
+            const data = await campusService.getStudentList();
+            setStudents(data);
+            if (data.length > 0) {
+                setSelectedStudentId(data[0].id);
+            }
+        } catch (error) {
+            console.error("Failed to load students", error);
+            toast.error("Failed to load students");
+        }
+    };
+
+    const loadStudentDetails = async (id: string) => {
+        try {
+            const data = await campusService.getStudentById(id);
+            setStudentData(data);
+        } catch (error) {
+            console.error("Failed to load student details", error);
+            toast.error("Failed to load student attendance");
+        }
+    };
+
+    // Process attendance data for the calendar
     const monthlyData = useMemo(() => {
-        if (!selectedStudent) return {};
-        return getMonthlyAttendance(selectedStudent, selectedYear, selectedMonth);
-    }, [selectedStudent, selectedYear, selectedMonth]);
+        if (!studentData || !studentData.attendanceStats) return {};
+
+        const data: Record<number, string> = {};
+
+        studentData.attendanceStats.forEach((record: any) => {
+            const date = new Date(record.date);
+            if (date.getMonth() === selectedMonth && date.getFullYear() === selectedYear) {
+                const day = date.getDate();
+                // Map backend status to UI status if needed, or use directly
+                // Backend: 'present', 'absent', 'late', 'excused'
+                // UI expects same
+                data[day] = record.status;
+            }
+        });
+
+        return data;
+    }, [studentData, selectedMonth, selectedYear]);
 
     // Calculate month statistics
     const monthStats = useMemo(() => {
-        const statuses = Object.values(monthlyData).filter(s => s !== null);
-        const total = statuses.length;
+        const statuses = Object.values(monthlyData);
+        const total = statuses.length; // distinct days marked
         const present = statuses.filter(s => s === 'present').length;
         const absent = statuses.filter(s => s === 'absent').length;
         const late = statuses.filter(s => s === 'late').length;
@@ -83,7 +134,7 @@ export function AttendanceCalendar() {
         setSelectedDay(null);
     };
 
-    const getStatusColor = (status: AttendanceRecord['status'] | null) => {
+    const getStatusColor = (status: string | undefined) => {
         if (!status) return 'bg-white border-slate-200';
         switch (status) {
             case 'present':
@@ -99,7 +150,7 @@ export function AttendanceCalendar() {
         }
     };
 
-    const getStatusLabel = (status: AttendanceRecord['status'] | null) => {
+    const getStatusLabel = (status: string | undefined) => {
         if (!status) return 'No Record';
         return status.charAt(0).toUpperCase() + status.slice(1);
     };
@@ -123,16 +174,16 @@ export function AttendanceCalendar() {
                             Select Student
                         </label>
                         <select
-                            value={selectedStudent}
+                            value={selectedStudentId}
                             onChange={(e) => {
-                                setSelectedStudent(e.target.value);
+                                setSelectedStudentId(e.target.value);
                                 setSelectedDay(null);
                             }}
-                            className="w-full md:w-96 border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                            className="w-full md:w-96 border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 rounded-lg"
                         >
-                            {MOCK_STUDENTS.map(s => (
+                            {students.map(s => (
                                 <option key={s.id} value={s.id}>
-                                    {getStudentFullName(s)} - {s.rollNumber}
+                                    {s.first_name} {s.last_name} - {s.rollNumber || 'N/A'}
                                 </option>
                             ))}
                         </select>
@@ -247,7 +298,7 @@ export function AttendanceCalendar() {
                                     {monthNames[selectedMonth]} {selectedDay}, {selectedYear}
                                 </p>
                                 <p className="text-xs text-slate-500 mt-1">
-                                    {student ? getStudentFullName(student) : 'Unknown Student'}
+                                    {studentData ? `${studentData.first_name} ${studentData.last_name}` : 'Unknown Student'}
                                 </p>
                             </div>
                             <div className={`px-4 py-2 text-sm font-medium ${getStatusColor(monthlyData[selectedDay])

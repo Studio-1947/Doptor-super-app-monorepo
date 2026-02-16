@@ -1,16 +1,11 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Filter, Download, FileText, TrendingUp, Users, Calendar } from 'lucide-react';
 import { Card, Button } from '@doptor/shared';
-import { MOCK_CLASSES } from '../campus-mock.db';
-import { MOCK_STUDENTS, getStudentFullName } from '../students/student-mock.db';
-import {
-    getAttendanceByDateRange,
-    calculateAttendanceSummary,
-    calculateClassAttendanceSummary,
-    AttendanceRecord
-} from './attendance-mock.db';
+import { toast } from 'sonner';
+import { campusService, CampusClass, Student } from '../../../services/campus.service';
+// Remove mock imports
 
 type ReportType = 'daily' | 'monthly' | 'student-wise' | 'class-trends';
 
@@ -21,100 +16,146 @@ export function AttendanceReports() {
     const [reportType, setReportType] = useState<ReportType>('monthly');
     const [filterClass, setFilterClass] = useState<string>('all');
     const [filterSection, setFilterSection] = useState<string>('all');
-    const [filterStudent, setFilterStudent] = useState<string>('all');
     const [startDate, setStartDate] = useState<string>(thirtyDaysAgo);
     const [endDate, setEndDate] = useState<string>(today);
     const [showFilters, setShowFilters] = useState(true);
 
-    const selectedClass = MOCK_CLASSES.find(c => c.id === filterClass);
+    const [classes, setClasses] = useState<CampusClass[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [reportData, setReportData] = useState<any[]>([]);
+    const [stats, setStats] = useState<any>(null);
 
-    // Generate report data based on type
-    const reportData = useMemo(() => {
-        const records = getAttendanceByDateRange(startDate, endDate);
+    useEffect(() => {
+        loadClasses();
+    }, []);
 
+    useEffect(() => {
+        loadReportData();
+    }, [reportType, filterClass, startDate, endDate]);
+
+    const loadClasses = async () => {
+        try {
+            const data = await campusService.getClasses(); // or getMyClasses
+            setClasses(data);
+        } catch (error) {
+            console.error("Failed to load classes", error);
+        }
+    };
+
+    const loadReportData = async () => {
+        setLoading(true);
+        try {
+            // Fetch raw records from new endpoint
+            const records = await campusService.getAttendanceReport(startDate, endDate, filterClass);
+
+            // Process data based on report type
+            processReportData(records);
+
+        } catch (error) {
+            console.error("Failed to load report data", error);
+            // toast.error("Failed to load report data"); // Optional
+            setReportData([]);
+            setStats(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const processReportData = (records: any[]) => {
         if (reportType === 'student-wise') {
-            // Student-wise attendance percentage
-            let students = MOCK_STUDENTS;
-            if (filterClass !== 'all') {
-                students = students.filter(s => s.classId === filterClass);
-            }
-            if (filterSection !== 'all') {
-                students = students.filter(s => s.sectionId === filterSection);
-            }
+            // Group by student
+            const studentMap: Record<string, any> = {};
 
-            return students.map(student => {
-                const summary = calculateAttendanceSummary(student.id, startDate, endDate);
-                return {
-                    id: student.id,
-                    name: getStudentFullName(student),
-                    rollNumber: student.rollNumber,
-                    class: MOCK_CLASSES.find(c => c.id === student.classId)?.name || 'Unknown',
-                    section: selectedClass?.sections.find(s => s.id === student.sectionId)?.name || 'Unknown',
-                    ...summary,
-                };
-            }).sort((a, b) => b.percentage - a.percentage);
-        }
-
-        if (reportType === 'daily') {
-            // Daily attendance summary
-            const dailySummary: { [date: string]: { total: number; present: number; absent: number; late: number; excused: number; percentage: number } } = {};
-
-            records.forEach(record => {
-                if (!dailySummary[record.date]) {
-                    dailySummary[record.date] = { total: 0, present: 0, absent: 0, late: 0, excused: 0, percentage: 0 };
+            records.forEach(r => {
+                if (!studentMap[r.student_id]) {
+                    studentMap[r.student_id] = {
+                        id: r.student_id,
+                        name: `${r.student.first_name} ${r.student.last_name}`,
+                        rollNumber: r.student.rollNo || "N/A",
+                        class: r.class?.course?.name || "Unknown",
+                        totalDays: 0,
+                        presentDays: 0,
+                        absentDays: 0,
+                        lateDays: 0,
+                        excusedDays: 0
+                    };
                 }
-                dailySummary[record.date].total++;
-                if (record.status === 'present') dailySummary[record.date].present++;
-                if (record.status === 'absent') dailySummary[record.date].absent++;
-                if (record.status === 'late') dailySummary[record.date].late++;
-                if (record.status === 'excused') dailySummary[record.date].excused++;
+                const s = studentMap[r.student_id];
+                s.totalDays++;
+                if (r.status === 'present') s.presentDays++;
+                if (r.status === 'absent') s.absentDays++;
+                if (r.status === 'late') s.lateDays++;
+                if (r.status === 'excused') s.excusedDays++;
             });
 
-            Object.keys(dailySummary).forEach(date => {
-                const data = dailySummary[date];
-                data.percentage = data.total > 0 ? Math.round((data.present / data.total) * 100) : 0;
-            });
+            const processed = Object.values(studentMap).map((s: any) => ({
+                ...s,
+                percentage: s.totalDays > 0 ? Math.round((s.presentDays / s.totalDays) * 100) : 0
+            })).sort((a: any, b: any) => b.percentage - a.percentage);
 
-            return Object.entries(dailySummary)
-                .map(([date, data]) => ({ date, ...data }))
-                .sort((a, b) => b.date.localeCompare(a.date));
-        }
+            setReportData(processed);
 
-        return [];
-    }, [reportType, filterClass, filterSection, filterStudent, startDate, endDate]);
-
-    // Calculate overall statistics
-    const overallStats = useMemo(() => {
-        if (reportType === 'student-wise' && Array.isArray(reportData)) {
-            const totalStudents = reportData.length;
+            // Stats
+            const totalStudents = processed.length;
             const avgAttendance = totalStudents > 0
-                ? Math.round(reportData.reduce((sum, s) => sum + s.percentage, 0) / totalStudents)
+                ? Math.round(processed.reduce((sum, s) => sum + s.percentage, 0) / totalStudents)
                 : 0;
-            const above90 = reportData.filter(s => s.percentage >= 90).length;
-            const below75 = reportData.filter(s => s.percentage < 75).length;
 
-            return { totalStudents, avgAttendance, above90, below75 };
-        }
+            setStats({
+                totalStudents,
+                avgAttendance,
+                above90: processed.filter((s: any) => s.percentage >= 90).length,
+                below75: processed.filter((s: any) => s.percentage < 75).length
+            });
 
-        if (reportType === 'daily' && Array.isArray(reportData)) {
-            const totalDays = reportData.length;
+        } else if (reportType === 'daily') {
+            // Group by date
+            const dateMap: Record<string, any> = {};
+
+            records.forEach(r => {
+                const date = r.date;
+                if (!dateMap[date]) {
+                    dateMap[date] = {
+                        date,
+                        total: 0, present: 0, absent: 0, late: 0, excused: 0
+                    };
+                }
+                const d = dateMap[date];
+                d.total++;
+                if (r.status === 'present') d.present++;
+                if (r.status === 'absent') d.absent++;
+                if (r.status === 'late') d.late++;
+                if (r.status === 'excused') d.excused++;
+            });
+
+            const processed = Object.values(dateMap).map((d: any) => ({
+                ...d,
+                percentage: d.total > 0 ? Math.round((d.present / d.total) * 100) : 0
+            })).sort((a: any, b: any) => b.date.localeCompare(a.date));
+
+            setReportData(processed);
+
+            // Stats
+            const totalDays = processed.length;
             const avgAttendance = totalDays > 0
-                ? Math.round(reportData.reduce((sum, d) => sum + d.percentage, 0) / totalDays)
+                ? Math.round(processed.reduce((sum: number, d: any) => sum + d.percentage, 0) / totalDays)
                 : 0;
-            const totalPresent = reportData.reduce((sum, d: any) => sum + (d.present || 0), 0);
-            const totalAbsent = reportData.reduce((sum, d: any) => sum + (d.absent || 0), 0);
 
-            return { totalDays, avgAttendance, totalPresent, totalAbsent };
+            setStats({
+                totalDays,
+                avgAttendance,
+                totalPresent: processed.reduce((sum: number, d: any) => sum + d.present, 0),
+                totalAbsent: processed.reduce((sum: number, d: any) => sum + d.absent, 0)
+            });
         }
-
-        return null;
-    }, [reportType, reportData]);
+        else {
+            setReportData([]);
+            setStats(null);
+        }
+    };
 
     const handleExport = (format: 'pdf' | 'excel') => {
-        // Simulate export
-        setTimeout(() => {
-            alert(`Exporting report as ${format.toUpperCase()}...`);
-        }, 100);
+        alert(`Exporting report as ${format.toUpperCase()}...`);
     };
 
     return (
@@ -196,27 +237,25 @@ export function AttendanceReports() {
                                     setFilterClass(e.target.value);
                                     setFilterSection('all');
                                 }}
-                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 rounded-lg"
                             >
                                 <option value="all">All Classes</option>
-                                {MOCK_CLASSES.map(cls => (
-                                    <option key={cls.id} value={cls.id}>{cls.name}</option>
+                                {classes.map(cls => (
+                                    <option key={cls.id} value={cls.id}>{cls.course?.name} - {cls.course?.code}</option>
                                 ))}
                             </select>
                         </div>
 
+                        {/* Sections not yet supported by endpoint filtering, keeping UI but disabled or generic */}
                         <div>
                             <label className="block text-xs font-medium text-slate-700 mb-1.5">Section</label>
                             <select
                                 value={filterSection}
                                 onChange={(e) => setFilterSection(e.target.value)}
-                                disabled={filterClass === 'all'}
-                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:bg-slate-50"
+                                disabled={filterClass === 'all'} // or true if not supported
+                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 disabled:bg-slate-50 rounded-lg"
                             >
                                 <option value="all">All Sections</option>
-                                {selectedClass?.sections.map(section => (
-                                    <option key={section.id} value={section.id}>{section.name}</option>
-                                ))}
                             </select>
                         </div>
 
@@ -227,7 +266,7 @@ export function AttendanceReports() {
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
                                 max={endDate}
-                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 rounded-lg"
                             />
                         </div>
 
@@ -239,7 +278,7 @@ export function AttendanceReports() {
                                 onChange={(e) => setEndDate(e.target.value)}
                                 min={startDate}
                                 max={today}
-                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                className="w-full border border-slate-200 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 rounded-lg"
                             />
                         </div>
 
@@ -267,52 +306,57 @@ export function AttendanceReports() {
                 )}
             </Card>
 
+            {/* Loading */}
+            {loading && (
+                <div className="p-12 text-center text-slate-500">Loading Report Data...</div>
+            )}
+
             {/* Statistics Cards */}
-            {overallStats && reportType === 'student-wise' && (
+            {!loading && stats && reportType === 'student-wise' && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <Card className="p-4 border-slate-200">
                         <p className="text-xs text-slate-500">Total Students</p>
-                        <p className="text-2xl font-bold text-slate-900 mt-1">{overallStats.totalStudents}</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">{stats.totalStudents}</p>
                     </Card>
                     <Card className="p-4 border-primary-200 bg-primary-50">
                         <p className="text-xs text-primary-700">Avg Attendance</p>
-                        <p className="text-2xl font-bold text-primary-700 mt-1">{overallStats.avgAttendance}%</p>
+                        <p className="text-2xl font-bold text-primary-700 mt-1">{stats.avgAttendance}%</p>
                     </Card>
                     <Card className="p-4 border-emerald-200 bg-emerald-50">
                         <p className="text-xs text-emerald-700">Above 90%</p>
-                        <p className="text-2xl font-bold text-emerald-700 mt-1">{overallStats.above90}</p>
+                        <p className="text-2xl font-bold text-emerald-700 mt-1">{stats.above90}</p>
                     </Card>
                     <Card className="p-4 border-red-200 bg-red-50">
                         <p className="text-xs text-red-700">Below 75%</p>
-                        <p className="text-2xl font-bold text-red-700 mt-1">{overallStats.below75}</p>
+                        <p className="text-2xl font-bold text-red-700 mt-1">{stats.below75}</p>
                     </Card>
                 </div>
             )}
 
-            {overallStats && reportType === 'daily' && (
+            {!loading && stats && reportType === 'daily' && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <Card className="p-4 border-slate-200">
                         <p className="text-xs text-slate-500">Total Days</p>
-                        <p className="text-2xl font-bold text-slate-900 mt-1">{overallStats.totalDays}</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">{stats.totalDays}</p>
                     </Card>
                     <Card className="p-4 border-primary-200 bg-primary-50">
                         <p className="text-xs text-primary-700">Avg Attendance</p>
-                        <p className="text-2xl font-bold text-primary-700 mt-1">{overallStats.avgAttendance}%</p>
+                        <p className="text-2xl font-bold text-primary-700 mt-1">{stats.avgAttendance}%</p>
                     </Card>
                     <Card className="p-4 border-emerald-200 bg-emerald-50">
                         <p className="text-xs text-emerald-700">Total Present</p>
-                        <p className="text-2xl font-bold text-emerald-700 mt-1">{overallStats.totalPresent}</p>
+                        <p className="text-2xl font-bold text-emerald-700 mt-1">{stats.totalPresent}</p>
                     </Card>
                     <Card className="p-4 border-red-200 bg-red-50">
                         <p className="text-xs text-red-700">Total Absent</p>
-                        <p className="text-2xl font-bold text-red-700 mt-1">{overallStats.totalAbsent}</p>
+                        <p className="text-2xl font-bold text-red-700 mt-1">{stats.totalAbsent}</p>
                     </Card>
                 </div>
             )}
 
             {/* Report Content */}
             <div className="flex-1 overflow-y-auto">
-                {reportType === 'student-wise' && Array.isArray(reportData) && (
+                {!loading && reportType === 'student-wise' && reportData.length > 0 && (
                     <Card className="border-slate-200 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
@@ -333,13 +377,13 @@ export function AttendanceReports() {
                                         <tr key={student.id} className="hover:bg-slate-50">
                                             <td className="py-3 px-4 font-medium">{student.rollNumber}</td>
                                             <td className="py-3 px-4">{student.name}</td>
-                                            <td className="py-3 px-4 text-slate-600">{student.class} - {student.section}</td>
+                                            <td className="py-3 px-4 text-slate-600">{student.class}</td>
                                             <td className="py-3 px-4 text-center">{student.totalDays}</td>
                                             <td className="py-3 px-4 text-center text-emerald-700">{student.presentDays}</td>
                                             <td className="py-3 px-4 text-center text-red-700">{student.absentDays}</td>
                                             <td className="py-3 px-4 text-center text-orange-700">{student.lateDays}</td>
                                             <td className="py-3 px-4 text-center">
-                                                <span className={`px-2 py-1 text-xs font-medium ${student.percentage >= 90 ? 'bg-emerald-100 text-emerald-700' :
+                                                <span className={`px-2 py-1 text-xs font-medium rounded ${student.percentage >= 90 ? 'bg-emerald-100 text-emerald-700' :
                                                     student.percentage >= 75 ? 'bg-orange-100 text-orange-700' :
                                                         'bg-red-100 text-red-700'
                                                     }`}>
@@ -354,7 +398,7 @@ export function AttendanceReports() {
                     </Card>
                 )}
 
-                {reportType === 'daily' && Array.isArray(reportData) && (
+                {!loading && reportType === 'daily' && reportData.length > 0 && (
                     <Card className="border-slate-200 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
@@ -381,7 +425,7 @@ export function AttendanceReports() {
                                             <td className="py-3 px-4 text-center text-orange-700">{day.late}</td>
                                             <td className="py-3 px-4 text-center text-blue-700">{day.excused}</td>
                                             <td className="py-3 px-4 text-center">
-                                                <span className={`px-2 py-1 text-xs font-medium ${day.percentage >= 90 ? 'bg-emerald-100 text-emerald-700' :
+                                                <span className={`px-2 py-1 text-xs font-medium rounded ${day.percentage >= 90 ? 'bg-emerald-100 text-emerald-700' :
                                                     day.percentage >= 75 ? 'bg-orange-100 text-orange-700' :
                                                         'bg-red-100 text-red-700'
                                                     }`}>
@@ -396,19 +440,25 @@ export function AttendanceReports() {
                     </Card>
                 )}
 
-                {reportType === 'monthly' && (
+                {!loading && reportType === 'monthly' && (
                     <Card className="p-12 border-slate-200 text-center">
                         <FileText size={48} className="mx-auto text-slate-300 mb-3" />
-                        <p className="text-sm text-slate-500">Monthly report view coming soon</p>
-                        <p className="text-xs text-slate-400 mt-1">Use Daily Summary or Student-wise % for now</p>
+                        <p className="text-sm text-slate-500">Monthly report not yet available.</p>
+                        <p className="text-xs text-slate-400 mt-1">Please use 'Student-wise %' or 'Daily Summary'</p>
                     </Card>
                 )}
 
-                {reportType === 'class-trends' && (
+                {!loading && reportType === 'class-trends' && (
                     <Card className="p-12 border-slate-200 text-center">
                         <TrendingUp size={48} className="mx-auto text-slate-300 mb-3" />
                         <p className="text-sm text-slate-500">Class trends view coming soon</p>
                         <p className="text-xs text-slate-400 mt-1">Charts and visualizations will be added here</p>
+                    </Card>
+                )}
+
+                {!loading && !stats && (reportType === 'daily' || reportType === 'student-wise') && (
+                    <Card className="p-12 border-slate-200 text-center">
+                        <p className="text-sm text-slate-500">No data found for the selected range/filters.</p>
                     </Card>
                 )}
             </div>
