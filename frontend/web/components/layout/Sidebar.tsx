@@ -75,13 +75,12 @@ const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, 
     campus: {
         all: [],
         super_admin: [
-            { icon: GraduationCap, label: 'Campus Admin', href: '/campus/admin' },
+            { icon: GraduationCap, label: 'Campus Dashboard', href: '/campus' },
         ],
         org_admin: [
             { icon: GraduationCap, label: 'Campus Dashboard', href: '/campus' },
             { icon: Users, label: 'Students', href: '/campus/students' },
             { icon: Users, label: 'Faculty', href: '/campus/faculty' },
-            // { icon: FileText, label: 'Academics', href: '/campus/academics' },
             { icon: Calendar, label: 'Attendance', href: '/campus/attendance/calendar' },
         ],
         manager: [
@@ -92,9 +91,7 @@ const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, 
         staff: [
             { icon: Calendar, label: 'Mark Attendance', href: '/campus/attendance/mark' },
         ],
-        student: [
-            // Student navigation is primarily via Dashboard
-        ]
+        student: []
     },
     network: {
         all: [],
