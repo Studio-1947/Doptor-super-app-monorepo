@@ -15,6 +15,13 @@
       "when": 1771215242930,
       "tag": "0001_rapid_zeigeist",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1771226178075,
+      "tag": "0002_exotic_martin_li",
+      "breakpoints": true
     }
   ]
 }

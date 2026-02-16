@@ -12,6 +12,10 @@ interface AuthContextType {
     registerOrganisation: (data: RegisterOrganisationData) => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
+    hasRole: (role: string) => boolean;
+    hasAnyRole: (roles: string[]) => boolean;
+    hasPermission: (action: string, resource: string) => boolean;
+    hasAllPermissions: (permissions: Array<{ action: string; resource: string }>) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -87,6 +91,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await loadUser();
     };
 
+    // Role and permission helpers
+    const hasRole = (role: string): boolean => {
+        if (!user || !user.roles) return false;
+        return user.roles.some(r => r.name === role);
+    };
+
+    const hasAnyRole = (roles: string[]): boolean => {
+        if (!user || !user.roles) return false;
+        return roles.some(role => user.roles!.some(r => r.name === role));
+    };
+
+    const hasPermission = (action: string, resource: string): boolean => {
+        if (!user || !user.permissions) return false;
+        return user.permissions.some(
+            p => p.action === action && p.resource === resource
+        );
+    };
+
+    const hasAllPermissions = (permissions: Array<{ action: string; resource: string }>): boolean => {
+        if (!user || !user.permissions) return false;
+        return permissions.every(perm =>
+            user.permissions!.some(
+                p => p.action === perm.action && p.resource === perm.resource
+            )
+        );
+    };
+
     const value: AuthContextType = {
         user,
         isLoading,
@@ -96,6 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         registerOrganisation,
         logout,
         refreshUser,
+        hasRole,
+        hasAnyRole,
+        hasPermission,
+        hasAllPermissions,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -236,7 +236,9 @@ export function StudentList() {
                                     </td>
                                     <td className="py-3 px-4">
                                         <div className="text-sm text-slate-900">
-                                            {student.department || 'N/A'}
+                                            {typeof student.department === 'object' && student.department !== null
+                                                ? student.department.name
+                                                : student.department || 'N/A'}
                                         </div>
                                         <div className="text-xs text-slate-500">{student.batch}</div>
                                     </td>

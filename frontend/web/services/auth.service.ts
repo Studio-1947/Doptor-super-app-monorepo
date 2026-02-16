@@ -10,8 +10,13 @@ export type UserRole =
 export interface User {
   id: string;
   email: string;
+  email_verified?: boolean;
   role: UserRole;
   organisation_id: string;
+  first_name?: string;
+  last_name?: string;
+  roles?: Array<{ id: string; name: string }>;
+  permissions?: Array<{ action: string; resource: string }>;
   created_at?: string;
   updated_at?: string;
 }
@@ -72,7 +77,46 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
-    await apiClient.post("/auth/logout");
+    const refreshToken = this.getRefreshToken();
+    await apiClient.post("/auth/logout", { refresh_token: refreshToken });
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await apiClient.post("/auth/forgot-password", { email });
+    return response.data;
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const response = await apiClient.post("/auth/reset-password", {
+      token,
+      newPassword,
+    });
+    return response.data;
+  }
+
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const response = await apiClient.post("/auth/verify-email", { token });
+    return response.data;
+  }
+
+  async resendVerificationEmail(email: string): Promise<{ message: string }> {
+    const response = await apiClient.post("/auth/resend-verification", {
+      email,
+    });
+    return response.data;
+  }
+
+  async getActiveSessions(): Promise<any[]> {
+    const response = await apiClient.get("/auth/sessions");
+    return response.data;
+  }
+
+  async revokeSession(sessionId: string): Promise<{ message: string }> {
+    const response = await apiClient.delete(`/auth/sessions/${sessionId}`);
+    return response.data;
   }
 
   // Token management
