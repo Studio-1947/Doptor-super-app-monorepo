@@ -21,6 +21,16 @@ export class CampusService {
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
   ) {}
 
+  async getAllClasses() {
+    return await this.db.query.academicClasses.findMany({
+      with: {
+        course: true,
+        // Assuming faculty is a user relation. If not defined in schema relations, we might need manual join or fix schema.
+        // For now, let's fetch course.
+      },
+    });
+  }
+
   async getMyClasses(userId: string) {
     // 1. Check if Faculty
     const facultyClasses = await this.db.query.academicClasses.findMany({

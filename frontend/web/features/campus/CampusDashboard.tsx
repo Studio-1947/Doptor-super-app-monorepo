@@ -8,37 +8,26 @@ import { CampusClass, campusService } from '../../services/campus.service';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/features/auth/RoleContext';
 
-// Mock data for display until connected to real backend
-const MOCK_CLASSES: CampusClass[] = [
-    {
-        id: '1',
-        name: 'Intro to Computer Science',
-        course: { id: 'c1', code: 'CS101', name: 'Intro to Computer Science', credits: 3 },
-        instructor: { id: 'i1', first_name: 'Dr.', last_name: 'Smith', email: 'smith@uni.edu', role: 'staff' },
-        schedule: [
-            { day: 'Monday', startTime: '09:00', endTime: '10:30', roomId: '101' },
-            { day: 'Wednesday', startTime: '09:00', endTime: '10:30', roomId: '101' }
-        ],
-        location: 'Room 101',
-        studentCount: 45
-    },
-    {
-        id: '2',
-        name: 'Calculus II',
-        course: { id: 'c2', code: 'MATH201', name: 'Calculus II', credits: 4 },
-        instructor: { id: 'i2', first_name: 'Prof.', last_name: 'Johnson', email: 'johnson@uni.edu', role: 'staff' },
-        schedule: [
-            { day: 'Tuesday', startTime: '11:00', endTime: '12:30', roomId: '204' },
-            { day: 'Thursday', startTime: '11:00', endTime: '12:30', roomId: '204' }
-        ],
-        location: 'Room 204',
-        studentCount: 38
-    }
-];
+
 
 export function CampusDashboard() {
     const router = useRouter();
-    const [classes] = useState<CampusClass[]>(MOCK_CLASSES);
+    const [classes, setClasses] = useState<CampusClass[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchClasses() {
+            try {
+                const data = await campusService.getClasses();
+                setClasses(data);
+            } catch (error) {
+                console.error("Failed to fetch classes:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchClasses();
+    }, []);
 
     return (
         <div className="space-y-6">

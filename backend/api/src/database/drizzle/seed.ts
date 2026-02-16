@@ -1,11 +1,12 @@
 import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+const postgres = require("postgres");
 import * as dotenv from "dotenv";
 import { organisations } from "./schema/organisation.schema";
 import { roles } from "./schema/role.schema";
 import { permissions } from "./schema/permission.schema";
 import { rolePermissions } from "./schema/role-permission.schema";
 import { users } from "./schema/user.schema";
+import { courses, academicClasses } from "./schema/campus.schema";
 import * as bcrypt from "bcrypt";
 
 dotenv.config();
@@ -190,6 +191,58 @@ async function seed() {
     console.log(`   Permissions: ${createdPermissions.length}`);
     console.log(`   Admin Email: admin@demo.com`);
     console.log(`   Admin Password: admin123`);
+
+    // --- Campus Data Seeding ---
+    console.log("\n🏫 Seeding Campus Data...");
+
+    // 1. Create Courses
+    const [course1] = await db
+      .insert(courses)
+      .values({
+        organisation_id: demoOrg.id,
+        code: "CS101",
+        name: "Intro to Computer Science",
+        description: "Basics of algorithms and data structures",
+        credits: 4,
+      })
+      .returning();
+    console.log(`  ✅ Created course: ${course1.code}`);
+
+    const [course2] = await db
+      .insert(courses)
+      .values({
+        organisation_id: demoOrg.id,
+        code: "MATH101",
+        name: "Calculus I",
+        credits: 3,
+      })
+      .returning();
+    console.log(`  ✅ Created course: ${course2.code}`);
+
+    // 2. Create Classes (Assign to Admin for simplicity as Faculty)
+    await db.insert(academicClasses).values({
+      course_id: course1.id,
+      faculty_id: adminUser.id,
+      name: "Section A",
+      location: "Room 304",
+      schedule: [
+        { day: "Monday", startTime: "09:00", endTime: "10:30" },
+        { day: "Wednesday", startTime: "09:00", endTime: "10:30" },
+      ],
+    });
+    console.log(`  ✅ Created class for ${course1.code}`);
+
+    await db.insert(academicClasses).values({
+      course_id: course2.id,
+      faculty_id: adminUser.id,
+      name: "Section B",
+      location: "Hall B",
+      schedule: [
+        { day: "Tuesday", startTime: "11:00", endTime: "12:30" },
+        { day: "Thursday", startTime: "11:00", endTime: "12:30" },
+      ],
+    });
+    console.log(`  ✅ Created class for ${course2.code}`);
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     throw error;

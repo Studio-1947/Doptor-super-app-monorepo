@@ -1,0 +1,25 @@
+
+> @doptor/backend-api@0.0.1 db:seed
+> ts-node src/database/drizzle/seed.ts
+
+C:\Users\soumi\Desktop\Doptor-super-app-monorepo\backend\api\src\database\drizzle\seed.ts:15
+const client = postgres(connectionString);
+                       ^
+TypeError: (0 , postgres_1.default) is not a function
+    at Object.<anonymous> (C:\Users\soumi\Desktop\Doptor-super-app-monorepo\backend\api\src\database\drizzle\seed.ts:15:24)
+    at Module._compile (node:internal/modules/cjs/loader:1554:14)
+    at Module.m._compile (C:\Users\soumi\Desktop\Doptor-super-app-monorepo\backend\node_modules\ts-node\src\index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1706:10
+    at Object.require.extensions.<computed> [as .ts] (C:\Users\soumi\Desktop\Doptor-super-app-monorepo\backend\node_modules\ts-node\src\index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1289:32)
+    at Function._load (node:internal/modules/cjs/loader:1108:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+npm error Lifecycle script `db:seed` failed with error:
+npm error code 1
+npm error path C:\Users\soumi\Desktop\Doptor-super-app-monorepo\backend\api
+npm error workspace @doptor/backend-api@0.0.1
+npm error location C:\Users\soumi\Desktop\Doptor-super-app-monorepo\backend\api
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c ts-node src/database/drizzle/seed.ts

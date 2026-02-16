@@ -21,6 +21,11 @@ export class CampusController {
     return this.campusService.getMyClasses(req.user.userId);
   }
 
+  @Get("classes")
+  getAllClasses() {
+    return this.campusService.getAllClasses();
+  }
+
   @Get("attendance/:classId")
   getAttendance(@Param("classId") classId: string, @Request() req) {
     return this.campusService.getClassAttendance(classId, req.user.userId);

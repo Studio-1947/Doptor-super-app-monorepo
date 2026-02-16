@@ -263,44 +263,8 @@ class CampusService {
   }
 
   async getClasses(): Promise<CampusClass[]> {
-    try {
-      const response = await apiClient.get("/campus/classes");
-      return response.data;
-    } catch (e) {
-      console.warn("Using mock classes");
-      return [
-        {
-          id: "c1",
-          name: "CS101 - Section A",
-          course: { id: "1", code: "CS101", name: "Intro to CS", credits: 3 },
-          instructor: {
-            id: "f1",
-            first_name: "Sarah",
-            last_name: "Smith",
-            email: "sarah@uni.edu",
-            role: "Professor",
-          },
-          schedule: [{ day: "Monday", startTime: "09:00", endTime: "10:00" }],
-          location: "Room 301",
-          studentCount: 45,
-        },
-        {
-          id: "c2",
-          name: "MATH201 - Section B",
-          course: { id: "2", code: "MATH201", name: "Calculus II", credits: 4 },
-          instructor: {
-            id: "f2",
-            first_name: "John",
-            last_name: "Doe",
-            email: "john@uni.edu",
-            role: "Lecturer",
-          },
-          schedule: [{ day: "Tuesday", startTime: "11:00", endTime: "12:30" }],
-          location: "Room 105",
-          studentCount: 30,
-        },
-      ];
-    }
+    const response = await apiClient.get("/campus/classes");
+    return response.data;
   }
 
   async createClass(data: any): Promise<void> {
