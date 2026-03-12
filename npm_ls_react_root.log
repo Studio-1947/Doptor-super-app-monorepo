@@ -1,0 +1,33 @@
+doptor-super-app@ C:\Users\soumi\Desktop\Doptor-super-app-monorepo
+├─┬ @doptor/backend-api@0.0.1 -> .\backend\api
+│ └─┬ drizzle-orm@0.29.5
+│   └── react@18.2.0 deduped
+├─┬ @doptor/mobile@0.0.1 -> .\frontend\mobile
+│ ├─┬ react-native@0.73.4
+│ │ ├─┬ react-shallow-renderer@16.15.0
+│ │ │ └── react@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ └── react@18.2.0 deduped
+├─┬ @doptor/shared@0.0.0 -> .\frontend\shared
+│ └── react@18.2.0 deduped
+├─┬ @doptor/web@0.1.0 -> .\frontend\web
+│ ├─┬ framer-motion@12.34.3
+│ │ └── react@18.2.0 deduped
+│ ├─┬ lucide-react@0.563.0
+│ │ └── react@18.2.0 deduped
+│ ├─┬ next@14.1.0
+│ │ ├── react@18.2.0 deduped
+│ │ └─┬ styled-jsx@5.1.1
+│ │   └── react@18.2.0 deduped
+│ ├── react@18.2.0 deduped
+│ └─┬ sonner@2.0.7
+│   └── react@18.2.0 deduped
+├─┬ react-dom@18.2.0
+│ └── react@18.2.0 deduped
+└── react@18.2.0
+
+npm notice
+npm notice New minor version of npm available! 11.2.0 -> 11.10.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.10.1
+npm notice To update run: npm install -g npm@11.10.1
+npm notice

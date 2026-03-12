@@ -1,0 +1,74 @@
+﻿doptor-super-app@ C:\Users\soumi\Desktop\Doptor-super-app-monorepo
+Γö£ΓöÇΓö¼ @doptor/backend-api@0.0.1 -> .\backend\api
+Γöé ΓööΓöÇΓö¼ drizzle-orm@0.29.5
+Γöé   ΓööΓöÇΓöÇ react@18.3.1 deduped
+Γö£ΓöÇΓö¼ @doptor/mobile@0.0.1 -> .\frontend\mobile
+Γöé Γö£ΓöÇΓö¼ react-native@0.73.4
+Γöé Γöé Γö£ΓöÇΓö¼ react-shallow-renderer@16.15.0
+Γöé Γöé Γöé ΓööΓöÇΓöÇ react@18.3.1 deduped invalid: "18.2.0" from node_modules/react-native
+Γöé Γöé ΓööΓöÇΓöÇ react@18.3.1 deduped invalid: "18.2.0" from node_modules/react-native
+Γöé ΓööΓöÇΓöÇ react@18.2.0
+Γö£ΓöÇΓö¼ @doptor/shared@0.0.0 -> .\frontend\shared
+Γöé Γö£ΓöÇΓö¼ react-dom@18.3.1
+Γöé Γöé ΓööΓöÇΓöÇ react@18.3.1 deduped
+Γöé ΓööΓöÇΓöÇ react@18.3.1
+Γö£ΓöÇΓö¼ @doptor/web@0.1.0 -> .\frontend\web
+Γöé Γö£ΓöÇΓö¼ @doptor/shared@0.0.0 -> .\frontend\shared
+Γöé Γöé ΓööΓöÇΓöÇ react@18.3.1 deduped
+Γöé Γö£ΓöÇΓö¼ framer-motion@12.29.2
+Γöé Γöé ΓööΓöÇΓöÇ react@18.3.1 deduped
+Γöé Γö£ΓöÇΓö¼ lucide-react@0.563.0
+Γöé Γöé ΓööΓöÇΓöÇ react@18.3.1 deduped
+Γöé Γö£ΓöÇΓö¼ next@14.1.0
+Γöé Γöé Γö£ΓöÇΓöÇ react@18.3.1 deduped
+Γöé Γöé ΓööΓöÇΓö¼ styled-jsx@5.1.1
+Γöé Γöé   ΓööΓöÇΓöÇ react@18.3.1 deduped invalid: "18.2.0" from node_modules/react-native
+Γöé Γö£ΓöÇΓöÇ react@18.3.1 deduped
+Γöé ΓööΓöÇΓö¼ sonner@2.0.7
+Γöé   ΓööΓöÇΓöÇ react@18.3.1 deduped
+Γö£ΓöÇΓö¼ drizzle-orm@0.29.5 extraneous
+Γöé ΓööΓöÇΓöÇ react@18.3.1 deduped
+Γö£ΓöÇΓö¼ lucide-react@0.563.0 extraneous
+Γöé ΓööΓöÇΓöÇ react@18.3.1 deduped
+Γö£ΓöÇΓö¼ react-dom@18.3.1
+Γöé ΓööΓöÇΓöÇ react@18.3.1 deduped
+Γö£ΓöÇΓöÇ react@18.3.1
+ΓööΓöÇΓö¼ sonner@2.0.7 extraneous
+  ΓööΓöÇΓöÇ react@18.3.1 deduped
+
+node.exe : npm 
+error code 
+ELSPROBLEMS
+At C:\Program Files
+\nodejs\npm.ps1:29 
+char:3
++   & $NODE_EXE 
+$NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+    + CategoryInfo 
+             : No  
+  tSpecified: (n   
+ pm error code     
+ELSPROBLEMS:St    
+ring) [], Remo    
+teException
+    + FullyQualifi 
+   edErrorId : Na  
+  tiveCommandErr   
+ or
+ 
+npm error invalid: 
+react@18.3.1 C:\Use
+rs\soumi\Desktop\Do
+ptor-super-app-mono
+repo\node_modules\r
+eact
+npm error A 
+complete log of 
+this run can be 
+found in: C:\Users\
+soumi\AppData\Local
+\npm-cache\_logs\20
+26-02-24T07_22_43_4
+59Z-debug-0.log

@@ -1,0 +1,35 @@
+doptor-super-app@ C:\Users\soumi\Desktop\Doptor-super-app-monorepo
+├─┬ @doptor/backend-api@0.0.1 -> .\backend\api
+│ └─┬ drizzle-orm@0.29.5
+│   └── react@18.2.0 deduped
+├─┬ @doptor/mobile@0.0.1 -> .\frontend\mobile
+│ ├─┬ react-native@0.73.4
+│ │ ├─┬ react-shallow-renderer@16.15.0
+│ │ │ └── react@18.2.0 deduped
+│ │ └── react@18.2.0 deduped
+│ └── react@18.3.1 invalid: "18.2.0" from frontend/mobile, "18.2.0" from frontend/shared, "18.2.0" from frontend/web
+├─┬ @doptor/shared@0.0.0 -> .\frontend\shared
+│ ├─┬ react-dom@18.3.1 invalid: "18.2.0" from frontend/shared, "18.2.0" from frontend/web
+│ │ └── react@18.3.1 deduped invalid: "18.2.0" from frontend/mobile, "18.2.0" from frontend/shared, "18.2.0" from frontend/web
+│ └── react@18.3.1 deduped invalid: "18.2.0" from frontend/mobile, "18.2.0" from frontend/shared
+├─┬ @doptor/web@0.1.0 -> .\frontend\web
+│ ├─┬ @doptor/shared@0.0.0 -> .\frontend\shared
+│ │ └── react@18.3.1 deduped invalid: "18.2.0" from frontend/mobile, "18.2.0" from frontend/shared, "18.2.0" from frontend/web, "18.2.0" from frontend/shared
+│ ├─┬ framer-motion@12.34.3
+│ │ └── react@18.2.0 deduped
+│ ├─┬ lucide-react@0.563.0
+│ │ └── react@18.3.1 deduped invalid: "18.2.0" from frontend/mobile, "18.2.0" from frontend/shared, "18.2.0" from frontend/web, "18.2.0" from frontend/shared
+│ ├─┬ next@14.1.0
+│ │ ├── react@18.2.0 deduped
+│ │ └─┬ styled-jsx@5.1.1
+│ │   └── react@18.2.0 deduped
+│ ├── react@18.3.1 deduped invalid: "18.2.0" from frontend/mobile, "18.2.0" from frontend/shared, "18.2.0" from frontend/web
+│ └─┬ sonner@2.0.7
+│   └── react@18.3.1 deduped invalid: "18.2.0" from frontend/mobile, "18.2.0" from frontend/shared, "18.2.0" from frontend/web, "18.2.0" from frontend/shared
+├─┬ react-dom@18.2.0
+│ └── react@18.2.0 deduped
+└── react@18.2.0
+
+npm error code ELSPROBLEMS
+npm error invalid: react@18.3.1 C:\Users\soumi\Desktop\Doptor-super-app-monorepo\frontend\node_modules\react
+npm error A complete log of this run can be found in: C:\Users\soumi\AppData\Local\npm-cache\_logs\2026-02-24T09_09_23_068Z-debug-0.log

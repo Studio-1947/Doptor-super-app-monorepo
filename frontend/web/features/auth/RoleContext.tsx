@@ -18,7 +18,7 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-export function RoleProvider({ children }: { children: React.ReactNode }) {
+export function RoleProvider({ children }: { children: any }) {
     const { user, isAuthenticated } = useAuth();
     // Default to 'super_admin' if not authenticated or role is missing (fallback/dev mode)
     // In production, this should likely default to a 'guest' state or redirect

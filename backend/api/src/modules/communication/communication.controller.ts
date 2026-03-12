@@ -7,15 +7,24 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from "@nestjs/swagger";
 import { CommunicationService } from "./communication.service";
-// Assuming AuthGuard exists, if not will comment out or use generic mock
-// import { AuthGuard } from '../../core/guards/auth.guard';
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 
+@ApiTags("Communication")
+@ApiBearerAuth()
 @Controller("communication")
+@UseGuards(JwtAuthGuard)
 export class CommunicationController {
   constructor(private readonly communicationService: CommunicationService) {}
 
   @Get("conversations")
+  @ApiOperation({ summary: "Get all conversations for the authenticated user" })
   async getConversations(@Request() req: any) {
     // const userId = req.user.id;
     // Mock user ID for now if Auth not fully wired in this context or use Header
@@ -24,6 +33,7 @@ export class CommunicationController {
   }
 
   @Get("conversations/:id/messages")
+  @ApiOperation({ summary: "Get messages for a specific conversation" })
   async getMessages(@Param("id") id: string) {
     return this.communicationService.getMessages(id);
   }
