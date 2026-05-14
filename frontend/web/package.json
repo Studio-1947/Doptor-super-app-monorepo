@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@doptor/shared": "*",
+    "@doptor/shared": "workspace:*",
     "axios": "^1.13.4",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
