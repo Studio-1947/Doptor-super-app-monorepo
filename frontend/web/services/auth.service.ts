@@ -121,21 +121,31 @@ class AuthService {
 
   // Token management
   setTokens(accessToken: string, refreshToken: string): void {
-    localStorage.setItem("access_token", accessToken);
-    localStorage.setItem("refresh_token", refreshToken);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem("access_token", accessToken);
+      localStorage.setItem("refresh_token", refreshToken);
+    }
   }
 
   getAccessToken(): string | null {
-    return localStorage.getItem("access_token");
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage.getItem("access_token");
+    }
+    return null;
   }
 
   getRefreshToken(): string | null {
-    return localStorage.getItem("refresh_token");
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage.getItem("refresh_token");
+    }
+    return null;
   }
 
   clearTokens(): void {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+    }
   }
 
   isAuthenticated(): boolean {
