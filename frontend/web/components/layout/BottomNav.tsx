@@ -31,7 +31,7 @@ export function BottomNav() {
                             {isActive && (
                                 <motion.div
                                     layoutId="bottomNavActive"
-                                    className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary-500 rounded-full"
+                                    className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary-500 rounded-none"
                                 />
                             )}
                             <tab.icon size={24} />

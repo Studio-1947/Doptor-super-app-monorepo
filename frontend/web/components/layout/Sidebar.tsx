@@ -172,13 +172,13 @@ export function Sidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center px-3 py-2.5 rounded-xl transition-all group relative overflow-hidden ${isActive ? 'text-primary-600 font-medium' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                            className={`flex items-center px-3 py-2.5 rounded-none transition-all group relative overflow-hidden ${isActive ? 'text-primary-600 font-medium' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                                 }`}
                         >
                             {isActive && (
                                 <motion.div
                                     layoutId="activeTab"
-                                    className="absolute inset-0 bg-primary-50 border border-primary-100 rounded-xl"
+                                    className="absolute inset-0 bg-primary-50 border border-primary-100 rounded-none"
                                     initial={false}
                                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                 />

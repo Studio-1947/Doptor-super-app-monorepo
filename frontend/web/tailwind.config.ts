@@ -5,8 +5,8 @@ const config: Config = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./features/**/*.{js,ts,jsx,tsx,mdx}",
-    // Also include shared folder if you move it to valid path or symlink
-    "../shared/**/*.{js,ts,jsx,tsx,mdx}",
+    // Explicitly target shared UI components to avoid node_modules scanning
+    "../shared/ui/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
