@@ -1,11 +1,6 @@
 {
   "name": "doptor-super-app",
   "private": true,
-  "workspaces": [
-    "frontend/*",
-    "backend/*",
-    "infra/*"
-  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -19,5 +14,5 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
-  "packageManager": "npm@10.0.0"
+  "packageManager": "pnpm@9.1.0"
 }
