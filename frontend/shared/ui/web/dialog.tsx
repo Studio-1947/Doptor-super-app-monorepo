@@ -13,6 +13,8 @@ export function Dialog({ isOpen, onClose, title, children, maxWidth = 'max-w-md'
     const [show, setShow] = useState(isOpen);
 
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+        
         setShow(isOpen);
         if (isOpen) {
             document.body.style.overflow = 'hidden';
@@ -30,23 +32,23 @@ export function Dialog({ isOpen, onClose, title, children, maxWidth = 'max-w-md'
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             />
 
-            {/* Content */}
-            <div className={`relative bg-white w-full ${maxWidth} rounded-xl shadow-xl border border-slate-200 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200`}>
-                <div className="flex items-center justify-between p-4 border-b border-slate-100">
-                    <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+            {/* Content - SHARP */}
+            <div className={`relative bg-white w-full ${maxWidth} rounded-none shadow-2xl border border-slate-900 flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200`}>
+                <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">{title}</h3>
                     <button
                         onClick={onClose}
-                        className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+                        className="p-2 rounded-none text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
-                <div className="p-4 overflow-y-auto">
+                <div className="p-6 overflow-y-auto">
                     {children}
                 </div>
             </div>
@@ -56,7 +58,7 @@ export function Dialog({ isOpen, onClose, title, children, maxWidth = 'max-w-md'
 
 export function DialogFooter({ children }: { children: React.ReactNode }) {
     return (
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50/50 rounded-b-xl">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100 bg-slate-50/50 rounded-none">
             {children}
         </div>
     );
