@@ -17,7 +17,7 @@ export function BottomNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-2 z-50 md:hidden pb-4">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-6 py-2 z-50 md:hidden pb-4 transition-colors">
             <div className="flex items-center justify-between">
                 {tabs.map((tab) => {
                     const isActive = pathname === tab.href;
@@ -25,17 +25,17 @@ export function BottomNav() {
                         <Link
                             key={tab.href}
                             href={tab.href}
-                            className={`flex flex-col items-center gap-1 p-2 relative ${isActive ? 'text-primary-600' : 'text-slate-400'
-                                }`}
+                            className={`flex flex-col items-center gap-1 p-2 relative transition-colors ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                 }`}
                         >
                             {isActive && (
                                 <motion.div
                                     layoutId="bottomNavActive"
-                                    className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary-500 rounded-none"
+                                    className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary-500 dark:bg-primary-400 rounded-none"
                                 />
                             )}
-                            <tab.icon size={24} />
-                            <span className="text-[10px] font-medium">{tab.label}</span>
+                            <tab.icon size={20} className={isActive ? 'animate-pulse' : ''} />
+                            <span className={`text-[10px] uppercase tracking-widest ${isActive ? 'font-black' : 'font-bold'}`}>{tab.label}</span>
                         </Link>
                     );
                 })}

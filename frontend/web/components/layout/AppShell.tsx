@@ -11,7 +11,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
     return (
-        <div className="flex h-screen overflow-hidden bg-slate-50">
+        <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
             {/* Context Switcher Rail */}
             <div className="hidden md:block flex-shrink-0 z-30">
                 <VerticalSwitcher />

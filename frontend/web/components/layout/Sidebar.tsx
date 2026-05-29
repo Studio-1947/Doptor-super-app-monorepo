@@ -142,7 +142,7 @@ export function Sidebar() {
         <motion.div
             initial={{ width: 240 }}
             animate={{ width: collapsed ? 80 : 240 }}
-            className="h-full bg-white border-r border-slate-200 flex flex-col relative z-20 shadow-sm transition-all duration-300"
+            className="h-full bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col relative z-20 shadow-sm transition-all duration-300"
         >
             <div className="p-4 flex items-center justify-between">
                 <AnimatePresence>
@@ -159,7 +159,7 @@ export function Sidebar() {
                 </AnimatePresence>
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                     {collapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
                 </button>
@@ -172,18 +172,18 @@ export function Sidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center px-3 py-2.5 rounded-none transition-all group relative overflow-hidden ${isActive ? 'text-primary-600 font-medium' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                            className={`flex items-center px-3 py-2.5 rounded-none transition-all group relative overflow-hidden ${isActive ? 'text-primary-600 dark:text-primary-400 font-bold' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-900'
                                 }`}
                         >
                             {isActive && (
                                 <motion.div
                                     layoutId="activeTab"
-                                    className="absolute inset-0 bg-primary-50 border border-primary-100 rounded-none"
+                                    className="absolute inset-0 bg-primary-50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-800/50 rounded-none"
                                     initial={false}
                                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                 />
                             )}
-                            <item.icon size={20} className={`relative z-10 ${isActive ? 'text-primary-600' : ''}`} />
+                            <item.icon size={20} className={`relative z-10 ${isActive ? 'text-primary-600 dark:text-primary-400' : ''}`} />
                             <AnimatePresence>
                                 {!collapsed && (
                                     <motion.span
@@ -201,15 +201,15 @@ export function Sidebar() {
                 })}
             </nav>
 
-            <div className="p-4 border-t border-slate-100">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white shrink-0">
                         JD
                     </div>
                     {!collapsed && (
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-medium text-slate-900 truncate">John Doe</p>
-                            <p className="text-xs text-slate-500 truncate capitalize">{role.replace('_', ' ')}</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">John Doe</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 truncate capitalize font-medium">{role.replace('_', ' ')}</p>
                         </div>
                     )}
                 </div>

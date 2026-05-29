@@ -28,79 +28,85 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 transition-colors duration-500">
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row"
+                className="bg-white dark:bg-slate-900 shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row border border-slate-200 dark:border-slate-800"
             >
-                {/* Visual Side */}
-                <div className="hidden md:flex flex-col justify-between p-12 bg-gradient-to-br from-blue-600 to-indigo-700 text-white w-2/5 relative overflow-hidden">
+                {/* Visual Side - SHARP */}
+                <div className="hidden md:flex flex-col justify-between p-12 bg-slate-900 dark:bg-black text-white w-2/5 relative overflow-hidden border-r border-slate-800 dark:border-primary-900/30">
                     <div className="relative z-10">
-                        <div className="w-12 h-12 bg-white/10 backdrop-blur-lg rounded-xl flex items-center justify-center mb-8 shadow-inner border border-white/20">
-                            <span className="font-bold text-xl">D</span>
+                        <div className="w-12 h-12 bg-primary-600 rounded-none flex items-center justify-center mb-12 shadow-lg border border-primary-500">
+                            <span className="font-black text-2xl">D</span>
                         </div>
-                        <h2 className="text-3xl font-bold mb-4">Welcome Back</h2>
-                        <p className="text-blue-100/90 leading-relaxed">
-                            Sign in to access your digital workspace, manage tasks, and collaborate with your team.
+                        <h2 className="text-4xl font-black mb-6 leading-tight uppercase tracking-tighter">
+                            Doptor <br/>
+                            <span className="text-primary-500">OS v2.0</span>
+                        </h2>
+                        <p className="text-slate-400 dark:text-slate-500 text-xs font-bold uppercase tracking-[0.2em] leading-loose max-w-[200px]">
+                            Secure digital infrastructure for the modern enterprise.
                         </p>
                     </div>
 
-                    {/* Decorative Circles */}
-                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-indigo-500/30 blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-blue-500/30 blur-3xl"></div>
+                    {/* Decorative Geometric Patterns */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary-600/10 -mr-32 -mt-32 rotate-45 border border-primary-600/20"></div>
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary-600/5 -ml-16 -mb-16 rotate-12 border border-primary-600/10"></div>
 
-                    <div className="relative z-10 flex items-center gap-3 text-sm font-medium bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
-                        <ShieldCheck size={20} className="text-blue-200" />
-                        <span>Secure Enterprise Login</span>
+                    <div className="relative z-10 flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] bg-white/5 p-4 border border-white/10 backdrop-blur-md">
+                        <ShieldCheck size={16} className="text-primary-500" />
+                        <span>Encrypted Session</span>
                     </div>
                 </div>
 
                 {/* Form Side */}
-                <div className="flex-1 p-8 md:p-12 flex flex-col justify-center">
+                <div className="flex-1 p-8 md:p-16 flex flex-col justify-center bg-white dark:bg-slate-900">
                     <div className="max-w-md mx-auto w-full">
-                        <div className="text-center md:text-left mb-10">
-                            <h1 className="text-2xl font-bold text-slate-900 mb-2">Sign in to Doptor</h1>
-                            <p className="text-slate-500">Please enter your credentials to continue.</p>
+                        <div className="text-center md:text-left mb-12">
+                            <div className="inline-block px-3 py-1 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 text-primary-700 dark:text-primary-400 text-[10px] font-black uppercase tracking-widest mb-4">
+                                AUTHENTICATION REQUIRED
+                            </div>
+                            <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-3 uppercase tracking-tight">System Login</h1>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">Enter your credentials to access the workspace.</p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-8">
                             {error && (
                                 <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    className="p-4 rounded-xl bg-red-50 text-red-600 text-sm flex items-center gap-3 border border-red-100"
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-3 border border-red-100 dark:border-red-900/30 rounded-none uppercase tracking-wider"
                                 >
                                     <AlertCircle size={18} />
                                     {error}
                                 </motion.div>
                             )}
 
-                            <div className="space-y-4">
+                            <div className="space-y-5">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
+                                    <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-[0.15em]">Email Address</label>
                                     <input
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all bg-slate-50/50 focus:bg-white"
-                                        placeholder="name@company.com"
+                                        className="w-full px-4 py-4 rounded-none border border-slate-200 dark:border-slate-800 focus:border-primary-500 dark:focus:border-primary-500 outline-none transition-all bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm font-bold placeholder:text-slate-400 dark:placeholder:text-slate-700"
+                                        placeholder="user@demo.com"
                                         required
                                     />
                                 </div>
 
                                 <div>
-                                    <div className="flex justify-between items-end mb-1.5">
-                                        <label className="block text-sm font-medium text-slate-700">Password</label>
-                                        <Link href="/forgot-password" className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline">
-                                            Forgot password?
+                                    <div className="flex justify-between items-end mb-2">
+                                        <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em]">Security Key</label>
+                                        <Link href="/forgot-password" className="text-[10px] font-black text-primary-600 dark:text-primary-400 hover:underline uppercase tracking-widest">
+                                            Reset Access
                                         </Link>
                                     </div>
                                     <input
                                         type="password"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all bg-slate-50/50 focus:bg-white"
+                                        className="w-full px-4 py-4 rounded-none border border-slate-200 dark:border-slate-800 focus:border-primary-500 dark:focus:border-primary-500 outline-none transition-all bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white text-sm font-bold placeholder:text-slate-400 dark:placeholder:text-slate-700"
                                         placeholder="••••••••"
                                         required
                                     />
@@ -110,20 +116,20 @@ export default function LoginPage() {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center"
+                                className="w-full py-5 bg-primary-600 hover:bg-primary-700 text-white font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-primary-500/10 transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center border border-primary-500"
                             >
                                 {isLoading ? (
                                     <Loader2 className="animate-spin" size={20} />
                                 ) : (
-                                    'Sign In'
+                                    'Initialize Access'
                                 )}
                             </button>
                         </form>
 
-                        <p className="mt-8 text-center text-slate-500 text-sm">
-                            Don&apos;t have an account?{' '}
-                            <Link href="/onboarding" className="text-blue-600 font-semibold hover:text-blue-700 hover:underline">
-                                Get Started
+                        <p className="mt-12 text-center text-slate-500 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                            New to the system?{' '}
+                            <Link href="/onboarding" className="text-primary-600 dark:text-primary-400 hover:underline">
+                                Request Provisioning
                             </Link>
                         </p>
                     </div>
