@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, Button } from '@doptor/shared';
+import { Card } from '@doptor/shared';
 import { GraduationCap, Users, Calendar, ArrowRight, Plus } from 'lucide-react';
 import TimeTable from './TimeTable';
 import { useState, useEffect } from 'react';
@@ -8,7 +8,17 @@ import { CampusClass, campusService } from '../../services/campus.service';
 import { useRouter } from 'next/navigation';
 import { useRole } from '@/features/auth/RoleContext';
 
+const progressMetrics = [
+    { label: 'Attendance Health', value: 92, color: 'bg-emerald-500' },
+    { label: 'Exam Readiness', value: 78, color: 'bg-indigo-500' },
+    { label: 'Enrollment Rate', value: 84, color: 'bg-sky-500' },
+];
 
+const campusAlerts = [
+    { title: 'Result release scheduled', subtitle: 'Final grades published by Friday.' },
+    { title: 'New course approvals', subtitle: '3 new courses require academic approval.' },
+    { title: 'Attendance alert', subtitle: 'Attendance below 80% for 2 classes.' },
+];
 
 export function CampusDashboard() {
     const router = useRouter();
@@ -21,7 +31,7 @@ export function CampusDashboard() {
                 const data = await campusService.getClasses();
                 setClasses(data);
             } catch (error) {
-                console.error("Failed to fetch classes:", error);
+                console.error('Failed to fetch classes:', error);
             } finally {
                 setLoading(false);
             }
@@ -34,11 +44,13 @@ export function CampusDashboard() {
             <div className="space-y-6 animate-pulse">
                 <div className="h-12 w-64 bg-slate-200 dark:bg-slate-800 rounded-none"></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {[1, 2, 3].map(i => <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-none border border-slate-200 dark:border-slate-700"></div>)}
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-24 bg-slate-100 dark:bg-slate-800 rounded-none border border-slate-200 dark:border-slate-700" />
+                    ))}
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 h-[400px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-none"></div>
-                    <div className="h-[400px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-none"></div>
+                    <div className="lg:col-span-2 h-[400px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-none" />
+                    <div className="h-[400px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-none" />
                 </div>
             </div>
         );
@@ -51,7 +63,6 @@ export function CampusDashboard() {
                 <p className="text-slate-500 dark:text-slate-400 text-sm">Manage academic schedules, attendance, and student performance.</p>
             </div>
 
-            {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard
                     title="Active Students"
@@ -77,10 +88,12 @@ export function CampusDashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Timetable Widget */}
                 <div className="lg:col-span-2">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-white uppercase tracking-tight">Weekly Schedule</h3>
+                        <div>
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white uppercase tracking-tight">Weekly Schedule</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm">Quick view of today&apos;s active classes and upcoming sessions.</p>
+                        </div>
                         <button className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary-600 dark:text-primary-400 hover:underline" onClick={() => router.push('/campus/timetable')}>
                             Full Schedule <ArrowRight size={14} />
                         </button>
@@ -90,7 +103,6 @@ export function CampusDashboard() {
                     </div>
                 </div>
 
-                {/* Quick Actions & Recent */}
                 <div className="space-y-6">
                     <Card className="p-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                         <h3 className="font-bold text-sm mb-4 text-slate-900 dark:text-white uppercase tracking-widest">Quick Actions</h3>
@@ -99,6 +111,7 @@ export function CampusDashboard() {
                             <ActionButton label="Student Directory" onClick={() => router.push('/campus/students')} />
                             <ActionButton label="Faculty Directory" onClick={() => router.push('/campus/faculty')} />
                             <ActionButton label="Attendance Reports" onClick={() => router.push('/campus/attendance/reports')} />
+                            <ActionButton label="Exam Results" onClick={() => router.push('/campus/results')} />
                         </div>
                     </Card>
 
@@ -127,6 +140,69 @@ export function CampusDashboard() {
                         </div>
                     </Card>
                 </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[1.6fr_1fr] gap-6">
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {progressMetrics.map(metric => (
+                            <Card key={metric.label} className="p-4 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">{metric.label}</span>
+                                    <span className="text-sm font-black text-slate-900 dark:text-white">{metric.value}%</span>
+                                </div>
+                                <div className="h-2 rounded-none bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                    <div className={`${metric.color} h-full rounded-none`} style={{ width: `${metric.value}%` }} />
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+
+                    <Card className="p-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Top Courses</h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm">Most engaged classes this week.</p>
+                            </div>
+                            <button className="text-xs font-black uppercase tracking-widest text-primary-600 dark:text-primary-400 hover:underline" onClick={() => router.push('/campus/timetable')}>
+                                View all
+                            </button>
+                        </div>
+                        <div className="space-y-3">
+                            {classes.slice(0, 3).map(cls => (
+                                <div key={cls.id} className="rounded-none border border-slate-200 dark:border-slate-800 p-4 hover:bg-slate-50 dark:hover:bg-slate-900 transition">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="font-bold text-slate-900 dark:text-white">{cls.name}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{cls.instructor ? `${cls.instructor.first_name} ${cls.instructor.last_name}` : 'Faculty pending'}</p>
+                                        </div>
+                                        <span className="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400">{cls.schedule?.[0]?.startTime ?? 'TBD'}</span>
+                                    </div>
+                                    <div className="mt-3 flex items-center gap-4 text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                                        <span>{cls.location}</span>
+                                        <span>{cls.studentCount ?? 0} students</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                </div>
+
+                <Card className="p-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                    <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-4">Campus Alerts</h3>
+                    <div className="space-y-3">
+                        {campusAlerts.map(alert => (
+                            <div key={alert.title} className="rounded-none border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950/40">
+                                <p className="font-bold text-slate-900 dark:text-white">{alert.title}</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">{alert.subtitle}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-6 flex items-center gap-2 text-[10px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400">
+                        <Plus size={12} />
+                        <span>Add new update</span>
+                    </div>
+                </Card>
             </div>
         </div>
     );

@@ -1,6 +1,6 @@
 'use client';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, FileText, Settings, Bell, ChevronLeft, Menu, ClipboardList, CheckSquare, MessageSquare, Calendar, BarChart3, Building2, Shield, GraduationCap, Globe2 } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, Bell, ChevronLeft, Menu, ClipboardList, CheckSquare, MessageSquare, Calendar, BarChart3, Building2, Shield, GraduationCap, Globe2, Award } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -76,12 +76,14 @@ const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, 
         all: [],
         super_admin: [
             { icon: GraduationCap, label: 'Campus Dashboard', href: '/campus' },
+            { icon: Award, label: 'Exam Results', href: '/campus/results' },
         ],
         org_admin: [
             { icon: GraduationCap, label: 'Campus Dashboard', href: '/campus' },
             { icon: Users, label: 'Students', href: '/campus/students' },
             { icon: Users, label: 'Faculty', href: '/campus/faculty' },
             { icon: Calendar, label: 'Attendance', href: '/campus/attendance/calendar' },
+            { icon: Award, label: 'Exam Results', href: '/campus/results' },
         ],
         manager: [
             { icon: Users, label: 'Students', href: '/campus/students' },
