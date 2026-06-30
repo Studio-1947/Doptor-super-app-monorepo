@@ -3,6 +3,9 @@
 import { useState, useRef } from 'react';
 import { X, Upload, Download, AlertCircle, CheckCircle2, FileSpreadsheet } from 'lucide-react';
 import { Card } from '@doptor/shared';
+import { toast } from 'sonner';
+import { campusService } from '../../../services/campus.service';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface BulkUploadDialogProps {
     isOpen: boolean;
@@ -16,80 +19,79 @@ interface ParsedStudent {
     lastName: string;
     dateOfBirth: string;
     gender: string;
-    email?: string;
-    phone?: string;
+    email: string;
+    phone: string;
     parentName: string;
     parentPhone: string;
-    classId: string;
-    sectionId: string;
     errors?: string[];
 }
 
+function parseCsv(text: string): string[][] {
+    return text
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(line => line.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
+}
+
+function validateStudent(s: ParsedStudent): string[] {
+    const errors: string[] = [];
+    if (!s.firstName) errors.push('First name is required');
+    if (!s.lastName) errors.push('Last name is required');
+    if (!s.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.email)) errors.push('Invalid email format');
+    if (!s.parentName) errors.push('Parent name is required');
+    return errors;
+}
+
 export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialogProps) {
+    const { user } = useAuth();
     const [file, setFile] = useState<File | null>(null);
     const [parsedData, setParsedData] = useState<ParsedStudent[]>([]);
     const [uploading, setUploading] = useState(false);
     const [step, setStep] = useState<'upload' | 'preview' | 'success'>('upload');
+    const [importedCount, setImportedCount] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
-        if (selectedFile) {
-            setFile(selectedFile);
-            // Simulate parsing CSV
-            setTimeout(() => {
-                const mockParsedData: ParsedStudent[] = [
-                    {
-                        rollNumber: '2024028',
-                        firstName: 'Rahul',
-                        lastName: 'Verma',
-                        dateOfBirth: '2010-05-15',
-                        gender: 'male',
-                        email: 'rahul.verma@student.edu',
-                        phone: '+91 98765 43270',
-                        parentName: 'Suresh Verma',
-                        parentPhone: '+91 98765 43271',
-                        classId: '1',
-                        sectionId: 's1',
-                    },
-                    {
-                        rollNumber: '2024029',
-                        firstName: 'Sneha',
-                        lastName: 'Reddy',
-                        dateOfBirth: '2010-08-22',
-                        gender: 'female',
-                        email: 'sneha.reddy@student.edu',
-                        phone: '+91 98765 43272',
-                        parentName: 'Ramesh Reddy',
-                        parentPhone: '+91 98765 43273',
-                        classId: '1',
-                        sectionId: 's1',
-                    },
-                    {
-                        rollNumber: '2024030',
-                        firstName: 'Invalid',
-                        lastName: 'Student',
-                        dateOfBirth: 'invalid-date',
-                        gender: 'unknown',
-                        email: 'invalid-email',
-                        parentName: '',
-                        parentPhone: '',
-                        classId: '1',
-                        sectionId: 's1',
-                        errors: ['Invalid date of birth', 'Invalid gender', 'Invalid email format', 'Parent name is required'],
-                    },
-                ];
-                setParsedData(mockParsedData);
-                setStep('preview');
-            }, 1000);
-        }
+        if (!selectedFile) return;
+        setFile(selectedFile);
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const text = String(reader.result || '');
+            const rows = parseCsv(text);
+            const dataRows = rows.slice(1); // skip header
+
+            const parsed: ParsedStudent[] = dataRows.map(cols => {
+                const s: ParsedStudent = {
+                    rollNumber: cols[0] || '',
+                    firstName: cols[1] || '',
+                    lastName: cols[2] || '',
+                    dateOfBirth: cols[3] || '',
+                    gender: cols[4] || '',
+                    email: cols[5] || '',
+                    phone: cols[6] || '',
+                    parentName: cols[7] || '',
+                    parentPhone: cols[8] || '',
+                };
+                const errors = validateStudent(s);
+                return errors.length > 0 ? { ...s, errors } : s;
+            });
+
+            setParsedData(parsed);
+            setStep('preview');
+        };
+        reader.onerror = () => {
+            toast.error('Failed to read file');
+        };
+        reader.readAsText(selectedFile);
     };
 
     const handleDownloadTemplate = () => {
-        // Create CSV template
-        const template = `Roll Number,First Name,Last Name,Date of Birth (YYYY-MM-DD),Gender (male/female/other),Email,Phone,Parent Name,Parent Phone,Class ID,Section ID
-2024001,John,Doe,2010-01-15,male,john.doe@student.edu,+91 98765 43210,Jane Doe,+91 98765 43211,1,s1
-2024002,Jane,Smith,2010-03-22,female,jane.smith@student.edu,+91 98765 43212,John Smith,+91 98765 43213,1,s2`;
+        const template = `Roll Number,First Name,Last Name,Date of Birth (YYYY-MM-DD),Gender (male/female/other),Email,Phone,Parent Name,Parent Phone
+2024001,John,Doe,2010-01-15,male,john.doe@student.edu,+91 98765 43210,Jane Doe,+91 98765 43211
+2024002,Jane,Smith,2010-03-22,female,jane.smith@student.edu,+91 98765 43212,John Smith,+91 98765 43213`;
 
         const blob = new Blob([template], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
@@ -101,22 +103,47 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
     };
 
     const handleImport = async () => {
+        if (!user?.organisation_id) {
+            toast.error('Missing organisation context');
+            return;
+        }
         setUploading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setUploading(false);
-        setStep('success');
-        setTimeout(() => {
-            onClose();
-            if (onSuccess) onSuccess();
-            resetDialog();
-        }, 2000);
+        try {
+            const rows = validStudents.map(s => ({
+                email: s.email,
+                first_name: s.firstName,
+                last_name: s.lastName,
+                rollNo: s.rollNumber || undefined,
+                phone: s.phone || undefined,
+                guardianName: s.parentName || undefined,
+                guardianPhone: s.parentPhone || undefined,
+            }));
+            const results = await campusService.bulkCreateStudents(user.organisation_id, rows);
+            const succeeded = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success);
+            if (failed.length > 0) {
+                toast.error(`${failed.length} record(s) failed to import`);
+            }
+            setImportedCount(succeeded);
+            setStep('success');
+            setTimeout(() => {
+                onClose();
+                if (onSuccess) onSuccess();
+                resetDialog();
+            }, 2000);
+        } catch (error) {
+            console.error('Bulk import failed', error);
+            toast.error('Failed to import students');
+        } finally {
+            setUploading(false);
+        }
     };
 
     const resetDialog = () => {
         setFile(null);
         setParsedData([]);
         setStep('upload');
+        setImportedCount(0);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -251,7 +278,7 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                                                 {invalidStudents.length} record(s) have errors
                                             </p>
                                             <p className="text-sm text-red-700">
-                                                Please fix the errors below or remove invalid records before importing
+                                                Invalid rows will be skipped. Fix the source CSV and re-upload if you need them included.
                                             </p>
                                         </div>
                                     </div>
@@ -311,7 +338,7 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                             </div>
                             <h4 className="text-xl font-bold text-slate-900 mb-2">Upload Successful!</h4>
                             <p className="text-sm text-slate-600">
-                                {validStudents.length} student(s) have been imported successfully
+                                {importedCount} student(s) have been imported successfully
                             </p>
                         </div>
                     )}
@@ -337,7 +364,7 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                         </button>
                         <button
                             onClick={handleImport}
-                            disabled={step === 'upload' || invalidStudents.length > 0 || uploading}
+                            disabled={step === 'upload' || validStudents.length === 0 || uploading}
                             className="flex-1 px-4 py-2.5 bg-primary-600 text-white hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {uploading ? 'Importing...' : `Import ${validStudents.length} Student(s)`}

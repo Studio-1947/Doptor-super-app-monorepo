@@ -14,8 +14,17 @@ import {
   CreateCourseDto,
   CreateDepartmentDto,
   CreateAcademicYearDto,
+  BulkCreateStudentsDto,
+  BulkCreateFacultyDto,
   UpdateClassDto,
 } from "./dto";
+
+export interface BulkRowResult {
+  row: number;
+  email: string;
+  success: boolean;
+  error?: string;
+}
 
 @Injectable()
 export class CampusService {
@@ -68,6 +77,33 @@ export class CampusService {
     await this.db.delete(schema.users).where(eq(schema.users.id, id));
   }
 
+  async bulkCreateFaculty(data: BulkCreateFacultyDto): Promise<BulkRowResult[]> {
+    const results: BulkRowResult[] = [];
+    for (let i = 0; i < data.faculty.length; i++) {
+      const row = data.faculty[i];
+      try {
+        await this.db.insert(schema.users).values({
+          email: row.email,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          department_id: row.department_id,
+          role: "faculty",
+          password_hash: "$argon2id$...", // Placeholder, matches createFaculty
+          organisation_id: data.organisation_id,
+        });
+        results.push({ row: i, email: row.email, success: true });
+      } catch (e) {
+        results.push({
+          row: i,
+          email: row.email,
+          success: false,
+          error: e instanceof Error ? e.message : "Insert failed",
+        });
+      }
+    }
+    return results;
+  }
+
   // --- Students ---
 
   async getStudentList() {
@@ -114,6 +150,33 @@ export class CampusService {
 
   async deleteStudent(id: string) {
     await this.db.delete(schema.users).where(eq(schema.users.id, id));
+  }
+
+  async bulkCreateStudents(data: BulkCreateStudentsDto): Promise<BulkRowResult[]> {
+    const results: BulkRowResult[] = [];
+    for (let i = 0; i < data.students.length; i++) {
+      const row = data.students[i];
+      try {
+        await this.db.insert(schema.users).values({
+          email: row.email,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          department_id: row.department_id,
+          role: "student",
+          password_hash: "temp", // Placeholder, matches createStudent
+          organisation_id: data.organisation_id,
+        });
+        results.push({ row: i, email: row.email, success: true });
+      } catch (e) {
+        results.push({
+          row: i,
+          email: row.email,
+          success: false,
+          error: e instanceof Error ? e.message : "Insert failed",
+        });
+      }
+    }
+    return results;
   }
 
   // --- Courses ---

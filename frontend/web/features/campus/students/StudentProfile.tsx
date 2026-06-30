@@ -225,13 +225,11 @@ function AcademicInfoTab({ student }: { student: Student }) {
 
 // Attendance Tab
 function AttendanceTab({ student }: { student: Student }) {
-    // Mocking summary stats for now as backend returns raw records
-    const attendancePercentage = 0;
-    const totalDays = 0;
-    const presentDays = 0;
-    const absentDays = 0;
-
-    // We can calculate this from student.attendanceStats if available
+    const records: { status: string }[] = student.attendanceStats || [];
+    const totalDays = records.length;
+    const presentDays = records.filter(r => r.status === 'present').length;
+    const absentDays = records.filter(r => r.status === 'absent').length;
+    const attendancePercentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

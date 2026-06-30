@@ -3,6 +3,9 @@
 import { useState, useRef } from 'react';
 import { X, Upload, Download, AlertCircle, CheckCircle2, FileSpreadsheet } from 'lucide-react';
 import { Card } from '@doptor/shared';
+import { toast } from 'sonner';
+import { campusService } from '../../../services/campus.service';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface BulkUploadDialogProps {
     isOpen: boolean;
@@ -22,56 +25,67 @@ interface ParsedFaculty {
     errors?: string[];
 }
 
+function parseCsv(text: string): string[][] {
+    return text
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(line => line.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
+}
+
+function validateFaculty(f: ParsedFaculty): string[] {
+    const errors: string[] = [];
+    if (!f.firstName) errors.push('First name is required');
+    if (!f.lastName) errors.push('Last name is required');
+    if (!f.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email)) errors.push('Invalid email format');
+    if (!f.phone) errors.push('Phone is required');
+    if (!f.department) errors.push('Department is required');
+    if (!f.qualification) errors.push('Qualification is required');
+    return errors;
+}
+
 export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialogProps) {
+    const { user } = useAuth();
     const [file, setFile] = useState<File | null>(null);
     const [parsedData, setParsedData] = useState<ParsedFaculty[]>([]);
     const [uploading, setUploading] = useState(false);
     const [step, setStep] = useState<'upload' | 'preview' | 'success'>('upload');
+    const [importedCount, setImportedCount] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
-        if (selectedFile) {
-            setFile(selectedFile);
-            // Simulate parsing CSV
-            setTimeout(() => {
-                const mockParsedData: ParsedFaculty[] = [
-                    {
-                        employeeId: 'EMP021',
-                        firstName: 'Amit',
-                        lastName: 'Sharma',
-                        email: 'amit.sharma@school.edu',
-                        phone: '+91 98765 12001',
-                        department: 'Mathematics',
-                        designation: 'Assistant Professor',
-                        qualification: 'M.Sc. Mathematics',
-                    },
-                    {
-                        employeeId: 'EMP022',
-                        firstName: 'Priya',
-                        lastName: 'Singh',
-                        email: 'priya.singh@school.edu',
-                        phone: '+91 98765 12002',
-                        department: 'Science',
-                        designation: 'Associate Professor',
-                        qualification: 'Ph.D. Physics',
-                    },
-                    {
-                        employeeId: 'EMP023',
-                        firstName: 'Invalid',
-                        lastName: 'Faculty',
-                        email: 'invalid-email',
-                        phone: '',
-                        department: '',
-                        designation: 'Unknown',
-                        qualification: '',
-                        errors: ['Invalid email format', 'Phone is required', 'Department is required', 'Qualification is required'],
-                    },
-                ];
-                setParsedData(mockParsedData);
-                setStep('preview');
-            }, 1000);
-        }
+        if (!selectedFile) return;
+        setFile(selectedFile);
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            const text = String(reader.result || '');
+            const rows = parseCsv(text);
+            const dataRows = rows.slice(1); // skip header
+
+            const parsed: ParsedFaculty[] = dataRows.map(cols => {
+                const f: ParsedFaculty = {
+                    employeeId: cols[0] || '',
+                    firstName: cols[1] || '',
+                    lastName: cols[2] || '',
+                    email: cols[3] || '',
+                    phone: cols[4] || '',
+                    department: cols[5] || '',
+                    designation: cols[6] || '',
+                    qualification: cols[7] || '',
+                };
+                const errors = validateFaculty(f);
+                return errors.length > 0 ? { ...f, errors } : f;
+            });
+
+            setParsedData(parsed);
+            setStep('preview');
+        };
+        reader.onerror = () => {
+            toast.error('Failed to read file');
+        };
+        reader.readAsText(selectedFile);
     };
 
     const handleDownloadTemplate = () => {
@@ -89,21 +103,46 @@ EMP002,Jane,Smith,jane.smith@school.edu,+91 98765 43211,Science,Associate Profes
     };
 
     const handleImport = async () => {
+        if (!user?.organisation_id) {
+            toast.error('Missing organisation context');
+            return;
+        }
         setUploading(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setUploading(false);
-        setStep('success');
-        setTimeout(() => {
-            onClose();
-            if (onSuccess) onSuccess();
-            resetDialog();
-        }, 2000);
+        try {
+            const rows = validFaculty.map(f => ({
+                email: f.email,
+                first_name: f.firstName,
+                last_name: f.lastName,
+                phone: f.phone || undefined,
+                designation: f.designation || undefined,
+                qualification: f.qualification || undefined,
+            }));
+            const results = await campusService.bulkCreateFaculty(user.organisation_id, rows);
+            const succeeded = results.filter(r => r.success).length;
+            const failed = results.filter(r => !r.success);
+            if (failed.length > 0) {
+                toast.error(`${failed.length} record(s) failed to import`);
+            }
+            setImportedCount(succeeded);
+            setStep('success');
+            setTimeout(() => {
+                onClose();
+                if (onSuccess) onSuccess();
+                resetDialog();
+            }, 2000);
+        } catch (error) {
+            console.error('Bulk import failed', error);
+            toast.error('Failed to import faculty');
+        } finally {
+            setUploading(false);
+        }
     };
 
     const resetDialog = () => {
         setFile(null);
         setParsedData([]);
         setStep('upload');
+        setImportedCount(0);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -238,7 +277,7 @@ EMP002,Jane,Smith,jane.smith@school.edu,+91 98765 43211,Science,Associate Profes
                                                 {invalidFaculty.length} record(s) have errors
                                             </p>
                                             <p className="text-sm text-red-700">
-                                                Please fix the errors or remove invalid records before importing
+                                                Invalid rows will be skipped. Fix the source CSV and re-upload if you need them included.
                                             </p>
                                         </div>
                                     </div>
@@ -296,7 +335,7 @@ EMP002,Jane,Smith,jane.smith@school.edu,+91 98765 43211,Science,Associate Profes
                             </div>
                             <h4 className="text-xl font-bold text-slate-900 mb-2">Upload Successful!</h4>
                             <p className="text-sm text-slate-600">
-                                {validFaculty.length} faculty member(s) have been imported successfully
+                                {importedCount} faculty member(s) have been imported successfully
                             </p>
                         </div>
                     )}
@@ -322,7 +361,7 @@ EMP002,Jane,Smith,jane.smith@school.edu,+91 98765 43211,Science,Associate Profes
                         </button>
                         <button
                             onClick={handleImport}
-                            disabled={step === 'upload' || invalidFaculty.length > 0 || uploading}
+                            disabled={step === 'upload' || validFaculty.length === 0 || uploading}
                             className="flex-1 px-4 py-2.5 bg-primary-600 text-white hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {uploading ? 'Importing...' : `Import ${validFaculty.length} Faculty`}

@@ -8,7 +8,11 @@ import {
   IsObject,
   IsBoolean,
   IsDateString,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
 } from "class-validator";
+import { Type } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
 
 // NOTE: AddFacultyDialog/AddStudentDialog (frontend/web/features/campus) collect
@@ -101,6 +105,87 @@ export class CreateStudentDto {
   @ApiProperty({ required: false }) @IsString() @IsOptional() phone?: string;
   @ApiProperty({ required: false }) @IsString() @IsOptional() guardianName?: string;
   @ApiProperty({ required: false }) @IsString() @IsOptional() guardianPhone?: string;
+}
+
+export class BulkStudentRowDto {
+  @ApiProperty({ example: "john.smith@university.edu" })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({ example: "John" })
+  @IsString()
+  @IsNotEmpty()
+  first_name: string;
+
+  @ApiProperty({ example: "Smith" })
+  @IsString()
+  @IsNotEmpty()
+  last_name: string;
+
+  @ApiProperty({ required: false })
+  @IsUUID()
+  @IsOptional()
+  department_id?: string;
+
+  @ApiProperty({ required: false }) @IsString() @IsOptional() rollNo?: string;
+  @ApiProperty({ required: false }) @IsString() @IsOptional() phone?: string;
+  @ApiProperty({ required: false }) @IsString() @IsOptional() guardianName?: string;
+  @ApiProperty({ required: false }) @IsString() @IsOptional() guardianPhone?: string;
+}
+
+export class BulkCreateStudentsDto {
+  @ApiProperty({ example: "123e4567-e89b-12d3-a456-426614174000" })
+  @IsUUID()
+  @IsNotEmpty()
+  organisation_id: string;
+
+  @ApiProperty({ type: [BulkStudentRowDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => BulkStudentRowDto)
+  students: BulkStudentRowDto[];
+}
+
+export class BulkFacultyRowDto {
+  @ApiProperty({ example: "jane.doe@university.edu" })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({ example: "Jane" })
+  @IsString()
+  @IsNotEmpty()
+  first_name: string;
+
+  @ApiProperty({ example: "Doe" })
+  @IsString()
+  @IsNotEmpty()
+  last_name: string;
+
+  @ApiProperty({ required: false })
+  @IsUUID()
+  @IsOptional()
+  department_id?: string;
+
+  @ApiProperty({ required: false }) @IsString() @IsOptional() phone?: string;
+  @ApiProperty({ required: false }) @IsString() @IsOptional() designation?: string;
+  @ApiProperty({ required: false }) @IsString() @IsOptional() qualification?: string;
+}
+
+export class BulkCreateFacultyDto {
+  @ApiProperty({ example: "123e4567-e89b-12d3-a456-426614174000" })
+  @IsUUID()
+  @IsNotEmpty()
+  organisation_id: string;
+
+  @ApiProperty({ type: [BulkFacultyRowDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => BulkFacultyRowDto)
+  faculty: BulkFacultyRowDto[];
 }
 
 export class CreateCourseDto {

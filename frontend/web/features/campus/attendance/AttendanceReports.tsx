@@ -5,7 +5,6 @@ import { Filter, Download, FileText, TrendingUp, Users, Calendar } from 'lucide-
 import { Card, Button } from '@doptor/shared';
 import { toast } from 'sonner';
 import { campusService, CampusClass, Student } from '../../../services/campus.service';
-// Remove mock imports
 
 type ReportType = 'daily' | 'monthly' | 'student-wise' | 'class-trends';
 

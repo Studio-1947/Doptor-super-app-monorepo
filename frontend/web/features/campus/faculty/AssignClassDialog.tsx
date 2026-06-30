@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import { campusService, Instructor, CampusClass } from '../../../services/campus.service';
-// Remove mock imports
 
 interface AssignClassDialogProps {
     isOpen: boolean;

@@ -90,6 +90,13 @@ export interface Student {
 
 // ... (CampusService class methods)
 
+export interface BulkRowResult {
+  row: number;
+  email: string;
+  success: boolean;
+  error?: string;
+}
+
 export interface StudentAttendance {
   student: {
     id: string;
@@ -120,6 +127,17 @@ class CampusService {
 
   async createFaculty(data: any): Promise<void> {
     await apiClient.post("/campus/faculty", data);
+  }
+
+  async bulkCreateFaculty(
+    organisationId: string,
+    faculty: any[],
+  ): Promise<BulkRowResult[]> {
+    const response = await apiClient.post("/campus/faculty/bulk", {
+      organisation_id: organisationId,
+      faculty,
+    });
+    return response.data;
   }
 
   async updateFaculty(id: string, data: any): Promise<void> {
@@ -178,6 +196,17 @@ class CampusService {
 
   async createStudent(data: any): Promise<void> {
     await apiClient.post("/campus/students", data);
+  }
+
+  async bulkCreateStudents(
+    organisationId: string,
+    students: any[],
+  ): Promise<BulkRowResult[]> {
+    const response = await apiClient.post("/campus/students/bulk", {
+      organisation_id: organisationId,
+      students,
+    });
+    return response.data;
   }
 
   async updateStudent(id: string, data: any): Promise<void> {

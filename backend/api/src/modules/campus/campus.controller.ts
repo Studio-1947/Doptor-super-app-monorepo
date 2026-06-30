@@ -19,6 +19,8 @@ import {
   CreateCourseDto,
   CreateDepartmentDto,
   CreateAcademicYearDto,
+  BulkCreateStudentsDto,
+  BulkCreateFacultyDto,
   UpdateClassDto,
 } from "./dto";
 
@@ -44,6 +46,11 @@ export class CampusController {
     return this.campusService.createFaculty(body);
   }
 
+  @Post("faculty/bulk")
+  bulkCreateFaculty(@Body() body: BulkCreateFacultyDto) {
+    return this.campusService.bulkCreateFaculty(body);
+  }
+
   @Delete("faculty/:id")
   deleteFaculty(@Param("id") id: string) {
     return this.campusService.deleteFaculty(id);
@@ -64,6 +71,11 @@ export class CampusController {
   @Post("students")
   createStudent(@Body() body: CreateStudentDto) {
     return this.campusService.createStudent(body);
+  }
+
+  @Post("students/bulk")
+  bulkCreateStudents(@Body() body: BulkCreateStudentsDto) {
+    return this.campusService.bulkCreateStudents(body);
   }
 
   @Delete("students/:id")
