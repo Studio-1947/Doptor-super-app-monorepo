@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, Button } from '@doptor/shared';
-import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { MOCK_OFFICE_USERS } from './office-mock.db';
+import { filesService } from '../../services/files.service';
+import { usersService, UserListItem } from '../../services/users.service';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ApproveRejectModalProps {
     isOpen: boolean;
@@ -21,32 +23,44 @@ export function ApproveRejectModal({
     actionType,
     onSuccess
 }: ApproveRejectModalProps) {
+    const { user } = useAuth();
     const [remarks, setRemarks] = useState('');
     const [forwardTo, setForwardTo] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [nextAuthorities, setNextAuthorities] = useState<UserListItem[]>([]);
 
     const isApprove = actionType === 'approve';
 
-    // Mock next authority (for approval flow)
-    const nextAuthorities = MOCK_OFFICE_USERS.filter(u => u.role === 'Director' || u.role === 'Manager');
+    useEffect(() => {
+        if (isOpen && isApprove) {
+            usersService
+                .list({ organisationId: user?.organisation_id })
+                .then((users) => setNextAuthorities(users.filter((u) => u.id !== user?.id)))
+                .catch(() => setNextAuthorities([]));
+        }
+    }, [isOpen, isApprove, user?.organisation_id, user?.id]);
 
     const handleSubmit = async () => {
-        if (isApprove && !remarks.trim()) {
-            // Allow empty remarks for approval, but maybe prompt? Let's say optional.
-        }
         if (!isApprove && !remarks.trim()) {
             toast.error('Remarks are required for rejection');
             return;
         }
 
         setIsSubmitting(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        toast.success(`File ${isApprove ? 'approved' : 'rejected'} successfully`);
-        setIsSubmitting(false);
-        onSuccess();
-        onClose();
+        try {
+            if (isApprove) {
+                await filesService.approve(fileId, remarks || undefined, forwardTo || undefined);
+            } else {
+                await filesService.reject(fileId, remarks);
+            }
+            toast.success(`File ${isApprove ? 'approved' : 'rejected'} successfully`);
+            onSuccess();
+            onClose();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || `Failed to ${actionType} file`);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -90,9 +104,9 @@ export function ApproveRejectModal({
                             className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
                         >
                             <option value="">End Workflow Here</option>
-                            {nextAuthorities.map(user => (
-                                <option key={user.id} value={user.id}>
-                                    {user.name} ({user.role})
+                            {nextAuthorities.map(u => (
+                                <option key={u.id} value={u.id}>
+                                    {u.first_name} {u.last_name}{u.role ? ` (${u.role.name})` : ''}
                                 </option>
                             ))}
                         </select>

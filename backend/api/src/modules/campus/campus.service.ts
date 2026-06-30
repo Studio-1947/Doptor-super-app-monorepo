@@ -8,6 +8,14 @@ import { DRIZZLE } from "../../database/drizzle/database.module";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../database/drizzle/schema";
 import { eq, and, desc, gte, lte } from "drizzle-orm";
+import {
+  CreateFacultyDto,
+  CreateStudentDto,
+  CreateCourseDto,
+  CreateDepartmentDto,
+  CreateAcademicYearDto,
+  UpdateClassDto,
+} from "./dto";
 
 @Injectable()
 export class CampusService {
@@ -38,7 +46,7 @@ export class CampusService {
     });
   }
 
-  async createFaculty(data: any) {
+  async createFaculty(data: CreateFacultyDto) {
     // Assuming data has email, first_name, last_name, department_id
     // For password, we'd hash it. Using placeholder for now.
     // For organisation, assuming context provides it or we default (not ideal for real app)
@@ -92,7 +100,7 @@ export class CampusService {
     });
   }
 
-  async createStudent(data: any) {
+  async createStudent(data: CreateStudentDto) {
     await this.db.insert(schema.users).values({
       email: data.email,
       first_name: data.first_name,
@@ -116,7 +124,7 @@ export class CampusService {
     });
   }
 
-  async createCourse(data: any) {
+  async createCourse(data: CreateCourseDto) {
     await this.db.insert(schema.courses).values({
       code: data.code,
       name: data.name,
@@ -131,7 +139,7 @@ export class CampusService {
     await this.db.delete(schema.courses).where(eq(schema.courses.id, id));
   }
 
-  async updateClass(id: string, data: any) {
+  async updateClass(id: string, data: UpdateClassDto) {
     const updateData: any = {};
     if (data.name) updateData.name = data.name;
     if (data.instructorId) updateData.faculty_id = data.instructorId; // Mapping to faculty_id
@@ -156,13 +164,48 @@ export class CampusService {
     return await this.db.query.departments.findMany();
   }
 
-  async createDepartment(data: any) {
+  async createDepartment(data: CreateDepartmentDto) {
     await this.db.insert(schema.departments).values({
       name: data.name,
       code: data.code,
       description: data.description,
       head_of_dept_id: data.headOfDept,
       organisation_id: data.organisation_id,
+    });
+  }
+
+  // --- Academic Years ---
+
+  async getAcademicYears(organisationId: string) {
+    return await this.db.query.academicYears.findMany({
+      where: eq(schema.academicYears.organisation_id, organisationId),
+      orderBy: [desc(schema.academicYears.start_date)],
+    });
+  }
+
+  async createAcademicYear(data: CreateAcademicYearDto) {
+    return await this.db.transaction(async (tx) => {
+      if (data.isCurrent) {
+        await tx
+          .update(schema.academicYears)
+          .set({ is_current: false })
+          .where(
+            eq(schema.academicYears.organisation_id, data.organisation_id),
+          );
+      }
+
+      const [year] = await tx
+        .insert(schema.academicYears)
+        .values({
+          name: data.name,
+          start_date: data.startDate,
+          end_date: data.endDate,
+          is_current: data.isCurrent ?? false,
+          organisation_id: data.organisation_id,
+        })
+        .returning();
+
+      return year;
     });
   }
 

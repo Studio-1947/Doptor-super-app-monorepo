@@ -11,7 +11,6 @@ export * from "./task.schema";
 export * from "./workflow.schema";
 export * from "./document.schema";
 export * from "./attendance.schema";
-export * from "./audit.schema";
 export * from "./files.schema";
 export * from "./campus.schema";
 export * from "./communication.schema";

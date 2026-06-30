@@ -1,26 +1,25 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     FileText,
     Save,
     Send,
     Clock,
     CheckCircle2,
-    AlertCircle,
     Bold,
     Italic,
     List,
     AlignLeft
 } from 'lucide-react';
 import { Card, Button } from '@doptor/shared';
-import { NoteSheet, getUserName, getUserDesignation } from './office-mock.db';
+import { NoteSheet } from '../../services/files.service';
 import { toast } from 'sonner';
 
 interface NoteSheetEditorProps {
     initialNotes: NoteSheet[];
     currentUserId: string;
-    onAddNote?: (note: string, isFinal: boolean) => void;
+    onAddNote: (note: string, isFinal: boolean) => Promise<void>;
     className?: string;
 }
 
@@ -31,11 +30,15 @@ export function NoteSheetEditor({
     className = ''
 }: NoteSheetEditorProps) {
     const [notes, setNotes] = useState<NoteSheet[]>(
-        [...initialNotes].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        [...initialNotes].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     );
     const [newNoteContent, setNewNoteContent] = useState('');
     const [isFinal, setIsFinal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setNotes([...initialNotes].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+    }, [initialNotes]);
 
     const handleSave = async (submit: boolean = false) => {
         if (!newNoteContent.trim()) {
@@ -44,30 +47,15 @@ export function NoteSheetEditor({
         }
 
         setIsSaving(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Creating mock new note
-        const newNote: NoteSheet = {
-            id: `new-${Date.now()}`,
-            fileId: notes[0]?.fileId || 'unknown',
-            userId: currentUserId,
-            content: newNoteContent,
-            version: 1,
-            isFinal: submit || isFinal,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-
-        setNotes([...notes, newNote]);
-        setNewNoteContent('');
-        setIsFinal(false);
-        setIsSaving(false);
-
-        toast.success(submit ? 'Note submitted successfully' : 'Draft saved successfully');
-
-        if (onAddNote) {
-            onAddNote(newNoteContent, submit || isFinal);
+        try {
+            await onAddNote(newNoteContent, submit || isFinal);
+            setNewNoteContent('');
+            setIsFinal(false);
+            toast.success(submit ? 'Note submitted successfully' : 'Draft saved successfully');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to save note');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -91,7 +79,7 @@ export function NoteSheetEditor({
                     </div>
                 ) : (
                     notes.map((note, index) => (
-                        <Card key={note.id} className={`p-0 overflow-hidden border-slate-200 ${note.userId === currentUserId ? 'border-primary-200' : ''
+                        <Card key={note.id} className={`p-0 overflow-hidden border-slate-200 ${note.user_id === currentUserId ? 'border-primary-200' : ''
                             }`}>
                             {/* Note Header */}
                             <div className="bg-slate-50 p-3 border-b border-slate-100 flex items-center justify-between">
@@ -101,21 +89,18 @@ export function NoteSheetEditor({
                                     </div>
                                     <div>
                                         <span className="font-semibold text-slate-900 text-sm block">
-                                            {getUserName(note.userId)}
-                                        </span>
-                                        <span className="text-xs text-slate-500">
-                                            {getUserDesignation(note.userId)}
+                                            {note.user ? `${note.user.first_name} ${note.user.last_name}` : 'Unknown'}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 text-xs">
                                     <span className="text-slate-400 flex items-center gap-1">
                                         <Clock size={12} />
-                                        {new Date(note.createdAt).toLocaleString('en-IN', {
+                                        {new Date(note.created_at).toLocaleString('en-IN', {
                                             day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
                                         })}
                                     </span>
-                                    {note.isFinal ? (
+                                    {note.is_final ? (
                                         <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                                             <CheckCircle2 size={12} /> Final
                                         </span>

@@ -11,6 +11,19 @@ import {
 import { users } from "./user.schema";
 import { organisations } from "./organisation.schema";
 
+export const academicYears = pgTable("academic_years", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organisation_id: uuid("organisation_id")
+    .references(() => organisations.id, { onDelete: "cascade" })
+    .notNull(),
+  name: text("name").notNull(), // e.g. "2024-2025"
+  start_date: date("start_date").notNull(),
+  end_date: date("end_date").notNull(),
+  is_current: boolean("is_current").default(false).notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const courses = pgTable("courses", {
   id: uuid("id").defaultRandom().primaryKey(),
   organisation_id: uuid("organisation_id")

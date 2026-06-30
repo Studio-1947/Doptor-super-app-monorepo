@@ -4,7 +4,6 @@
 
 - **frontend/**: Frontend applications (Web, Mobile) and shared UI.
 - **backend/**: Backend services (API, Workers, Realtime) and database schemas.
-- **infra/**: Infrastructure configuration (Docker, K8s, Terraform).
 
 ## Getting Started
 
@@ -16,13 +15,13 @@
 ### Installation
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### Running Locally
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 ## Architecture

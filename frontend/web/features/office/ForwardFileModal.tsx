@@ -2,16 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Share2, User, Loader2 } from 'lucide-react';
-import apiClient from '../../lib/api-client'; // Direct API call for searching users? Or make a users service.
+import { X, Share2, User as UserIcon, Loader2 } from 'lucide-react';
+import { usersService, UserListItem } from '../../services/users.service';
+import { filesService } from '../../services/files.service';
 
-interface User {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-    role?: { name: string };
-}
+type User = UserListItem;
 
 interface ForwardFileModalProps {
     isOpen: boolean;
@@ -37,10 +32,8 @@ export default function ForwardFileModal({ isOpen, onClose, onSuccess, fileId, c
 
     const searchUsers = async () => {
         try {
-            // Assuming we have a users search endpoint or similar. For now just mock or list all.
-            // But wait, we have users module in backend.
-            const response = await apiClient.get(`/users?search=${searchQuery}`);
-            setUsers(response.data);
+            const results = await usersService.list({ search: searchQuery });
+            setUsers(results);
         } catch (error) {
             console.error(error);
         }
@@ -50,13 +43,10 @@ export default function ForwardFileModal({ isOpen, onClose, onSuccess, fileId, c
         if (!selectedUser) return;
         setIsLoading(true);
         try {
-            await apiClient.post(`/files/${fileId}/forward`, {
-                to_user_id: selectedUser.id,
-                remarks: remarks
-            });
+            await filesService.forward(fileId, selectedUser.id, remarks || undefined);
             onSuccess();
             onClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to forward', error);
         } finally {
             setIsLoading(false);
@@ -117,7 +107,7 @@ export default function ForwardFileModal({ isOpen, onClose, onSuccess, fileId, c
                                             className="p-2 hover:bg-slate-50 cursor-pointer flex items-center gap-3 border-b border-slate-50 last:border-0"
                                         >
                                             <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
-                                                <User size={14} />
+                                                <UserIcon size={14} />
                                             </div>
                                             <div>
                                                 <p className="text-sm font-medium text-slate-900">{user.first_name} {user.last_name}</p>

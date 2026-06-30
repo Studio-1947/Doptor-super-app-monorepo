@@ -7,6 +7,7 @@ import {
   enrollments,
   studentAttendance,
 } from "./campus.schema";
+import { files, fileMovements, noteSheets } from "./files.schema";
 
 // Users Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -87,3 +88,43 @@ export const studentAttendanceRelations = relations(
     }),
   }),
 );
+
+// Files (E-File System) Relations
+export const filesRelations = relations(files, ({ one, many }) => ({
+  initiator: one(users, {
+    fields: [files.initiator_id],
+    references: [users.id],
+  }),
+  currentHolder: one(users, {
+    fields: [files.current_user_id],
+    references: [users.id],
+  }),
+  movements: many(fileMovements),
+  notes: many(noteSheets),
+}));
+
+export const fileMovementsRelations = relations(fileMovements, ({ one }) => ({
+  file: one(files, {
+    fields: [fileMovements.file_id],
+    references: [files.id],
+  }),
+  fromUser: one(users, {
+    fields: [fileMovements.from_user_id],
+    references: [users.id],
+  }),
+  toUser: one(users, {
+    fields: [fileMovements.to_user_id],
+    references: [users.id],
+  }),
+}));
+
+export const noteSheetsRelations = relations(noteSheets, ({ one }) => ({
+  file: one(files, {
+    fields: [noteSheets.file_id],
+    references: [files.id],
+  }),
+  user: one(users, {
+    fields: [noteSheets.user_id],
+    references: [users.id],
+  }),
+}));

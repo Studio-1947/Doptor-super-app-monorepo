@@ -5,6 +5,7 @@ import {
   timestamp,
   boolean,
   jsonb,
+  date,
 } from "drizzle-orm/pg-core";
 import { users } from "./user.schema";
 
@@ -13,11 +14,15 @@ export const files = pgTable("files", {
   file_number: text("file_number").notNull().unique(),
   subject: text("subject").notNull(),
   description: text("description"),
+  category: text("category"),
+  security_level: text("security_level").default("unclassified").notNull(), // unclassified, restricted, confidential, secret
+  tags: jsonb("tags").$type<string[]>().default([]),
+  due_date: date("due_date"),
   current_user_id: uuid("current_user_id").references(() => users.id), // Who currently holds the file
   initiator_id: uuid("initiator_id")
     .references(() => users.id)
     .notNull(), // Who started the file
-  status: text("status").default("active").notNull(), // active, closed, archived
+  status: text("status").default("active").notNull(), // active, approved, rejected, closed, archived
   priority: text("priority").default("normal").notNull(), // normal, urgent, immediate
   meta_data: jsonb("meta_data").default({}), // Flexible field for custom attributes
   created_at: timestamp("created_at").defaultNow().notNull(),

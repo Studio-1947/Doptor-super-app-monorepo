@@ -12,11 +12,7 @@ import {
     User
 } from 'lucide-react';
 import { Card } from '@doptor/shared';
-import {
-    FileMovement,
-    getUserName,
-    getUserDesignation
-} from './office-mock.db';
+import { FileMovement } from '../../services/files.service';
 
 interface FileMovementHistoryProps {
     movements: FileMovement[];
@@ -27,11 +23,11 @@ export function FileMovementHistory({ movements, className = '' }: FileMovementH
     // Sort movements by date (newest first)
     const sortedMovements = useMemo(() => {
         return [...movements].sort((a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         );
     }, [movements]);
 
-    const getActionIcon = (action: FileMovement['action']) => {
+    const getActionIcon = (action: string) => {
         switch (action) {
             case 'create':
                 return <FileText size={16} />;
@@ -50,7 +46,7 @@ export function FileMovementHistory({ movements, className = '' }: FileMovementH
         }
     };
 
-    const getActionColor = (action: FileMovement['action']) => {
+    const getActionColor = (action: string) => {
         switch (action) {
             case 'create':
                 return 'bg-blue-100 text-blue-700 border-blue-200';
@@ -69,8 +65,9 @@ export function FileMovementHistory({ movements, className = '' }: FileMovementH
         }
     };
 
-    const getActionLabel = (action: FileMovement['action']) => {
+    const getActionLabel = (action: string) => {
         switch (action) {
+            case 'initiated':
             case 'create': return 'Created File';
             case 'forward': return 'Forwarded';
             case 'return': return 'Returned';
@@ -113,7 +110,7 @@ export function FileMovementHistory({ movements, className = '' }: FileMovementH
 
                             {/* Date */}
                             <div className="text-xs text-slate-500 mt-1 sm:mt-0.5 whitespace-nowrap">
-                                {new Date(movement.createdAt).toLocaleString('en-IN', {
+                                {new Date(movement.created_at).toLocaleString('en-IN', {
                                     day: 'numeric', month: 'short', year: 'numeric',
                                     hour: '2-digit', minute: '2-digit'
                                 })}
@@ -126,14 +123,13 @@ export function FileMovementHistory({ movements, className = '' }: FileMovementH
 
                                 {/* From -> To */}
                                 <div className="flex items-center gap-3 text-sm">
-                                    {movement.fromUserId ? (
+                                    {movement.fromUser ? (
                                         <div className="flex items-center gap-2 text-slate-600">
                                             <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
-                                                {getUserName(movement.fromUserId).charAt(0)}
+                                                {movement.fromUser.first_name.charAt(0)}
                                             </div>
                                             <div>
-                                                <span className="font-medium text-slate-900">{getUserName(movement.fromUserId)}</span>
-                                                <span className="text-xs text-slate-500 block">{getUserDesignation(movement.fromUserId)}</span>
+                                                <span className="font-medium text-slate-900">{movement.fromUser.first_name} {movement.fromUser.last_name}</span>
                                             </div>
                                         </div>
                                     ) : (
@@ -144,11 +140,10 @@ export function FileMovementHistory({ movements, className = '' }: FileMovementH
 
                                     <div className="flex items-center gap-2 text-slate-600">
                                         <div className="w-6 h-6 rounded-full bg-primary-50 flex items-center justify-center text-xs font-bold text-primary-600">
-                                            {getUserName(movement.toUserId).charAt(0)}
+                                            {movement.toUser?.first_name?.charAt(0) ?? '?'}
                                         </div>
                                         <div>
-                                            <span className="font-medium text-slate-900">{getUserName(movement.toUserId)}</span>
-                                            <span className="text-xs text-slate-500 block">{getUserDesignation(movement.toUserId)}</span>
+                                            <span className="font-medium text-slate-900">{movement.toUser ? `${movement.toUser.first_name} ${movement.toUser.last_name}` : 'Unknown'}</span>
                                         </div>
                                     </div>
                                 </div>

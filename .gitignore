@@ -23,6 +23,20 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+build_log*
+*build_log*.txt
+web_build*.log
+my_build_log*
+install_log*.txt
+npm_ls*.txt
+npm_ls*.log
+ts_errors.txt
+tsc_errors.txt
+lint_report.json
+build_verification*.txt
+build_error*.txt
+build_error*.log
+next_build_errors.txt
 
 # Environment variables
 .env

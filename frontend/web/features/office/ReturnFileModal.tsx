@@ -1,26 +1,33 @@
 "use client";
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Dialog, Button } from '@doptor/shared';
 import { RotateCcw, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { MOCK_OFFICE_USERS } from './office-mock.db';
+import { filesService, FileMovement, UserSummary } from '../../services/files.service';
 
 interface ReturnFileModalProps {
     isOpen: boolean;
     onClose: () => void;
     fileId: string;
+    movements: FileMovement[];
     onSuccess: () => void;
 }
 
-export function ReturnFileModal({ isOpen, onClose, fileId, onSuccess }: ReturnFileModalProps) {
+export function ReturnFileModal({ isOpen, onClose, fileId, movements, onSuccess }: ReturnFileModalProps) {
     const [returnTo, setReturnTo] = useState<string>('');
     const [reason, setReason] = useState<string>('needs_improvement');
     const [remarks, setRemarks] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Mock previous senders (in real app, fetch from history)
-    const previousSenders = MOCK_OFFICE_USERS.slice(0, 2);
+    // Previous senders derived from this file's actual movement history
+    const previousSenders = useMemo(() => {
+        const seen = new Map<string, UserSummary>();
+        for (const m of movements) {
+            if (m.fromUser) seen.set(m.fromUser.id, m.fromUser);
+        }
+        return Array.from(seen.values());
+    }, [movements]);
 
     const handleSubmit = async () => {
         if (!returnTo) {
@@ -33,13 +40,17 @@ export function ReturnFileModal({ isOpen, onClose, fileId, onSuccess }: ReturnFi
         }
 
         setIsSubmitting(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        toast.success('File returned successfully');
-        setIsSubmitting(false);
-        onSuccess();
-        onClose();
+        try {
+            const reasonLabel = { needs_improvement: 'Needs Improvement', incomplete: 'Incomplete', query: 'Query Raised', other: 'Other' }[reason] || reason;
+            await filesService.returnFile(fileId, returnTo, `[${reasonLabel}] ${remarks}`);
+            toast.success('File returned successfully');
+            onSuccess();
+            onClose();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to return file');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -65,7 +76,7 @@ export function ReturnFileModal({ isOpen, onClose, fileId, onSuccess }: ReturnFi
                         <option value="">Select User</option>
                         {previousSenders.map(user => (
                             <option key={user.id} value={user.id}>
-                                {user.name} ({user.role})
+                                {user.first_name} {user.last_name}
                             </option>
                         ))}
                     </select>

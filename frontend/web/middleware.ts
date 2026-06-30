@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Middleware for route-level access control
- * Protects Campus routes based on user roles
+ * Middleware for route-level access control.
+ * Protects Campus, Office, Admin, and Network routes based on user roles.
  */
 
-// Define role-based access for Campus routes
-const campusRouteAccess: Record<string, string[]> = {
+// Public index route for each protected vertical — visiting the bare
+// vertical root never requires a specific role.
+const publicVerticalRoots = ["/campus", "/office", "/admin", "/network"];
+
+// Define role-based access per route prefix. More specific prefixes should
+// be listed before their parents since the first match wins.
+const protectedRouteAccess: Record<string, string[]> = {
+  // Campus
   "/campus/students": ["super_admin", "org_admin", "manager"],
   "/campus/faculty": ["super_admin", "org_admin", "manager"],
   "/campus/attendance/calendar": ["super_admin", "org_admin"],
@@ -22,18 +28,35 @@ const campusRouteAccess: Record<string, string[]> = {
     "student",
   ],
   "/campus/results": ["super_admin", "org_admin", "student"],
+
+  // Office
+  "/office/admin": ["super_admin", "org_admin"],
+  "/office/team": ["super_admin", "org_admin", "manager"],
+  "/office/reports": ["super_admin", "org_admin", "manager"],
+  "/office/registry": ["super_admin", "org_admin", "manager", "staff"],
+  "/office/files": ["super_admin", "org_admin", "manager", "staff"],
+
+  // Admin (org-level settings/roles/departments — admins only)
+  "/admin": ["super_admin", "org_admin"],
+
+  // Network
+  "/network/admin": ["super_admin", "org_admin"],
 };
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only apply to Campus routes
-  if (!pathname.startsWith("/campus")) {
+  const matchedRoot = publicVerticalRoots.find((root) =>
+    pathname.startsWith(root),
+  );
+
+  // Only apply to the protected verticals listed above.
+  if (!matchedRoot) {
     return NextResponse.next();
   }
 
-  // Allow public campus routes
-  if (pathname === "/campus") {
+  // Allow visiting a vertical's own dashboard root unconditionally.
+  if (pathname === matchedRoot) {
     return NextResponse.next();
   }
 
@@ -42,11 +65,11 @@ export function middleware(request: NextRequest) {
   const userRole = request.cookies.get("user_role")?.value || "student";
 
   // Check if route requires specific roles
-  for (const [route, allowedRoles] of Object.entries(campusRouteAccess)) {
+  for (const [route, allowedRoles] of Object.entries(protectedRouteAccess)) {
     if (pathname.startsWith(route)) {
       if (!allowedRoles.includes(userRole)) {
-        // Redirect unauthorized users to campus dashboard
-        return NextResponse.redirect(new URL("/campus", request.url));
+        // Redirect unauthorized users to that vertical's dashboard
+        return NextResponse.redirect(new URL(matchedRoot, request.url));
       }
       break;
     }
@@ -57,5 +80,5 @@ export function middleware(request: NextRequest) {
 
 // Configure which routes this middleware applies to
 export const config = {
-  matcher: ["/campus/:path*"],
+  matcher: ["/campus/:path*", "/office/:path*", "/admin/:path*", "/network/:path*"],
 };

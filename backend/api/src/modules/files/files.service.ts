@@ -8,6 +8,11 @@ import { eq, desc, and } from "drizzle-orm";
 import { DRIZZLE } from "../../database/drizzle/database.module";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../database/drizzle/schema";
+import {
+  CreateFileDto,
+  ApproveFileDto,
+  RejectFileDto,
+} from "./dto";
 
 @Injectable()
 export class FilesService {
@@ -15,7 +20,7 @@ export class FilesService {
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
   ) {}
 
-  async create(userId: string, data: any) {
+  async create(userId: string, data: CreateFileDto) {
     return await this.db.transaction(async (tx) => {
       // Create the file
       const [newFile] = await tx
@@ -24,6 +29,10 @@ export class FilesService {
           file_number: data.file_number,
           subject: data.subject,
           description: data.description,
+          category: data.category,
+          security_level: data.securityLevel || "unclassified",
+          tags: data.tags || [],
+          due_date: data.dueDate,
           initiator_id: userId,
           current_user_id: userId,
           priority: data.priority || "normal",
@@ -67,6 +76,10 @@ export class FilesService {
   async findOne(id: string) {
     const file = await this.db.query.files.findFirst({
       where: eq(files.id, id),
+      with: {
+        initiator: true,
+        currentHolder: true,
+      },
     });
 
     if (!file) throw new NotFoundException("File not found");
@@ -75,11 +88,18 @@ export class FilesService {
     const notes = await this.db.query.noteSheets.findMany({
       where: eq(noteSheets.file_id, id),
       orderBy: [desc(noteSheets.created_at)],
+      with: {
+        user: true,
+      },
     });
 
     const movements = await this.db.query.fileMovements.findMany({
       where: eq(fileMovements.file_id, id),
       orderBy: [desc(fileMovements.created_at)],
+      with: {
+        fromUser: true,
+        toUser: true,
+      },
     });
 
     return { ...file, notes, movements };
@@ -149,6 +169,59 @@ export class FilesService {
     });
   }
 
+  async approveFile(fileId: string, userId: string, data: ApproveFileDto) {
+    return await this.db.transaction(async (tx) => {
+      const nextHolder = data.forwardTo || userId;
+
+      await tx
+        .update(files)
+        .set({
+          status: data.forwardTo ? "active" : "approved",
+          current_user_id: nextHolder,
+          updated_at: new Date(),
+        })
+        .where(eq(files.id, fileId));
+
+      const [movement] = await tx
+        .insert(fileMovements)
+        .values({
+          file_id: fileId,
+          from_user_id: userId,
+          to_user_id: nextHolder,
+          action: "approve",
+          remarks: data.remarks || "File approved",
+        })
+        .returning();
+
+      return movement;
+    });
+  }
+
+  async rejectFile(fileId: string, userId: string, data: RejectFileDto) {
+    return await this.db.transaction(async (tx) => {
+      await tx
+        .update(files)
+        .set({
+          status: "rejected",
+          updated_at: new Date(),
+        })
+        .where(eq(files.id, fileId));
+
+      const [movement] = await tx
+        .insert(fileMovements)
+        .values({
+          file_id: fileId,
+          from_user_id: userId,
+          to_user_id: userId,
+          action: "reject",
+          remarks: data.remarks,
+        })
+        .returning();
+
+      return movement;
+    });
+  }
+
   async closeFile(fileId: string, userId: string, remarks?: string) {
     return await this.db.transaction(async (tx) => {
       // Update file status to closed
@@ -176,13 +249,19 @@ export class FilesService {
     });
   }
 
-  async addNote(fileId: string, userId: string, content: string) {
+  async addNote(
+    fileId: string,
+    userId: string,
+    content: string,
+    isFinal?: boolean,
+  ) {
     const [note] = await this.db
       .insert(noteSheets)
       .values({
         file_id: fileId,
         user_id: userId,
         content,
+        is_final: isFinal ?? true,
       })
       .returning();
 

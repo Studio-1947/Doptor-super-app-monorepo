@@ -17,6 +17,8 @@ const priorityConfig = {
 
 const statusConfig = {
     active: { color: 'text-green-600 bg-green-100', label: 'Active' },
+    approved: { color: 'text-emerald-600 bg-emerald-100', label: 'Approved' },
+    rejected: { color: 'text-red-600 bg-red-100', label: 'Rejected' },
     closed: { color: 'text-slate-600 bg-slate-100', label: 'Closed' },
     archived: { color: 'text-slate-500 bg-slate-50', label: 'Archived' },
 };

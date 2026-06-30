@@ -11,8 +11,16 @@ import {
   Query,
 } from "@nestjs/common";
 import { CampusService } from "./campus.service";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { RolesGuard } from "../../common/guards/roles.guard";
+import {
+  CreateFacultyDto,
+  CreateStudentDto,
+  CreateCourseDto,
+  CreateDepartmentDto,
+  CreateAcademicYearDto,
+  UpdateClassDto,
+} from "./dto";
 
 @Controller("campus")
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,7 +40,7 @@ export class CampusController {
   }
 
   @Post("faculty")
-  createFaculty(@Body() body: any) {
+  createFaculty(@Body() body: CreateFacultyDto) {
     return this.campusService.createFaculty(body);
   }
 
@@ -54,7 +62,7 @@ export class CampusController {
   }
 
   @Post("students")
-  createStudent(@Body() body: any) {
+  createStudent(@Body() body: CreateStudentDto) {
     return this.campusService.createStudent(body);
   }
 
@@ -71,7 +79,7 @@ export class CampusController {
   }
 
   @Post("courses")
-  createCourse(@Body() body: any) {
+  createCourse(@Body() body: CreateCourseDto) {
     return this.campusService.createCourse(body);
   }
 
@@ -88,8 +96,20 @@ export class CampusController {
   }
 
   @Post("departments")
-  createDepartment(@Body() body: any) {
+  createDepartment(@Body() body: CreateDepartmentDto) {
     return this.campusService.createDepartment(body);
+  }
+
+  // --- Academic Years ---
+
+  @Get("academic-years")
+  getAcademicYears(@Query("organisation_id") organisationId: string) {
+    return this.campusService.getAcademicYears(organisationId);
+  }
+
+  @Post("academic-years")
+  createAcademicYear(@Body() body: CreateAcademicYearDto) {
+    return this.campusService.createAcademicYear(body);
   }
 
   // --- Classes & Attendance ---
@@ -152,7 +172,7 @@ export class CampusController {
     return this.campusService.enrollStudent(classId, body.studentId);
   }
   @Put("classes/:id")
-  updateClass(@Param("id") id: string, @Body() body: any) {
+  updateClass(@Param("id") id: string, @Body() body: UpdateClassDto) {
     return this.campusService.updateClass(id, body);
   }
 }

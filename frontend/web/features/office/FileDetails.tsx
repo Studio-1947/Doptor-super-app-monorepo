@@ -1,22 +1,17 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { X, Clock, User, AlertCircle } from 'lucide-react';
-import { Card, Button } from '@doptor/shared';
+import { useState, useEffect, useCallback } from 'react';
+import { X, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { Card } from '@doptor/shared';
 import { format } from 'date-fns';
-import {
-    OfficeFile,
-    getFileById,
-    getFileMovements,
-    getFileNotes,
-    NoteSheet,
-    FileMovement
-} from './office-mock.db';
+import { filesService, FileDetails as FileDetailsData } from '../../services/files.service';
+import { useAuth } from '../../contexts/AuthContext';
 import { FileMovementHistory } from './FileMovementHistory';
 import { NoteSheetEditor } from './NoteSheetEditor';
 import { FileActionPanel } from './FileActionPanel';
 import { ReturnFileModal } from './ReturnFileModal';
 import { ApproveRejectModal } from './ApproveRejectModal';
+import ForwardFileModal from './ForwardFileModal';
 import { toast } from 'sonner';
 
 interface FileDetailsProps {
@@ -26,36 +21,64 @@ interface FileDetailsProps {
 }
 
 export default function FileDetails({ fileId, onClose, onUpdate }: FileDetailsProps) {
-    // Current User Mock
-    const currentUserId = 'u1'; // Mock user
+    const { user } = useAuth();
+    const currentUserId = user?.id || '';
 
     const [activeTab, setActiveTab] = useState<'notes' | 'movements'>('notes');
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [file, setFile] = useState<FileDetailsData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Modals state
+    const [showForwardModal, setShowForwardModal] = useState(false);
     const [showReturnModal, setShowReturnModal] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
 
-    // Load Data
-    const file = useMemo(() => getFileById(fileId), [fileId, refreshTrigger]);
-    const movements = useMemo(() => getFileMovements(fileId), [fileId, refreshTrigger]);
-    const notes = useMemo(() => getFileNotes(fileId), [fileId, refreshTrigger]);
+    const loadFile = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            const data = await filesService.getFile(fileId);
+            setFile(data);
+        } catch (error) {
+            console.error('Failed to load file:', error);
+            setFile(null);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [fileId]);
+
+    useEffect(() => {
+        loadFile();
+    }, [loadFile]);
 
     const handleRefresh = () => {
-        setRefreshTrigger(prev => prev + 1);
+        loadFile();
         onUpdate();
     };
 
-    const handleForward = async () => {
-        // Simple forward simulation
-        toast.success("Opening forward dialog... (Simulated)");
+    const handleAddNote = async (content: string, isFinal: boolean) => {
+        await filesService.addNote(fileId, content, isFinal);
+        handleRefresh();
     };
 
-    const handleCloseFile = () => {
-        toast.success("File closed successfully (Simulated)");
-        onClose();
+    const handleCloseFile = async () => {
+        try {
+            await filesService.closeFile(fileId);
+            toast.success('File closed successfully');
+            handleRefresh();
+            onClose();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to close file');
+        }
     };
+
+    if (isLoading) {
+        return (
+            <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
+                <Loader2 className="animate-spin text-primary-600" size={32} />
+            </div>
+        );
+    }
 
     if (!file) {
         return (
@@ -77,22 +100,24 @@ export default function FileDetails({ fileId, onClose, onUpdate }: FileDetailsPr
                     <div>
                         <div className="flex items-center gap-3 mb-1">
                             <span className="font-mono text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                                #{file.fileNumber}
+                                #{file.file_number}
                             </span>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider 
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
                                 ${file.priority === 'urgent' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
                                     file.priority === 'immediate' ? 'bg-red-50 text-red-600 border border-red-100' :
                                         'bg-slate-100 text-slate-600 border border-slate-200'}`}>
                                 {file.priority}
                             </span>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider 
-                                ${file.securityLevel === 'confidential' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
-                                    'bg-slate-50 text-slate-500 border border-slate-100'}`}>
-                                {file.securityLevel}
-                            </span>
+                            {file.security_level && (
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+                                    ${file.security_level === 'confidential' || file.security_level === 'secret' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
+                                        'bg-slate-50 text-slate-500 border border-slate-100'}`}>
+                                    {file.security_level}
+                                </span>
+                            )}
                         </div>
                         <h2 className="text-xl font-bold text-slate-900">{file.subject}</h2>
-                        <p className="text-sm text-slate-500 mt-0.5">{file.category} • Created on {format(new Date(file.createdAt), 'MMM dd, yyyy')}</p>
+                        <p className="text-sm text-slate-500 mt-0.5">{file.category || 'Uncategorized'} • Created on {format(new Date(file.created_at), 'MMM dd, yyyy')}</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -135,12 +160,12 @@ export default function FileDetails({ fileId, onClose, onUpdate }: FileDetailsPr
                         <div className="flex-1 overflow-y-auto p-6 scrollbar-thin">
                             {activeTab === 'notes' ? (
                                 <NoteSheetEditor
-                                    initialNotes={notes}
+                                    initialNotes={file.notes}
                                     currentUserId={currentUserId}
-                                    onAddNote={handleRefresh}
+                                    onAddNote={handleAddNote}
                                 />
                             ) : (
-                                <FileMovementHistory movements={movements} />
+                                <FileMovementHistory movements={file.movements} />
                             )}
                         </div>
                     </div>
@@ -152,7 +177,7 @@ export default function FileDetails({ fileId, onClose, onUpdate }: FileDetailsPr
                         <FileActionPanel
                             file={file}
                             currentUserId={currentUserId}
-                            onForward={handleForward}
+                            onForward={() => setShowForwardModal(true)}
                             onReturn={() => setShowReturnModal(true)}
                             onApprove={() => setShowApproveModal(true)}
                             onReject={() => setShowRejectModal(true)}
@@ -172,15 +197,17 @@ export default function FileDetails({ fileId, onClose, onUpdate }: FileDetailsPr
                                         {file.description || 'No description provided.'}
                                     </p>
                                 </div>
-                                <div className="pt-3 border-t border-slate-100">
-                                    <div className="flex flex-wrap gap-2">
-                                        {file.tags.map(tag => (
-                                            <span key={tag} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full border border-slate-200">
-                                                #{tag}
-                                            </span>
-                                        ))}
+                                {!!file.tags?.length && (
+                                    <div className="pt-3 border-t border-slate-100">
+                                        <div className="flex flex-wrap gap-2">
+                                            {file.tags.map(tag => (
+                                                <span key={tag} className="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full border border-slate-200">
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         </Card>
                     </div>
@@ -188,10 +215,19 @@ export default function FileDetails({ fileId, onClose, onUpdate }: FileDetailsPr
             </div>
 
             {/* Modals */}
+            <ForwardFileModal
+                isOpen={showForwardModal}
+                onClose={() => setShowForwardModal(false)}
+                fileId={file.id}
+                currentSubject={file.subject}
+                onSuccess={handleRefresh}
+            />
+
             <ReturnFileModal
                 isOpen={showReturnModal}
                 onClose={() => setShowReturnModal(false)}
                 fileId={file.id}
+                movements={file.movements}
                 onSuccess={handleRefresh}
             />
 

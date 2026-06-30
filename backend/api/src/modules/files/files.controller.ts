@@ -7,16 +7,19 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiBody,
-} from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { FilesService } from "./files.service";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { RolesGuard } from "../auth/guards/roles.guard";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { RolesGuard } from "../../common/guards/roles.guard";
+import {
+  CreateFileDto,
+  ForwardFileDto,
+  ReturnFileDto,
+  CloseFileDto,
+  AddNoteDto,
+  ApproveFileDto,
+  RejectFileDto,
+} from "./dto";
 
 @ApiTags("Files (E-File System)")
 @ApiBearerAuth()
@@ -27,13 +30,7 @@ export class FilesController {
 
   @Post()
   @ApiOperation({ summary: "Initialize a new file (Dak)" })
-  @ApiBody({
-    schema: {
-      type: "object",
-      properties: { subject: { type: "string" }, priority: { type: "string" } },
-    },
-  })
-  create(@Request() req, @Body() body: any) {
+  create(@Request() req, @Body() body: CreateFileDto) {
     return this.filesService.create(req.user.userId, body);
   }
 
@@ -57,13 +54,11 @@ export class FilesController {
 
   @Post(":id/forward")
   @ApiOperation({ summary: "Forward a file to another user" })
-  @ApiBody({
-    schema: {
-      type: "object",
-      properties: { toUserId: { type: "string" }, remarks: { type: "string" } },
-    },
-  })
-  forwardFile(@Param("id") id: string, @Request() req, @Body() body: any) {
+  forwardFile(
+    @Param("id") id: string,
+    @Request() req,
+    @Body() body: ForwardFileDto,
+  ) {
     return this.filesService.forwardFile(
       id,
       req.user.userId,
@@ -74,13 +69,11 @@ export class FilesController {
 
   @Post(":id/return")
   @ApiOperation({ summary: "Return a file to the sender" })
-  @ApiBody({
-    schema: {
-      type: "object",
-      properties: { toUserId: { type: "string" }, remarks: { type: "string" } },
-    },
-  })
-  returnFile(@Param("id") id: string, @Request() req, @Body() body: any) {
+  returnFile(
+    @Param("id") id: string,
+    @Request() req,
+    @Body() body: ReturnFileDto,
+  ) {
     return this.filesService.returnFile(
       id,
       req.user.userId,
@@ -89,21 +82,44 @@ export class FilesController {
     );
   }
 
+  @Post(":id/approve")
+  @ApiOperation({ summary: "Approve a file, optionally forwarding it onward" })
+  approveFile(
+    @Param("id") id: string,
+    @Request() req,
+    @Body() body: ApproveFileDto,
+  ) {
+    return this.filesService.approveFile(id, req.user.userId, body);
+  }
+
+  @Post(":id/reject")
+  @ApiOperation({ summary: "Reject a file and close its workflow" })
+  rejectFile(
+    @Param("id") id: string,
+    @Request() req,
+    @Body() body: RejectFileDto,
+  ) {
+    return this.filesService.rejectFile(id, req.user.userId, body);
+  }
+
   @Post(":id/close")
   @ApiOperation({ summary: "Close/Finalize a file" })
-  @ApiBody({
-    schema: { type: "object", properties: { remarks: { type: "string" } } },
-  })
-  closeFile(@Param("id") id: string, @Request() req, @Body() body: any) {
+  closeFile(
+    @Param("id") id: string,
+    @Request() req,
+    @Body() body: CloseFileDto,
+  ) {
     return this.filesService.closeFile(id, req.user.userId, body.remarks);
   }
 
   @Post(":id/notes")
   @ApiOperation({ summary: "Add a note/remark to a file" })
-  @ApiBody({
-    schema: { type: "object", properties: { content: { type: "string" } } },
-  })
-  addNote(@Param("id") id: string, @Request() req, @Body() body: any) {
-    return this.filesService.addNote(id, req.user.userId, body.content);
+  addNote(@Param("id") id: string, @Request() req, @Body() body: AddNoteDto) {
+    return this.filesService.addNote(
+      id,
+      req.user.userId,
+      body.content,
+      body.isFinal,
+    );
   }
 }

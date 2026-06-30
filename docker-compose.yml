@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: doptor-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: doptor
+      POSTGRES_PASSWORD: doptor
+      POSTGRES_DB: doptor
+    ports:
+      - "5432:5432"
+    volumes:
+      - doptor-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U doptor -d doptor"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  doptor-postgres-data:

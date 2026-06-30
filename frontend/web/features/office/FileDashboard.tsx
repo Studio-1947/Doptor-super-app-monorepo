@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     FileText,
     Clock,
@@ -12,43 +12,64 @@ import {
 } from 'lucide-react';
 import { Card, Button } from '@doptor/shared';
 import { useRouter } from 'next/navigation';
-import { MOCK_FILES, OfficeFile } from './office-mock.db';
+import { filesService, File } from '../../services/files.service';
+import FileCreateModal from './FileCreateModal';
 
 export function FileDashboard() {
     const router = useRouter();
 
-    // Mock current user ID
-    const currentUserId = 'u1';
+    const [inbox, setInbox] = useState<File[]>([]);
+    const [outbox, setOutbox] = useState<File[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
-    const stats = useMemo(() => {
-        const total = MOCK_FILES.length;
-        const pending = MOCK_FILES.filter(f => f.status === 'pending').length;
-        const approved = MOCK_FILES.filter(f => f.status === 'approved').length;
-        const urgency = MOCK_FILES.filter(f => f.priority === 'urgent' || f.priority === 'immediate').length;
-
-        return { total, pending, approved, urgency };
-    }, []);
-
-    const recentFiles = useMemo(() => {
-        return [...MOCK_FILES]
-            .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-            .slice(0, 5);
-    }, []);
-
-    const getPriorityColor = (priority: OfficeFile['priority']) => {
-        switch (priority) {
-            case 'immediate': return 'bg-red-100 text-red-700 border-red-200';
-            case 'urgent': return 'bg-orange-100 text-orange-700 border-orange-200';
-            default: return 'bg-slate-100 text-slate-700 border-slate-200';
+    const loadFiles = async () => {
+        try {
+            setIsLoading(true);
+            const [inboxData, outboxData] = await Promise.all([
+                filesService.getInbox(),
+                filesService.getOutbox(),
+            ]);
+            setInbox(inboxData);
+            setOutbox(outboxData);
+        } catch (error) {
+            console.error('Failed to load files:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const getStatusColor = (status: OfficeFile['status']) => {
+    useEffect(() => {
+        loadFiles();
+    }, []);
+
+    const allFiles = useMemo(() => {
+        const map = new Map<string, File>();
+        for (const f of [...inbox, ...outbox]) map.set(f.id, f);
+        return Array.from(map.values());
+    }, [inbox, outbox]);
+
+    const stats = useMemo(() => {
+        const total = allFiles.length;
+        const pending = allFiles.filter(f => f.status === 'active').length;
+        const approved = allFiles.filter(f => f.status === 'approved').length;
+        const urgency = allFiles.filter(f => f.priority === 'urgent' || f.priority === 'immediate').length;
+
+        return { total, pending, approved, urgency };
+    }, [allFiles]);
+
+    const recentFiles = useMemo(() => {
+        return [...allFiles]
+            .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+            .slice(0, 5);
+    }, [allFiles]);
+
+    const getStatusColor = (status: File['status']) => {
         switch (status) {
             case 'approved': return 'bg-emerald-100 text-emerald-700';
             case 'rejected': return 'bg-red-100 text-red-700';
-            case 'returned': return 'bg-amber-100 text-amber-700';
             case 'closed': return 'bg-slate-100 text-slate-700';
+            case 'archived': return 'bg-slate-100 text-slate-700';
             default: return 'bg-blue-100 text-blue-700';
         }
     };
@@ -71,7 +92,7 @@ export function FileDashboard() {
                     </Button>
                     <Button
                         variant="primary"
-                        onClick={() => router.push('/office/create')}
+                        onClick={() => setShowCreateModal(true)}
                         className="gap-2"
                     >
                         <Plus size={18} />
@@ -124,7 +145,7 @@ export function FileDashboard() {
             </div>
 
             {/* Recent Activity */}
-            < div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
                     <Card className="border-slate-200 overflow-hidden h-full">
                         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
@@ -134,38 +155,44 @@ export function FileDashboard() {
                             </Button>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-50 text-slate-500 font-medium">
-                                    <tr>
-                                        <th className="px-4 py-3">File Number</th>
-                                        <th className="px-4 py-3">Subject</th>
-                                        <th className="px-4 py-3">Status</th>
-                                        <th className="px-4 py-3">Last Updated</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {recentFiles.map(file => (
-                                        <tr
-                                            key={file.id}
-                                            className="hover:bg-slate-50 cursor-pointer transition-colors"
-                                            onClick={() => router.push(`/office/files/${file.id}`)}
-                                        >
-                                            <td className="px-4 py-3 font-medium text-slate-900">{file.fileNumber}</td>
-                                            <td className="px-4 py-3 max-w-[200px] truncate text-slate-600">
-                                                {file.subject}
-                                            </td>
-                                            <td className="px-4 py-3">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(file.status)}`}>
-                                                    {file.status.charAt(0).toUpperCase() + file.status.slice(1)}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-slate-500">
-                                                {new Date(file.updatedAt).toLocaleDateString()}
-                                            </td>
+                            {isLoading ? (
+                                <div className="p-8 text-center text-slate-400">Loading...</div>
+                            ) : recentFiles.length === 0 ? (
+                                <div className="p-8 text-center text-slate-400">No files yet</div>
+                            ) : (
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-slate-50 text-slate-500 font-medium">
+                                        <tr>
+                                            <th className="px-4 py-3">File Number</th>
+                                            <th className="px-4 py-3">Subject</th>
+                                            <th className="px-4 py-3">Status</th>
+                                            <th className="px-4 py-3">Last Updated</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {recentFiles.map(file => (
+                                            <tr
+                                                key={file.id}
+                                                className="hover:bg-slate-50 cursor-pointer transition-colors"
+                                                onClick={() => router.push(`/office/files/${file.id}`)}
+                                            >
+                                                <td className="px-4 py-3 font-medium text-slate-900">{file.file_number}</td>
+                                                <td className="px-4 py-3 max-w-[200px] truncate text-slate-600">
+                                                    {file.subject}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(file.status)}`}>
+                                                        {file.status.charAt(0).toUpperCase() + file.status.slice(1)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-slate-500">
+                                                    {new Date(file.updated_at).toLocaleDateString()}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
                     </Card>
                 </div>
@@ -188,7 +215,7 @@ export function FileDashboard() {
                                         <span className="text-xs text-slate-500">Files pending your action</span>
                                     </div>
                                 </div>
-                                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">3</span>
+                                <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">{inbox.length}</span>
                             </button>
 
                             <button
@@ -204,12 +231,18 @@ export function FileDashboard() {
                                         <span className="text-xs text-slate-500">Files initiated by you</span>
                                     </div>
                                 </div>
-                                <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-full">12</span>
+                                <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-full">{outbox.length}</span>
                             </button>
                         </div>
                     </Card>
                 </div>
             </div>
+
+            <FileCreateModal
+                isOpen={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onSuccess={loadFiles}
+            />
         </div>
     );
 }

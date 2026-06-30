@@ -10,10 +10,10 @@ import {
     Share2
 } from 'lucide-react';
 import { Card, Button } from '@doptor/shared';
-import { OfficeFile, getUserName } from './office-mock.db';
+import { File } from '../../services/files.service';
 
 interface FileActionPanelProps {
-    file: OfficeFile;
+    file: File;
     currentUserId: string;
     onForward: () => void;
     onReturn: () => void;
@@ -34,7 +34,7 @@ export function FileActionPanel({
     className = ''
 }: FileActionPanelProps) {
     // Check if current user is the holder
-    const isHolder = file.currentHolderId === currentUserId;
+    const isHolder = file.current_user_id === currentUserId;
     const isClosed = file.status === 'closed';
 
     if (!isHolder || isClosed) {
@@ -54,7 +54,7 @@ export function FileActionPanel({
                     {isClosed ? (
                         <p>This file is closed and archived.</p>
                     ) : (
-                        <p>Currently with <span className="font-semibold text-slate-900">{getUserName(file.currentHolderId)}</span></p>
+                        <p>Currently with <span className="font-semibold text-slate-900">{file.currentHolder ? `${file.currentHolder.first_name} ${file.currentHolder.last_name}` : 'Unknown'}</span></p>
                     )}
                 </div>
             </Card>

@@ -22,6 +22,20 @@
       "when": 1771226178075,
       "tag": "0002_exotic_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1782813968869,
+      "tag": "0003_strong_warhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1782815404547,
+      "tag": "0004_whole_smiling_tiger",
+      "breakpoints": true
     }
   ]
 }
