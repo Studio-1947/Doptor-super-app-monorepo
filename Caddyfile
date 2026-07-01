@@ -1,0 +1,13 @@
+# Replace the domains below with your real ones.
+# Caddy automatically obtains + renews Let's Encrypt certificates for these hosts.
+# Websockets (socket.io) are proxied transparently — no extra config needed.
+
+app.example.com {
+	encode gzip
+	reverse_proxy web:3000
+}
+
+api.example.com {
+	encode gzip
+	reverse_proxy api:5000
+}
