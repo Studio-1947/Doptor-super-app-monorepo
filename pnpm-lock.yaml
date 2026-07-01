@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      only-allow:
+        specifier: ^1.2.1
+        version: 1.2.2
       prettier:
         specifier: latest
         version: 3.9.4
@@ -4996,6 +4999,10 @@ packages:
     resolution: {integrity: sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg==}
     engines: {node: '>=6'}
 
+  only-allow@1.2.2:
+    resolution: {integrity: sha512-uxyNYDsCh5YIJ780G7hC5OHjVUr9reHsbZNMM80L9tZlTpb3hUzb36KXgW4ZUGtJKQnGA3xegmWg1BxhWV0jJA==}
+    hasBin: true
+
   open@6.4.0:
     resolution: {integrity: sha512-IFenVPgF70fSm1keSd2iDBIDIBZkroLeuffXq+wKTzTJlBpesFWojV9lb8mzOfaAzM1sr7HQHuO0vtV0zYekGg==}
     engines: {node: '>=8'}
@@ -6179,6 +6186,10 @@ packages:
 
   which-module@2.0.1:
     resolution: {integrity: sha512-iBdZ57RDvnOR9AGBhML2vFZf7h8vmBjhoaZqODJBFWHVtKkDmKuHai3cx5PgVMrX5YDNp27AofYbAwctSS+vhQ==}
+
+  which-pm-runs@1.1.0:
+    resolution: {integrity: sha512-n1brCuqClxfFfq/Rb0ICg9giSZqCS+pLtccdag6C2HyufBrh3fBOiy9nb6ggRMvWOVH5GrdJskj5iGTZNxd7SA==}
+    engines: {node: '>=4'}
 
   which-typed-array@1.1.22:
     resolution: {integrity: sha512-fvO4ExWMFsqyhG3AiPAObMuY1lxaqgYcxbc49CNdWDDECOJNgQyvsOWVwbZc+qf3rzRtxojBK+CMEv0Ld5CYpw==}
@@ -11969,6 +11980,10 @@ snapshots:
     dependencies:
       mimic-fn: 2.1.0
 
+  only-allow@1.2.2:
+    dependencies:
+      which-pm-runs: 1.1.0
+
   open@6.4.0:
     dependencies:
       is-wsl: 1.1.0
@@ -13343,6 +13358,8 @@ snapshots:
       is-weakset: 2.0.4
 
   which-module@2.0.1: {}
+
+  which-pm-runs@1.1.0: {}
 
   which-typed-array@1.1.22:
     dependencies:

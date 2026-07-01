@@ -2,6 +2,7 @@
   "name": "doptor-super-app",
   "private": true,
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
@@ -9,6 +10,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
+    "only-allow": "^1.2.1",
     "turbo": "latest",
     "prettier": "latest",
     "react": "^18.2.0",
