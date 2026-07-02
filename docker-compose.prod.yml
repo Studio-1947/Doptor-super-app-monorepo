@@ -22,6 +22,9 @@ services:
       dockerfile: backend/api/Dockerfile
     container_name: doptor-api
     restart: unless-stopped
+    # Bound to localhost only; the host nginx reverse-proxies to it.
+    ports:
+      - "127.0.0.1:5000:5000"
     environment:
       NODE_ENV: production
       PORT: 5000
@@ -47,25 +50,11 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: doptor-web
     restart: unless-stopped
-    depends_on:
-      - api
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: doptor-caddy
-    restart: unless-stopped
+    # Bound to localhost only; the host nginx reverse-proxies to it.
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
+      - "127.0.0.1:3000:3000"
     depends_on:
-      - web
       - api
 
 volumes:
   doptor-postgres-data:
-  caddy-data:
-  caddy-config:
