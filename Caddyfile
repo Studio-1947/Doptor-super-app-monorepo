@@ -1,13 +1,13 @@
-# Replace the domains below with your real ones.
 # Caddy automatically obtains + renews Let's Encrypt certificates for these hosts.
 # Websockets (socket.io) are proxied transparently — no extra config needed.
+# DuckDNS resolves api.doptor-dev.duckdns.org to the same IP automatically.
 
-app.example.com {
+doptor-dev.duckdns.org {
 	encode gzip
 	reverse_proxy web:3000
 }
 
-api.example.com {
+api.doptor-dev.duckdns.org {
 	encode gzip
 	reverse_proxy api:5000
 }
