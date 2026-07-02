@@ -26,6 +26,8 @@ COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 RUN pnpm install --frozen-lockfile
 
 COPY --from=pruner /app/out/full/ .
+# Root tsconfig is referenced by web/tsconfig.json but not included by turbo prune.
+COPY --from=pruner /app/tsconfig.base.json ./tsconfig.base.json
 
 # NEXT_PUBLIC_* vars are inlined at build time, so they must be present here.
 ARG NEXT_PUBLIC_API_URL
