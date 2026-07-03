@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Param,
+  Query,
   UseGuards,
   Request,
 } from "@nestjs/common";
@@ -11,6 +12,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { FilesService } from "./files.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { PermissionsGuard } from "../../common/guards/permissions.guard";
+import { Permissions } from "../../common/decorators/permissions.decorator";
 import {
   CreateFileDto,
   ForwardFileDto,
@@ -31,19 +34,41 @@ export class FilesController {
   @Post()
   @ApiOperation({ summary: "Initialize a new file (Dak)" })
   create(@Request() req, @Body() body: CreateFileDto) {
-    return this.filesService.create(req.user.userId, body);
+    return this.filesService.create(
+      req.user.id,
+      req.user.organisation_id,
+      body,
+    );
   }
 
   @Get("inbox")
   @ApiOperation({ summary: "Get files in the user's inbox" })
   getInbox(@Request() req) {
-    return this.filesService.getInbox(req.user.userId);
+    return this.filesService.getInbox(req.user.id);
   }
 
   @Get("outbox")
   @ApiOperation({ summary: "Get files in the user's outbox" })
   getOutbox(@Request() req) {
-    return this.filesService.getOutbox(req.user.userId);
+    return this.filesService.getOutbox(req.user.id);
+  }
+
+  @Get("registry")
+  @UseGuards(PermissionsGuard)
+  @Permissions("read:documents")
+  @ApiOperation({
+    summary: "Get the full organisation-wide file registry (searchable)",
+  })
+  getRegistry(
+    @Request() req,
+    @Query("search") search?: string,
+    @Query("status") status?: string,
+  ) {
+    return this.filesService.getRegistry(
+      req.user.organisation_id,
+      search,
+      status,
+    );
   }
 
   @Get(":id")
@@ -61,7 +86,7 @@ export class FilesController {
   ) {
     return this.filesService.forwardFile(
       id,
-      req.user.userId,
+      req.user.id,
       body.toUserId,
       body.remarks,
     );
@@ -76,7 +101,7 @@ export class FilesController {
   ) {
     return this.filesService.returnFile(
       id,
-      req.user.userId,
+      req.user.id,
       body.toUserId,
       body.remarks,
     );
@@ -89,7 +114,7 @@ export class FilesController {
     @Request() req,
     @Body() body: ApproveFileDto,
   ) {
-    return this.filesService.approveFile(id, req.user.userId, body);
+    return this.filesService.approveFile(id, req.user.id, body);
   }
 
   @Post(":id/reject")
@@ -99,7 +124,7 @@ export class FilesController {
     @Request() req,
     @Body() body: RejectFileDto,
   ) {
-    return this.filesService.rejectFile(id, req.user.userId, body);
+    return this.filesService.rejectFile(id, req.user.id, body);
   }
 
   @Post(":id/close")
@@ -109,7 +134,7 @@ export class FilesController {
     @Request() req,
     @Body() body: CloseFileDto,
   ) {
-    return this.filesService.closeFile(id, req.user.userId, body.remarks);
+    return this.filesService.closeFile(id, req.user.id, body.remarks);
   }
 
   @Post(":id/notes")
@@ -117,7 +142,7 @@ export class FilesController {
   addNote(@Param("id") id: string, @Request() req, @Body() body: AddNoteDto) {
     return this.filesService.addNote(
       id,
-      req.user.userId,
+      req.user.id,
       body.content,
       body.isFinal,
     );

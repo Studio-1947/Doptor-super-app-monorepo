@@ -84,8 +84,9 @@ Key design decisions this implies:
       linked to the new "Organisation Admin" role inside the existing transaction.
 - [x] **O-3** ~~Add invited/active status to `users`~~ — done 2026-07-03: migration
       `0005_ordinary_salo.sql` adds `status`, `invitation_token`, `invitation_expires`,
-      `invited_by`. **Still needs to be applied** (`npm run db:migrate` from
-      `backend/api`) — not run yet, no local Postgres was available during implementation.
+      `invited_by`. **Applied and verified end-to-end** 2026-07-03 (register-org →
+      invite → accept-invite → login round trip, plus cross-org IDOR/hijack edge cases,
+      all confirmed against a live local Postgres).
 - [ ] **O-4** Build "choose verticals" step into the signup/first-login flow, writing to
       `organisations.enabled_verticals` (currently only settable via raw org update, not
       surfaced in onboarding UI).
@@ -110,11 +111,83 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 - [x] **C-1** ~~`campus.service.ts:71,91` fake password hash~~ — fixed 2026-07-03 via O-6
       (faculty creation now goes through the real invite flow; no placeholder hashes left).
 - [x] **C-2** ~~`campus.service.ts:166` `password_hash: "temp"`~~ — fixed 2026-07-03 via O-6.
-- [ ] **C-3** 🔴 `communication.controller.ts:31` — `getConversations` hardcodes
-      `const userId = "user-uuid-placeholder"` instead of reading `req.user.id`. Breaks
-      the endpoint for every real user despite `@UseGuards(JwtAuthGuard)`. **Unrelated to
-      the invite work — still open.**
+- [x] **C-3** ~~`communication.controller.ts:31` hardcoded placeholder userId~~ — fixed
+      2026-07-03: `getConversations` now reads `req.user.id`. Note: the WebSocket gateway
+      (`communication.gateway.ts`) still has no socket authentication at all — `handleConnection`
+      has a bare "Authentication logic here" comment, and `sendMessage` trusts a
+      client-supplied `payload.userId` rather than an authenticated identity, so any
+      connected client can send messages as any user. Tracked as new item **M-6** below,
+      out of scope for this fix (real-time auth is a bigger design decision).
 - [x] **C-4** ~~`registerOrganisation` grants zero permissions~~ — fixed 2026-07-03 via O-2.
+- [x] **C-5** ~~`registerOrganisation` audit-log/token-generation ran inside the DB
+      transaction using the untransacted `this.db` handle~~ — found + fixed 2026-07-03
+      while doing end-to-end verification: `createAuditLog`/`generateTokens` (inserts
+      into `audit_logs`/`refresh_tokens`) ran *inside* `db.transaction(async (tx) => ...)`
+      but via `this.db` instead of `tx`, so they referenced a user row not yet committed
+      and always threw an FK-violation 500. `auth.service.ts` now returns
+      `{newUser, newOrg}` from the transaction and runs those side effects after it
+      commits. Pre-existing bug, unrelated to the invite work, but blocked verifying it.
+- [x] **C-6** ~~`JwtModule.register()` read `process.env.JWT_SECRET` before
+      `ConfigModule` loaded `.env`~~ — found + fixed 2026-07-03: `AuthModule`'s
+      `JwtModule.register({secret: process.env.JWT_SECRET})` is evaluated at import time
+      (before `AppModule`'s `ConfigModule.forRoot()` runs), so it always silently signed
+      tokens with the hardcoded fallback secret, while `JwtStrategy` (instantiated later,
+      at DI-resolution time) verified against the real `.env` value — every authenticated
+      request 401'd. Only masked in production because docker-compose injects
+      `JWT_SECRET` as a real OS env var before Node starts. Fixed by switching to
+      `JwtModule.registerAsync()` + `ConfigService`, matching `DatabaseModule`'s existing
+      pattern. Pre-existing, unrelated to the invite work, but silently broke all local
+      dev auth until now.
+
+### Newly found + fixed 2026-07-03, round 2 (recheck of H-3/H-5/H-6)
+
+- [x] **C-9** ~~`GET /files/registry` had no authorization guard~~ — fixed: any
+      authenticated org member (regardless of role/permissions) could read every file
+      in the org, including `security_level: confidential/secret` ones, since
+      `FilesController`'s class-level `RolesGuard` is a no-op without an explicit
+      `@Roles()`/`@Permissions()` on the handler. Gated behind
+      `@Permissions("read:documents")` (reusing the closest existing permission
+      resource — a dedicated `files` permission resource doesn't exist yet, tracked as
+      **M-7** below). Verified: org admin gets 200, a freshly invited member with no
+      role assigned gets a clean 403.
+- [x] **C-10** ~~`files.organisation_id` migration would fail against any database with
+      existing `files` rows~~ — fixed: the auto-generated migration added the column as
+      `NOT NULL` with no default/backfill. This project's actual deploy process runs
+      `drizzle-kit push:pg` directly against the live schema (see `docs/DEPLOYMENT.md`),
+      not the versioned SQL files, so a `NOT NULL` add would prompt/fail against a
+      populated `files` table. Made the column nullable at the schema level instead
+      (`files.schema.ts`) — the service layer always sets it on every insert, so it's
+      required in practice without risking a broken deploy. Migration `0007` reflects
+      the correction.
+- [x] **C-11** ~~Non-deterministic "which role" a multi-role user shows as~~ — fixed:
+      `users.service.ts findAll`'s role-lookup query had no `ORDER BY`, so which role
+      won the dedup for a user with 2+ roles was unspecified per Postgres, causing the
+      office/team and office/admin "Admins" stat to flap between runs on identical data.
+      Now ordered by `userRoles.created_at` (earliest-assigned role wins, deterministic).
+- [x] Consolidated three independently-defined "safe user columns" constants
+      (`files.service.ts`, `campus.service.ts`, `communication.service.ts` each had their
+      own slightly-different version) into one shared
+      `backend/api/src/common/constants/safe-user-columns.ts` — multiple review passes
+      flagged the duplication as a drift risk (a future sensitive column added to `users`
+      would need updating in 3+ places to stay leak-free).
+- [x] Fixed a redundant double-fetch in `office/admin/page.tsx` (fetched the full org
+      user list twice — once unfiltered, once for `status=invited` — to derive two
+      counts); now fetches once and derives both client-side, matching the pattern
+      already used correctly on the team page. Also removed an unused `ArrowRight` import
+      left over from the old mocked page.
+- [ ] **M-7** 🟡 No dedicated `files` permission resource exists in
+      `DEFAULT_PERMISSIONS` — the new registry guard (C-9) reuses `read:documents` as
+      the closest fit. A real e-Dak-specific permission set (e.g. `files:read`,
+      `files:approve`) would let file-level access be tuned independently of the
+      generic `documents` module.
+- [ ] **M-8** 🟡 `GET /files/registry` has no pagination (`db.query.files.findMany`
+      with no `.limit()`) — a new, unbounded-result-set endpoint. Fine at current scale,
+      but will need `limit`/`offset` or cursor pagination before an org accumulates
+      thousands of files.
+- [ ] **M-9** 🟡 `files.service.ts getRegistry`'s `search` param uses raw `like()`
+      against user input — Postgres `LIKE` wildcard characters (`%`, `_`) in a search
+      term aren't escaped, so a search containing a literal `_` can match more broadly
+      than intended. Minor UX correctness issue, not a security risk.
 
 ### High — required for "fully functional" campus/office
 
@@ -125,15 +198,26 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       just a JSON blob per class); `app/campus/timetable/page.tsx` is a dead route
       (`redirect('/campus')`) despite a working `features/campus/TimeTable.tsx`
       component that's never mounted.
-- [ ] **H-3** 🟠 Wire **office/admin** page to real data (roles/permissions/departments
-      modules already exist) — currently fully hardcoded stats/policies table.
+- [x] **H-3** ~~Wire office/admin page to real data~~ — done 2026-07-03: stats
+      (departments, roles, members, pending invites) and a Roles & Permissions table are
+      now real, sourced from `departmentService`/`roleService`/`usersService`. The
+      fictional "policies" concept had no backing schema anywhere — replaced entirely
+      rather than left half-mocked; a real policy engine (if wanted) is new scope, not
+      tracked here yet.
 - [ ] **H-4** 🟠 Wire **office/reports** page to real data — currently fully hardcoded,
       no backend report-generation endpoints exist either (only unrelated
       `analytics/overview`).
-- [ ] **H-5** 🟠 Wire **office/team** page to real data (reuse `users`/`roles` modules) —
-      currently hardcoded fake names ("John Doe", "Jane Smith").
-- [ ] **H-6** 🟠 Build **office/registry** — currently an explicit `<ComingSoon>` stub,
-      zero implementation either side.
+- [x] **H-5** ~~Wire office/team page to real data~~ — done 2026-07-03: roster now comes
+      from `usersService.list({organisationId})` (extended backend `findAll` to join
+      department + primary role), stats computed from real data, resend-invite wired
+      into each pending row.
+- [x] **H-6** ~~Build office/registry~~ — done 2026-07-03: interpreted as an
+      organisation-wide searchable ledger of every file (e-Dak) across departments,
+      consistent with the already-built `files` e-Dak system. Added `organisation_id` to
+      the `files` table (was missing — files had no direct tenant scoping at all, only
+      reachable indirectly via `initiator_id → users.organisation_id`), a new
+      `GET /files/registry` endpoint, and a real frontend page with search/status
+      filtering. Verified end-to-end (create file → appears in registry, org-scoped).
 - [ ] **H-7** 🟠 Add real file/attachment upload (multer + storage backend) to
       `documents` and `files` modules — both are metadata-only today, so the e-Dak
       file-movement system can't actually carry an attached document.
@@ -144,6 +228,26 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 - [ ] **H-9** 🟠 Wire **workflows** and **documents** frontends similarly — no
       `services/workflows.service.ts` or `documents.service.ts` exist despite real
       backend CRUD.
+
+### Newly found + fixed 2026-07-03 (while building H-3/H-5/H-6)
+
+- [x] **C-7** ~~`req.user.userId` vs `req.user.id` mismatch~~ — fixed: `JwtStrategy`
+      only ever returns `id` (no `userId` key), but `campus.controller.ts` and
+      `files.controller.ts` read `req.user.userId` throughout, so every one of those
+      handlers (`getMyClasses`, `markAttendance`, `files/inbox`, `files/:id/forward`,
+      etc.) always received `undefined` — silently broken end-to-end for as long as
+      those modules have existed. Mechanically replaced across both files.
+- [x] **C-8** ~~Password hashes and auth tokens leaked in API responses~~ — fixed:
+      several relational queries used Drizzle's `with: { relation: true }` shorthand
+      (or queried `users` directly with no column restriction), which returns **every**
+      column including `password_hash`, `invitation_token`, `password_reset_token`, etc.
+      Found live while testing the new file registry endpoint. Fixed in
+      `files.service.ts` (`initiator`/`currentHolder`/`fromUser`/`toUser`/note `user`
+      relations), `campus.service.ts` (`getFacultyList`/`getFaculty`/`getStudentList`/
+      `getStudent` — direct `users` queries, plus the `student` relation in attendance
+      views), and `communication.service.ts` (`sender` relation) — all now scoped to a
+      public-safe column set. This was live in production for campus faculty/student
+      list endpoints before this fix.
 
 ### Medium — real gaps, not blocking core flows
 
@@ -158,8 +262,12 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 - [ ] **M-4** 🟡 Build a real **notifications** backend — no module/table exists;
       `features/notifications/notifications-mock.db.ts` is entirely self-contained mock.
 - [ ] **M-5** 🟡 `features/communication/CommunicationHub.tsx` also has mock-data
-      fallbacks layered on top of C-3 — once C-3 is fixed, verify the frontend actually
-      calls the real endpoint end-to-end (mock removal + live test).
+      fallbacks layered on top of C-3 — now that C-3 is fixed, verify the frontend
+      actually calls the real endpoint end-to-end (mock removal + live test).
+- [ ] **M-6** 🟡 `communication.gateway.ts` has no WebSocket authentication —
+      `handleConnection` never verifies the socket's identity, and `sendMessage` trusts a
+      client-supplied `payload.userId` instead of one derived from an authenticated
+      session, so any connected client can send messages impersonating any user.
 
 ### Low / cleanup
 

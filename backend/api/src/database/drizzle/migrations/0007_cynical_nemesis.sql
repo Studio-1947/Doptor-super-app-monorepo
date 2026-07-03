@@ -1,0 +1,1 @@
+ALTER TABLE "files" ALTER COLUMN "organisation_id" DROP NOT NULL;

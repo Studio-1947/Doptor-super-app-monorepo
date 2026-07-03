@@ -4,7 +4,7 @@ import {
   fileMovements,
   noteSheets,
 } from "../../database/drizzle/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, like, or } from "drizzle-orm";
 import { DRIZZLE } from "../../database/drizzle/database.module";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../database/drizzle/schema";
@@ -13,6 +13,7 @@ import {
   ApproveFileDto,
   RejectFileDto,
 } from "./dto";
+import { USER_SUMMARY_COLUMNS } from "../../common/constants/safe-user-columns";
 
 @Injectable()
 export class FilesService {
@@ -20,7 +21,7 @@ export class FilesService {
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
   ) {}
 
-  async create(userId: string, data: CreateFileDto) {
+  async create(userId: string, organisationId: string, data: CreateFileDto) {
     return await this.db.transaction(async (tx) => {
       // Create the file
       const [newFile] = await tx
@@ -35,6 +36,7 @@ export class FilesService {
           due_date: data.dueDate,
           initiator_id: userId,
           current_user_id: userId,
+          organisation_id: organisationId,
           priority: data.priority || "normal",
         })
         .returning();
@@ -68,7 +70,7 @@ export class FilesService {
       where: eq(files.current_user_id, userId),
       orderBy: [desc(files.updated_at)],
       with: {
-        initiator: true,
+        initiator: { columns: USER_SUMMARY_COLUMNS },
       },
     });
   }
@@ -77,8 +79,8 @@ export class FilesService {
     const file = await this.db.query.files.findFirst({
       where: eq(files.id, id),
       with: {
-        initiator: true,
-        currentHolder: true,
+        initiator: { columns: USER_SUMMARY_COLUMNS },
+        currentHolder: { columns: USER_SUMMARY_COLUMNS },
       },
     });
 
@@ -89,7 +91,7 @@ export class FilesService {
       where: eq(noteSheets.file_id, id),
       orderBy: [desc(noteSheets.created_at)],
       with: {
-        user: true,
+        user: { columns: USER_SUMMARY_COLUMNS },
       },
     });
 
@@ -97,8 +99,8 @@ export class FilesService {
       where: eq(fileMovements.file_id, id),
       orderBy: [desc(fileMovements.created_at)],
       with: {
-        fromUser: true,
-        toUser: true,
+        fromUser: { columns: USER_SUMMARY_COLUMNS },
+        toUser: { columns: USER_SUMMARY_COLUMNS },
       },
     });
 
@@ -286,10 +288,40 @@ export class FilesService {
       where: (files, { inArray }) => inArray(files.id, fileIds),
       orderBy: [desc(files.updated_at)],
       with: {
-        initiator: true,
+        initiator: { columns: USER_SUMMARY_COLUMNS },
       },
     });
 
     return outboxFiles;
+  }
+
+  async getRegistry(
+    organisationId: string,
+    search?: string,
+    status?: string,
+  ) {
+    const conditions = [eq(files.organisation_id, organisationId)];
+
+    if (status) {
+      conditions.push(eq(files.status, status));
+    }
+
+    if (search) {
+      conditions.push(
+        or(
+          like(files.subject, `%${search}%`),
+          like(files.file_number, `%${search}%`),
+        )!,
+      );
+    }
+
+    return await this.db.query.files.findMany({
+      where: and(...conditions),
+      orderBy: [desc(files.updated_at)],
+      with: {
+        initiator: { columns: USER_SUMMARY_COLUMNS },
+        currentHolder: { columns: USER_SUMMARY_COLUMNS },
+      },
+    });
   }
 }

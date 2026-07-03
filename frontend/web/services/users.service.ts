@@ -7,6 +7,8 @@ export interface UserListItem {
   email: string;
   status?: "invited" | "active";
   role?: { id: string; name: string };
+  department?: { name: string };
+  created_at?: string;
 }
 
 export interface InviteUserPayload {

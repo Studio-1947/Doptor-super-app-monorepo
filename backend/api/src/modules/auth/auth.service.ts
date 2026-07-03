@@ -146,7 +146,7 @@ export class AuthService {
       Date.now() + EMAIL_VERIFICATION_EXPIRY,
     );
 
-    return await this.db.transaction(async (tx) => {
+    const { newUser, newOrg } = await this.db.transaction(async (tx) => {
       // 1. Create Organisation
       const [newOrg] = await tx
         .insert(organisations)
@@ -211,38 +211,45 @@ export class AuthService {
         })),
       );
 
-      // Send verification email
-      try {
-        await this.emailService.sendVerificationEmail(
-          newUser.email,
-          email_verification_token,
-        );
-      } catch (error) {
-        console.error("Failed to send verification email:", error);
-      }
-
-      // Log audit event
-      await this.createAuditLog(
-        newUser.id,
-        "register_organisation",
-        "organisation",
-        {
-          email: newUser.email,
-          organisation_name: newOrg.name,
-        },
-      );
-
-      // Generate tokens
-      const tokens = await this.generateTokens(newUser.id, newUser.email);
-
-      return {
-        user: newUser,
-        organisation: newOrg,
-        ...tokens,
-        message:
-          "Registration successful. Please check your email to verify your account.",
-      };
+      return { newUser, newOrg };
     });
+
+    // The steps below touch tables (audit_logs, refresh_tokens) via `this.db`
+    // rather than the transaction handle above, so they must run after the
+    // transaction has committed — otherwise the newly inserted user isn't
+    // visible yet and their foreign keys fail.
+
+    // Send verification email
+    try {
+      await this.emailService.sendVerificationEmail(
+        newUser.email,
+        email_verification_token,
+      );
+    } catch (error) {
+      console.error("Failed to send verification email:", error);
+    }
+
+    // Log audit event
+    await this.createAuditLog(
+      newUser.id,
+      "register_organisation",
+      "organisation",
+      {
+        email: newUser.email,
+        organisation_name: newOrg.name,
+      },
+    );
+
+    // Generate tokens
+    const tokens = await this.generateTokens(newUser.id, newUser.email);
+
+    return {
+      user: newUser,
+      organisation: newOrg,
+      ...tokens,
+      message:
+        "Registration successful. Please check your email to verify your account.",
+    };
   }
 
   async login(loginDto: LoginDto, ipAddress?: string, userAgent?: string) {

@@ -8,6 +8,7 @@ import {
   date,
 } from "drizzle-orm/pg-core";
 import { users } from "./user.schema";
+import { organisations } from "./organisation.schema";
 
 export const files = pgTable("files", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -22,6 +23,12 @@ export const files = pgTable("files", {
   initiator_id: uuid("initiator_id")
     .references(() => users.id)
     .notNull(), // Who started the file
+  // Nullable (not .notNull()) deliberately: this project's deploy process runs
+  // `drizzle-kit push:pg` directly against the live schema (see docs/DEPLOYMENT.md),
+  // not the versioned SQL migration files — so adding a NOT NULL column here would
+  // prompt/fail against any database that already has rows in `files`. The service
+  // layer always sets this on every insert; treat it as required in practice.
+  organisation_id: uuid("organisation_id").references(() => organisations.id),
   status: text("status").default("active").notNull(), // active, approved, rejected, closed, archived
   priority: text("priority").default("normal").notNull(), // normal, urgent, immediate
   meta_data: jsonb("meta_data").default({}), // Flexible field for custom attributes

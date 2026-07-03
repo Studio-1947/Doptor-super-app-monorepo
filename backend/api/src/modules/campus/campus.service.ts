@@ -19,6 +19,10 @@ import {
   UpdateClassDto,
 } from "./dto";
 import { UsersService, BulkRowResult } from "../users/users.service";
+import {
+  USER_SUMMARY_COLUMNS,
+  EXCLUDE_SENSITIVE_USER_COLUMNS,
+} from "../../common/constants/safe-user-columns";
 
 export { BulkRowResult };
 
@@ -34,6 +38,7 @@ export class CampusService {
   async getFacultyList() {
     return await this.db.query.users.findMany({
       where: eq(schema.users.role, "faculty"),
+      columns: EXCLUDE_SENSITIVE_USER_COLUMNS,
       with: {
         department: true,
       },
@@ -43,6 +48,7 @@ export class CampusService {
   async getFaculty(id: string) {
     return await this.db.query.users.findFirst({
       where: and(eq(schema.users.id, id), eq(schema.users.role, "faculty")),
+      columns: EXCLUDE_SENSITIVE_USER_COLUMNS,
       with: {
         department: true,
         classesTaught: {
@@ -97,6 +103,7 @@ export class CampusService {
   async getStudentList() {
     return await this.db.query.users.findMany({
       where: eq(schema.users.role, "student"),
+      columns: EXCLUDE_SENSITIVE_USER_COLUMNS,
       with: { department: true },
     });
   }
@@ -104,6 +111,7 @@ export class CampusService {
   async getStudent(id: string) {
     return await this.db.query.users.findFirst({
       where: and(eq(schema.users.id, id), eq(schema.users.role, "student")),
+      columns: EXCLUDE_SENSITIVE_USER_COLUMNS,
       with: {
         department: true,
         enrollments: {
@@ -319,7 +327,7 @@ export class CampusService {
 
     const students = await this.db.query.enrollments.findMany({
       where: eq(schema.enrollments.class_id, classId),
-      with: { student: true },
+      with: { student: { columns: USER_SUMMARY_COLUMNS } },
     });
 
     // If date range, we return raw records mapped to students
@@ -369,7 +377,7 @@ export class CampusService {
         class: {
           with: { course: true },
         },
-        student: true,
+        student: { columns: USER_SUMMARY_COLUMNS },
       },
     });
 

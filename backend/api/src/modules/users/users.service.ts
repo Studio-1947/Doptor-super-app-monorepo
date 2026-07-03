@@ -5,11 +5,13 @@ import {
   ConflictException,
   Inject,
 } from "@nestjs/common";
-import { eq, and, like } from "drizzle-orm";
+import { eq, and, like, inArray } from "drizzle-orm";
 import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
 import { users } from "../../database/drizzle/schema/user.schema";
 import { userRoles } from "../../database/drizzle/schema/user-role.schema";
+import { roles } from "../../database/drizzle/schema/role.schema";
+import { departments } from "../../database/drizzle/schema/department.schema";
 import { organisations } from "../../database/drizzle/schema/organisation.schema";
 import { CreateUserDto, UpdateUserDto, InviteUserDto } from "./dto";
 import { DRIZZLE } from "../../database/drizzle/database.module";
@@ -55,19 +57,6 @@ export class UsersService {
   }
 
   async findAll(organisationId?: string, search?: string, status?: string) {
-    let query = this.db
-      .select({
-        id: users.id,
-        email: users.email,
-        first_name: users.first_name,
-        last_name: users.last_name,
-        status: users.status,
-        organisation_id: users.organisation_id,
-        created_at: users.created_at,
-        updated_at: users.updated_at,
-      })
-      .from(users);
-
     const conditions = [];
 
     if (organisationId) {
@@ -82,11 +71,55 @@ export class UsersService {
       conditions.push(eq(users.status, status));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions)) as any;
+    const rows = await this.db
+      .select({
+        id: users.id,
+        email: users.email,
+        first_name: users.first_name,
+        last_name: users.last_name,
+        status: users.status,
+        organisation_id: users.organisation_id,
+        created_at: users.created_at,
+        updated_at: users.updated_at,
+        department_name: departments.name,
+      })
+      .from(users)
+      .leftJoin(departments, eq(users.department_id, departments.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    if (rows.length === 0) return [];
+
+    const roleRows = await this.db
+      .select({
+        user_id: userRoles.user_id,
+        role_id: roles.id,
+        role_name: roles.name,
+      })
+      .from(userRoles)
+      .innerJoin(roles, eq(userRoles.role_id, roles.id))
+      .where(
+        inArray(
+          userRoles.user_id,
+          rows.map((r) => r.id),
+        ),
+      )
+      // Deterministic when a user has multiple roles: always prefer the
+      // earliest-assigned one rather than whatever order Postgres happens
+      // to return (which is unspecified without an ORDER BY).
+      .orderBy(userRoles.created_at);
+
+    const roleByUser = new Map<string, { id: string; name: string }>();
+    for (const r of roleRows) {
+      if (!roleByUser.has(r.user_id)) {
+        roleByUser.set(r.user_id, { id: r.role_id, name: r.role_name });
+      }
     }
 
-    return await query;
+    return rows.map(({ department_name, ...r }) => ({
+      ...r,
+      department: department_name ? { name: department_name } : undefined,
+      role: roleByUser.get(r.id),
+    }));
   }
 
   async findOne(id: string) {

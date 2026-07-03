@@ -144,7 +144,7 @@ export class CampusController {
 
   @Get("my-classes")
   getMyClasses(@Request() req) {
-    return this.campusService.getMyClasses(req.user.userId);
+    return this.campusService.getMyClasses(req.user.id);
   }
 
   @Get("classes")
@@ -162,7 +162,7 @@ export class CampusController {
   ) {
     return this.campusService.getClassAttendance(
       classId,
-      req.user.userId,
+      req.user.id,
       date,
       startDate,
       endDate,
@@ -177,7 +177,7 @@ export class CampusController {
     @Query("classId") classId?: string,
   ) {
     return this.campusService.getAttendanceReport(
-      req.user.userId,
+      req.user.id,
       startDate,
       endDate,
       classId,
@@ -189,7 +189,7 @@ export class CampusController {
     @Request() req,
     @Body() data: { classId: string; date: string; updates: any[] },
   ) {
-    return this.campusService.markAttendance(req.user.userId, data);
+    return this.campusService.markAttendance(req.user.id, data);
   }
 
   @Post("classes/:classId/enroll")

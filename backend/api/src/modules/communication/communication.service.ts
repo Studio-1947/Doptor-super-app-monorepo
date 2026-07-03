@@ -8,6 +8,7 @@ import {
   conversationParticipants,
 } from "../../database/drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { USER_SUMMARY_COLUMNS as SENDER_SUMMARY_COLUMNS } from "../../common/constants/safe-user-columns";
 
 @Injectable()
 export class CommunicationService {
@@ -33,7 +34,7 @@ export class CommunicationService {
       orderBy: [desc(messages.createdAt)],
       limit,
       with: {
-        sender: true,
+        sender: { columns: SENDER_SUMMARY_COLUMNS },
       },
     });
   }
@@ -52,7 +53,7 @@ export class CommunicationService {
     const message = await this.db.query.messages.findFirst({
       where: eq(messages.id, result[0].id),
       with: {
-        sender: true,
+        sender: { columns: SENDER_SUMMARY_COLUMNS },
       },
     });
 

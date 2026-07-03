@@ -82,6 +82,13 @@ class FilesService {
     return response.data;
   }
 
+  async getRegistry(params?: { search?: string; status?: string }): Promise<File[]> {
+    const response = await apiClient.get("/files/registry", {
+      params: { search: params?.search, status: params?.status },
+    });
+    return response.data;
+  }
+
   async getFile(id: string): Promise<FileDetails> {
     const response = await apiClient.get(`/files/${id}`);
     return response.data;
