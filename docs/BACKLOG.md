@@ -10,6 +10,59 @@ live backlog; check items off in place and add new ones as they're found.
 
 ---
 
+## 0. Campus/Office navigational separation (2026-07-03)
+
+Fixed the data plumbing that was undermining "Campus and Office should feel like
+separate products": `VerticalContext.tsx` was hardcoding all 4 verticals as enabled
+for every org (real `enabled_verticals` never wired up), and `RoleContext.tsx` was
+silently defaulting every user to `'super_admin'` nav (derived from a `user.role`
+field that doesn't exist on the real `/auth/me` response). Also fixed: hardcoded
+`"Acme Corp"`/`"John Doe"` in Header/Sidebar, clicking the vertical icon rail not
+actually navigating anywhere, and `BottomNav` being a fully static tab list.
+
+- [x] Real `enabled_verticals` wired from `organisationService.getById` — verified
+      live: a plain member with zero permissions can fetch their own org (no
+      `@Permissions` restriction on `GET /organisations/:id`), and the response shape
+      matches exactly what `VerticalContext` expects.
+- [x] Real role derivation via `AuthContext`'s existing (previously-unused)
+      `hasAnyRole` helpers, with a name-mapping shim since DB role names ("Organisation
+      Admin", "Professor") don't match the frontend's legacy snake_case enum.
+- [x] `activeVertical` now derived from the URL (`usePathname`), not independent
+      click-state — fixes drift on deep links/back-forward, and clicking the icon rail
+      now actually navigates to `/campus` or `/office`.
+- [x] Shared `verticalTheme` token map (`VerticalContext.tsx`) replacing the
+      icon-rail-only color constants; applied to `Header`, `VerticalSwitcher`, and new
+      `app/campus/layout.tsx` / `app/office/layout.tsx` wrappers.
+- [x] `BottomNav` now reuses `Sidebar`'s `verticalMenus` instead of a hardcoded tab list.
+- [x] **Recheck round (same day)**: 8-angle review found the icon rail hid disabled
+      verticals from the switcher but never stopped a direct/bookmarked URL from fully
+      rendering one anyway (`/campus` worked even for an office-only org) — fixed with a
+      client-side redirect-to-`/` guard in `VerticalContext.tsx` once `enabledVerticals`
+      has actually loaded. Also fixed: a real backend role name not in the hardcoded
+      priority list (e.g. a custom/renamed org role) silently downgraded to the same
+      `'student'` default as an unauthenticated user — now falls back to `'staff'`
+      instead. A third finding (role briefly defaulting to `'student'` during the
+      auth-loading window) was investigated and found **not reachable in practice** —
+      `AuthGuard.tsx` blocks the whole app shell behind a spinner until loading
+      completes, so no user ever sees that state. Production build (`next build`)
+      verified clean after fixes.
+- [ ] **Not yet done**: migrating existing ad-hoc emerald/indigo Tailwind classes
+      scattered across a few campus/office pages onto the shared token system (left
+      as-is this pass, flagged for new/touched pages going forward).
+- [ ] **Not yet done**: `middleware.ts` still does no real server-side route
+      protection (reads a `user_role` cookie nothing sets) — deferred by explicit
+      decision, since backend already enforces real permission checks per-endpoint.
+      Fixing it properly requires a token-storage strategy change (localStorage →
+      cookie) — separate, bigger decision.
+- **Verification caveat**: no browser-automation tool (Playwright/chromium-cli) was
+  available in this environment, so this was verified via `tsc --noEmit` (clean),
+  a live backend check of the one new runtime call (`GET /organisations/:id`, confirmed
+  working for zero-permission users), and manual code trace — **not** a real rendered
+  click-through. Recommend a manual pass in a browser (or `/run-skill-generator` to
+  set up Playwright for this repo) before considering this fully verified.
+
+---
+
 ## 1. Onboarding flow (role-based nodes)
 
 ### Current state

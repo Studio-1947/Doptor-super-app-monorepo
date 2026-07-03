@@ -7,9 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useRole, UserRole } from '@/features/auth/RoleContext';
 import { useVertical, VerticalType } from '@/contexts/VerticalContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Define menus for each vertical and role
-const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, label: string, href: string }[]>> = {
+export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, label: string, href: string }[]>> = {
     core: {
         all: [],
         super_admin: [
@@ -127,6 +128,14 @@ export function Sidebar() {
     const pathname = usePathname();
     const { role } = useRole();
     const { activeVertical } = useVertical();
+    const { user } = useAuth();
+
+    const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email || 'User';
+    const initials = (
+        [user?.first_name?.[0], user?.last_name?.[0]].filter(Boolean).join('') ||
+        user?.email?.[0] ||
+        '?'
+    ).toUpperCase();
 
     // Combine 'all' menus with role-specific menus for the active vertical
     const verticalSpecific = verticalMenus[activeVertical];
@@ -206,11 +215,11 @@ export function Sidebar() {
             <div className="p-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white shrink-0">
-                        JD
+                        {initials}
                     </div>
                     {!collapsed && (
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">John Doe</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{displayName}</p>
                             <p className="text-xs text-slate-600 dark:text-slate-400 truncate capitalize font-medium">{role.replace('_', ' ')}</p>
                         </div>
                     )}

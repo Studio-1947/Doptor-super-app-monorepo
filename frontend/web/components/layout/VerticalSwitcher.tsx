@@ -7,17 +7,25 @@ import {
     LayoutGrid,
     Settings
 } from 'lucide-react';
-import { useVertical, VerticalType } from '../../contexts/VerticalContext';
+import { useVertical, VerticalType, verticalTheme } from '../../contexts/VerticalContext';
+
+const VERTICAL_ICONS: Record<VerticalType, any> = {
+    core: LayoutGrid,
+    office: Building2,
+    campus: GraduationCap,
+    network: Globe2,
+};
 
 export function VerticalSwitcher() {
     const { activeVertical, setActiveVertical, enabledVerticals } = useVertical();
 
-    const verticals = [
-        { id: 'core', label: 'Dashboard', icon: LayoutGrid, color: 'text-primary-600 dark:text-primary-400', activeBg: 'bg-primary-50 dark:bg-primary-900/20' },
-        { id: 'office', label: 'Office', icon: Building2, color: 'text-indigo-600 dark:text-indigo-400', activeBg: 'bg-indigo-50 dark:bg-indigo-900/20' },
-        { id: 'campus', label: 'Campus', icon: GraduationCap, color: 'text-emerald-600 dark:text-emerald-400', activeBg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-        { id: 'network', label: 'Network', icon: Globe2, color: 'text-rose-600 dark:text-rose-400', activeBg: 'bg-rose-50 dark:bg-rose-900/20' },
-    ];
+    const verticals = (['core', 'office', 'campus', 'network'] as VerticalType[]).map((id) => ({
+        id,
+        label: verticalTheme[id].label,
+        icon: VERTICAL_ICONS[id],
+        color: verticalTheme[id].textClass,
+        activeBg: verticalTheme[id].activeBgClass,
+    }));
 
     return (
         <div className="flex flex-col items-center w-16 py-6 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 z-30 h-full">
