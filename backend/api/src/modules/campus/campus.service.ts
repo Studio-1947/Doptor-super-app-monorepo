@@ -18,18 +18,15 @@ import {
   BulkCreateFacultyDto,
   UpdateClassDto,
 } from "./dto";
+import { UsersService, BulkRowResult } from "../users/users.service";
 
-export interface BulkRowResult {
-  row: number;
-  email: string;
-  success: boolean;
-  error?: string;
-}
+export { BulkRowResult };
 
 @Injectable()
 export class CampusService {
   constructor(
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly usersService: UsersService,
   ) {}
 
   // --- Faculty ---
@@ -55,53 +52,44 @@ export class CampusService {
     });
   }
 
-  async createFaculty(data: CreateFacultyDto) {
-    // Assuming data has email, first_name, last_name, department_id
-    // For password, we'd hash it. Using placeholder for now.
-    // For organisation, assuming context provides it or we default (not ideal for real app)
-    // But controller should pass it (TODO: update controller to pass orgId)
-    const orgId = data.organisation_id;
-
-    await this.db.insert(schema.users).values({
-      email: data.email,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      department_id: data.department_id,
-      role: "faculty",
-      password_hash: "$argon2id$...", // Placeholder
-      organisation_id: orgId, // Needs to be passed
-    });
+  async createFaculty(
+    data: CreateFacultyDto,
+    inviterId: string,
+    organisationId: string,
+  ) {
+    return this.usersService.inviteUser(
+      {
+        email: data.email,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        department_id: data.department_id,
+        legacy_role: "faculty",
+      },
+      inviterId,
+      organisationId,
+    );
   }
 
   async deleteFaculty(id: string) {
     await this.db.delete(schema.users).where(eq(schema.users.id, id));
   }
 
-  async bulkCreateFaculty(data: BulkCreateFacultyDto): Promise<BulkRowResult[]> {
-    const results: BulkRowResult[] = [];
-    for (let i = 0; i < data.faculty.length; i++) {
-      const row = data.faculty[i];
-      try {
-        await this.db.insert(schema.users).values({
-          email: row.email,
-          first_name: row.first_name,
-          last_name: row.last_name,
-          department_id: row.department_id,
-          role: "faculty",
-          password_hash: "$argon2id$...", // Placeholder, matches createFaculty
-          organisation_id: data.organisation_id,
-        });
-        results.push({ row: i, email: row.email, success: true });
-      } catch (e) {
-        results.push({
-          row: i,
-          email: row.email,
-          success: false,
-          error: e instanceof Error ? e.message : "Insert failed",
-        });
-      }
-    }
-    return results;
+  async bulkCreateFaculty(
+    data: BulkCreateFacultyDto,
+    inviterId: string,
+    organisationId: string,
+  ): Promise<BulkRowResult[]> {
+    return this.usersService.bulkInviteUsers(
+      data.faculty.map((row) => ({
+        email: row.email,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        department_id: row.department_id,
+        legacy_role: "faculty",
+      })),
+      inviterId,
+      organisationId,
+    );
   }
 
   // --- Students ---
@@ -136,47 +124,44 @@ export class CampusService {
     });
   }
 
-  async createStudent(data: CreateStudentDto) {
-    await this.db.insert(schema.users).values({
-      email: data.email,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      department_id: data.department_id,
-      role: "student",
-      password_hash: "temp",
-      organisation_id: data.organisation_id,
-    });
+  async createStudent(
+    data: CreateStudentDto,
+    inviterId: string,
+    organisationId: string,
+  ) {
+    return this.usersService.inviteUser(
+      {
+        email: data.email,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        department_id: data.department_id,
+        legacy_role: "student",
+      },
+      inviterId,
+      organisationId,
+    );
   }
 
   async deleteStudent(id: string) {
     await this.db.delete(schema.users).where(eq(schema.users.id, id));
   }
 
-  async bulkCreateStudents(data: BulkCreateStudentsDto): Promise<BulkRowResult[]> {
-    const results: BulkRowResult[] = [];
-    for (let i = 0; i < data.students.length; i++) {
-      const row = data.students[i];
-      try {
-        await this.db.insert(schema.users).values({
-          email: row.email,
-          first_name: row.first_name,
-          last_name: row.last_name,
-          department_id: row.department_id,
-          role: "student",
-          password_hash: "temp", // Placeholder, matches createStudent
-          organisation_id: data.organisation_id,
-        });
-        results.push({ row: i, email: row.email, success: true });
-      } catch (e) {
-        results.push({
-          row: i,
-          email: row.email,
-          success: false,
-          error: e instanceof Error ? e.message : "Insert failed",
-        });
-      }
-    }
-    return results;
+  async bulkCreateStudents(
+    data: BulkCreateStudentsDto,
+    inviterId: string,
+    organisationId: string,
+  ): Promise<BulkRowResult[]> {
+    return this.usersService.bulkInviteUsers(
+      data.students.map((row) => ({
+        email: row.email,
+        first_name: row.first_name,
+        last_name: row.last_name,
+        department_id: row.department_id,
+        legacy_role: "student",
+      })),
+      inviterId,
+      organisationId,
+    );
   }
 
   // --- Courses ---

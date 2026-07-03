@@ -333,9 +333,9 @@ EMP002,Jane,Smith,jane.smith@school.edu,+91 98765 43211,Science,Associate Profes
                             <div className="w-16 h-16 bg-emerald-100 flex items-center justify-center mb-4">
                                 <CheckCircle2 size={32} className="text-emerald-600" />
                             </div>
-                            <h4 className="text-xl font-bold text-slate-900 mb-2">Upload Successful!</h4>
+                            <h4 className="text-xl font-bold text-slate-900 mb-2">Invitations Sent!</h4>
                             <p className="text-sm text-slate-600">
-                                {importedCount} faculty member(s) have been imported successfully
+                                {importedCount} faculty member(s) have been invited successfully
                             </p>
                         </div>
                     )}

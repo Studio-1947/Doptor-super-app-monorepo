@@ -102,6 +102,21 @@ class AuthService {
     return response.data;
   }
 
+  async acceptInvite(
+    token: string,
+    password: string,
+    first_name?: string,
+    last_name?: string,
+  ): Promise<AuthResponse> {
+    const response = await apiClient.post("/auth/accept-invite", {
+      token,
+      password,
+      first_name,
+      last_name,
+    });
+    return response.data;
+  }
+
   async resendVerificationEmail(email: string): Promise<{ message: string }> {
     const response = await apiClient.post("/auth/resend-verification", {
       email,

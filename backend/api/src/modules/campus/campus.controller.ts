@@ -42,13 +42,21 @@ export class CampusController {
   }
 
   @Post("faculty")
-  createFaculty(@Body() body: CreateFacultyDto) {
-    return this.campusService.createFaculty(body);
+  createFaculty(@Body() body: CreateFacultyDto, @Request() req) {
+    return this.campusService.createFaculty(
+      body,
+      req.user.id,
+      req.user.organisation_id,
+    );
   }
 
   @Post("faculty/bulk")
-  bulkCreateFaculty(@Body() body: BulkCreateFacultyDto) {
-    return this.campusService.bulkCreateFaculty(body);
+  bulkCreateFaculty(@Body() body: BulkCreateFacultyDto, @Request() req) {
+    return this.campusService.bulkCreateFaculty(
+      body,
+      req.user.id,
+      req.user.organisation_id,
+    );
   }
 
   @Delete("faculty/:id")
@@ -69,13 +77,21 @@ export class CampusController {
   }
 
   @Post("students")
-  createStudent(@Body() body: CreateStudentDto) {
-    return this.campusService.createStudent(body);
+  createStudent(@Body() body: CreateStudentDto, @Request() req) {
+    return this.campusService.createStudent(
+      body,
+      req.user.id,
+      req.user.organisation_id,
+    );
   }
 
   @Post("students/bulk")
-  bulkCreateStudents(@Body() body: BulkCreateStudentsDto) {
-    return this.campusService.bulkCreateStudents(body);
+  bulkCreateStudents(@Body() body: BulkCreateStudentsDto, @Request() req) {
+    return this.campusService.bulkCreateStudents(
+      body,
+      req.user.id,
+      req.user.organisation_id,
+    );
   }
 
   @Delete("students/:id")

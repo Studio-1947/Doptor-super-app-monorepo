@@ -1,13 +1,33 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import { ReadyUI } from '@/components/ReadyUI';
 import { Users, UserCheck, UserPlus, Shield, MoreHorizontal, Mail, Phone } from 'lucide-react';
+import { InviteMemberDialog } from '@/features/office/InviteMemberDialog';
+import { usersService } from '@/services/users.service';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function TeamPage() {
+    const { user } = useAuth();
+    const [showInviteDialog, setShowInviteDialog] = useState(false);
+    const [pendingInviteCount, setPendingInviteCount] = useState<number | null>(null);
+
+    const loadPendingInvites = () => {
+        if (!user?.organisation_id) return;
+        usersService
+            .list({ organisationId: user.organisation_id, status: 'invited' })
+            .then((users) => setPendingInviteCount(users.length))
+            .catch(() => setPendingInviteCount(null));
+    };
+
+    useEffect(() => {
+        loadPendingInvites();
+    }, [user?.organisation_id]);
+
     const stats = [
         { label: 'Total Members', value: '42', change: '+4', trend: 'up', icon: Users, color: 'bg-indigo-500' },
         { label: 'Active Now', value: '28', change: '12%', trend: 'up', icon: UserCheck, color: 'bg-emerald-500' },
-        { label: 'Pending Invites', value: '5', change: '-2', trend: 'down', icon: UserPlus, color: 'bg-orange-500' },
+        { label: 'Pending Invites', value: pendingInviteCount === null ? '-' : String(pendingInviteCount), icon: UserPlus, color: 'bg-orange-500' },
         { label: 'Admins', value: '4', icon: Shield, color: 'bg-rose-500' },
     ] as any[];
 
@@ -20,14 +40,22 @@ export default function TeamPage() {
     ];
 
     return (
-        <ReadyUI 
-            title="Team Management" 
+        <>
+        {showInviteDialog && (
+            <InviteMemberDialog
+                onClose={() => setShowInviteDialog(false)}
+                onInvited={loadPendingInvites}
+            />
+        )}
+        <ReadyUI
+            title="Team Management"
             description="Manage your organization's members, roles, and permissions."
             moduleName="Office"
             stats={stats}
             primaryAction={{
                 label: "Invite Member",
-                icon: UserPlus
+                icon: UserPlus,
+                onClick: () => setShowInviteDialog(true)
             }}
         >
             <div className="w-full overflow-x-auto">
@@ -93,5 +121,6 @@ export default function TeamPage() {
                 </table>
             </div>
         </ReadyUI>
+        </>
     );
 }

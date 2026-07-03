@@ -65,7 +65,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
             await campusService.createFaculty(payload);
 
-            toast.success('Faculty member added successfully');
+            toast.success(`Invitation sent to ${payload.email}`);
             setSubmitting(false);
             onClose();
             if (onSuccess) onSuccess();

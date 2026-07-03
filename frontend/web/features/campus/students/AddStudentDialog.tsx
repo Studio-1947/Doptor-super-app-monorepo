@@ -40,7 +40,7 @@ export function AddStudentDialog({ isOpen, onClose, onSuccess }: AddStudentDialo
 
         try {
             await campusService.createStudent(formData);
-            toast.success('Student added successfully');
+            toast.success(`Invitation sent to ${formData.email}`);
             if (onSuccess) onSuccess();
             onClose();
             // Reset form

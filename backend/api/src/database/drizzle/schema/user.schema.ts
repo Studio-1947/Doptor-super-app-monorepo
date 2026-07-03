@@ -34,6 +34,12 @@ export const users = pgTable("users", {
   failed_login_attempts: integer("failed_login_attempts").default(0).notNull(),
   account_locked_until: timestamp("account_locked_until"),
 
+  // Invitations
+  status: text("status").default("active").notNull(), // 'invited' | 'active'
+  invitation_token: text("invitation_token"),
+  invitation_expires: timestamp("invitation_expires"),
+  invited_by: uuid("invited_by"), // References users.id, handled loosely to avoid circular deps
+
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().notNull(),
 });

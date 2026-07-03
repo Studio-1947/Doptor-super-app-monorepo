@@ -36,6 +36,13 @@
       "when": 1782815404547,
       "tag": "0004_whole_smiling_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1783058683372,
+      "tag": "0005_ordinary_salo",
+      "breakpoints": true
     }
   ]
 }

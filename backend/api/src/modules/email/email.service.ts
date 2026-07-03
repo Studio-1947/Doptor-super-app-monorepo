@@ -157,4 +157,54 @@ export class EmailService {
 
     await this.transporter.sendMail(mailOptions);
   }
+
+  async sendInvitationEmail(
+    email: string,
+    token: string,
+    organisationName?: string,
+  ): Promise<void> {
+    const inviteUrl = `${process.env.FRONTEND_URL}/accept-invite?token=${token}`;
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || "noreply@doptor.com",
+      to: email,
+      subject: `You're invited to join ${organisationName || "Doptor"}`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #7C3AED; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+            .button { display: inline-block; padding: 12px 30px; background-color: #7C3AED; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>You've been invited!</h1>
+            </div>
+            <div class="content">
+              <h2>Join ${organisationName || "your organisation"} on Doptor</h2>
+              <p>You've been invited to join ${organisationName || "an organisation"} on Doptor. Click the button below to set your password and get started:</p>
+              <a href="${inviteUrl}" class="button">Accept Invitation</a>
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; color: #7C3AED;">${inviteUrl}</p>
+              <p>This invitation link will expire in 7 days.</p>
+              <p>If you weren't expecting this invitation, you can safely ignore this email.</p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} Doptor. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    };
+
+    await this.transporter.sendMail(mailOptions);
+  }
 }

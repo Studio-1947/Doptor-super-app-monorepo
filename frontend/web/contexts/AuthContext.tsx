@@ -10,6 +10,7 @@ interface AuthContextType {
     login: (credentials: LoginCredentials) => Promise<void>;
     register: (data: RegisterData) => Promise<void>;
     registerOrganisation: (data: RegisterOrganisationData) => Promise<void>;
+    acceptInvite: (token: string, password: string, firstName?: string, lastName?: string) => Promise<void>;
     logout: () => Promise<void>;
     refreshUser: () => Promise<void>;
     hasRole: (role: string) => boolean;
@@ -76,6 +77,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const acceptInvite = async (token: string, password: string, firstName?: string, lastName?: string) => {
+        try {
+            const response = await authService.acceptInvite(token, password, firstName, lastName);
+            authService.setTokens(response.access_token, response.refresh_token);
+            setUser(response.user);
+        } catch (error) {
+            console.error('Accept invite failed:', error);
+            throw error;
+        }
+    };
+
     const logout = async () => {
         try {
             await authService.logout();
@@ -125,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         registerOrganisation,
+        acceptInvite,
         logout,
         refreshUser,
         hasRole,

@@ -14,8 +14,11 @@ import { users } from "../../database/drizzle/schema/user.schema";
 import { organisations } from "../../database/drizzle/schema/organisation.schema";
 import { roles } from "../../database/drizzle/schema/role.schema";
 import { userRoles } from "../../database/drizzle/schema/user-role.schema";
+import { permissions } from "../../database/drizzle/schema/permission.schema";
+import { rolePermissions } from "../../database/drizzle/schema/role-permission.schema";
 import { refreshTokens } from "../../database/drizzle/schema/refresh-token.schema";
 import { auditLogs } from "../../database/drizzle/schema/audit-log.schema";
+import { DEFAULT_PERMISSIONS } from "../../database/drizzle/default-permissions";
 import {
   RegisterDto,
   LoginDto,
@@ -23,6 +26,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   VerifyEmailDto,
+  AcceptInviteDto,
 } from "./dto";
 import { DRIZZLE } from "../../database/drizzle/database.module";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -187,6 +191,25 @@ export class AuthService {
         user_id: newUser.id,
         role_id: adminRole.id,
       });
+
+      // 5. Seed default permissions for this org and grant them all to the admin role
+      const insertedPermissions = await tx
+        .insert(permissions)
+        .values(
+          DEFAULT_PERMISSIONS.map((p) => ({
+            resource: p.resource,
+            action: p.action,
+            organisation_id: newOrg.id,
+          })),
+        )
+        .returning();
+
+      await tx.insert(rolePermissions).values(
+        insertedPermissions.map((p) => ({
+          role_id: adminRole.id,
+          permission_id: p.id,
+        })),
+      );
 
       // Send verification email
       try {
@@ -393,15 +416,28 @@ export class AuthService {
     const password_hash = await bcrypt.hash(dto.newPassword, saltRounds);
 
     // Update password and clear reset token
+    const updateData: any = {
+      password_hash,
+      password_reset_token: null,
+      password_reset_expires: null,
+      failed_login_attempts: 0,
+      account_locked_until: null,
+    };
+
+    // A user who was still 'invited' (never went through accept-invite) can
+    // reach this flow if they know the account email; treat a successful
+    // password reset as completing their invitation too, so `status` and
+    // pending-invite counts stay accurate.
+    if (user.status === "invited") {
+      updateData.status = "active";
+      updateData.email_verified = true;
+      updateData.invitation_token = null;
+      updateData.invitation_expires = null;
+    }
+
     await this.db
       .update(users)
-      .set({
-        password_hash,
-        password_reset_token: null,
-        password_reset_expires: null,
-        failed_login_attempts: 0,
-        account_locked_until: null,
-      })
+      .set(updateData)
       .where(eq(users.id, user.id));
 
     // Revoke all refresh tokens for security
@@ -474,6 +510,63 @@ export class AuthService {
 
     return {
       message: "Email verified successfully!",
+    };
+  }
+
+  async acceptInvite(dto: AcceptInviteDto) {
+    const [user] = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.invitation_token, dto.token))
+      .limit(1);
+
+    if (!user) {
+      throw new BadRequestException("Invalid or expired invitation token");
+    }
+
+    if (user.status !== "invited") {
+      throw new BadRequestException("This invitation has already been used");
+    }
+
+    if (
+      !user.invitation_expires ||
+      user.invitation_expires < new Date()
+    ) {
+      throw new BadRequestException("Invalid or expired invitation token");
+    }
+
+    const saltRounds = 10;
+    const password_hash = await bcrypt.hash(dto.password, saltRounds);
+
+    const updateData: any = {
+      password_hash,
+      status: "active",
+      email_verified: true,
+      invitation_token: null,
+      invitation_expires: null,
+    };
+
+    if (dto.first_name) updateData.first_name = dto.first_name;
+    if (dto.last_name) updateData.last_name = dto.last_name;
+
+    await this.db.update(users).set(updateData).where(eq(users.id, user.id));
+
+    // Log audit event
+    await this.createAuditLog(user.id, "accept_invite", "user", {
+      email: user.email,
+    });
+
+    // Generate tokens
+    const tokens = await this.generateTokens(user.id, user.email);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        organisation_id: user.organisation_id,
+      },
+      ...tokens,
+      message: "Invitation accepted successfully.",
     };
   }
 

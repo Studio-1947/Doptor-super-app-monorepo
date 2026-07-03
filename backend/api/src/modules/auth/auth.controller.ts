@@ -29,6 +29,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   VerifyEmailDto,
+  AcceptInviteDto,
 } from "./dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 
@@ -100,6 +101,15 @@ export class AuthController {
   @ApiResponse({ status: 200, description: "Email successfully verified" })
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     return this.authService.verifyEmail(dto);
+  }
+
+  @Post("accept-invite")
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: "Accept an invitation and set a password" })
+  @ApiResponse({ status: 200, description: "Invitation accepted, logged in" })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async acceptInvite(@Body() dto: AcceptInviteDto) {
+    return this.authService.acceptInvite(dto);
   }
 
   @Post("resend-verification")

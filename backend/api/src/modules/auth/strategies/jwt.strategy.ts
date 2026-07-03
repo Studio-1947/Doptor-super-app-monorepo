@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, Inject } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { users } from "../../../database/drizzle/schema/user.schema";
 import { userRoles } from "../../../database/drizzle/schema/user-role.schema";
 import { roles } from "../../../database/drizzle/schema/role.schema";
@@ -53,10 +53,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // Get permissions for all user roles
     const roleIds = userRoleRecords.map((r) => r.roleId);
-    let userPermissions: any[] = [];
+    let userPermissions: { action: string; resource: string }[] = [];
 
     if (roleIds.length > 0) {
-      userPermissions = await this.db
+      const rawPermissions = await this.db
         .select({
           action: permissions.action,
           resource: permissions.resource,
@@ -66,7 +66,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           permissions,
           eq(rolePermissions.permission_id, permissions.id),
         )
-        .where(eq(rolePermissions.role_id, roleIds[0])); // Simplified for now
+        .where(inArray(rolePermissions.role_id, roleIds));
+
+      const dedupeMap = new Map(
+        rawPermissions.map((p) => [`${p.action}:${p.resource}`, p]),
+      );
+      userPermissions = Array.from(dedupeMap.values());
     }
 
     return {

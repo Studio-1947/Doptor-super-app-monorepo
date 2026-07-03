@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Query,
+  Request,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -17,8 +18,15 @@ import {
   ApiQuery,
 } from "@nestjs/swagger";
 import { UsersService } from "./users.service";
-import { CreateUserDto, UpdateUserDto } from "./dto";
+import {
+  CreateUserDto,
+  UpdateUserDto,
+  InviteUserDto,
+  BulkInviteUsersDto,
+} from "./dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { PermissionsGuard } from "../../common/guards/permissions.guard";
+import { Permissions } from "../../common/decorators/permissions.decorator";
 
 @ApiTags("Users")
 @ApiBearerAuth()
@@ -49,11 +57,49 @@ export class UsersController {
     required: false,
     description: "Search users by name or email",
   })
+  @ApiQuery({
+    name: "status",
+    required: false,
+    description: "Filter by account status ('invited' | 'active')",
+  })
   findAll(
     @Query("organisation_id") organisationId?: string,
     @Query("search") search?: string,
+    @Query("status") status?: string,
   ) {
-    return this.usersService.findAll(organisationId, search);
+    return this.usersService.findAll(organisationId, search, status);
+  }
+
+  @Post("invite")
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions("create:users")
+  @ApiOperation({ summary: "Invite a new user to the organisation" })
+  inviteUser(@Body() dto: InviteUserDto, @Request() req) {
+    return this.usersService.inviteUser(
+      dto,
+      req.user.id,
+      req.user.organisation_id,
+    );
+  }
+
+  @Post("invite/bulk")
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions("create:users")
+  @ApiOperation({ summary: "Invite multiple users to the organisation" })
+  bulkInviteUsers(@Body() dto: BulkInviteUsersDto, @Request() req) {
+    return this.usersService.bulkInviteUsers(
+      dto.invites,
+      req.user.id,
+      req.user.organisation_id,
+    );
+  }
+
+  @Post(":id/resend-invite")
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions("create:users")
+  @ApiOperation({ summary: "Resend a pending invitation" })
+  resendInvite(@Param("id") id: string, @Request() req) {
+    return this.usersService.resendInvite(id, req.user.organisation_id);
   }
 
   @Get(":id")
