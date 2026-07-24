@@ -108,6 +108,46 @@ export interface StudentAttendance {
   date: string;
 }
 
+export interface ResultRow {
+  id: string;
+  exam: string;
+  className: string;
+  maxMarks: number;
+  studentsGraded: number;
+  average: number | null;
+  passRate: number | null;
+  status: "draft" | "published";
+}
+
+export interface ResultsSummaryResponse {
+  summary: {
+    publishedCount: number;
+    draftCount: number;
+    highestAverage: number | null;
+    totalStudentsGraded: number;
+  };
+  rows: ResultRow[];
+}
+
+export interface Exam {
+  id: string;
+  class_id: string;
+  name: string;
+  exam_date: string | null;
+  max_marks: number;
+  passing_marks: number;
+  status: "draft" | "published";
+  class?: { name: string | null; course?: { name: string } };
+}
+
+export interface ExamDetail extends Exam {
+  grades: {
+    id: string;
+    marks_obtained: number;
+    student: { id: string; first_name: string; last_name: string; email: string };
+  }[];
+}
+
 class CampusService {
   // --- Faculty ---
 
@@ -343,6 +383,46 @@ class CampusService {
 
   async deleteDepartment(id: string): Promise<void> {
     await apiClient.delete(`/campus/departments/${id}`);
+  }
+
+  async getResultsSummary(): Promise<ResultsSummaryResponse> {
+    const response = await apiClient.get("/campus/results/summary");
+    return response.data;
+  }
+
+  async getExams(classId?: string): Promise<Exam[]> {
+    const response = await apiClient.get("/campus/exams", {
+      params: classId ? { classId } : undefined,
+    });
+    return response.data;
+  }
+
+  async getExam(id: string): Promise<ExamDetail> {
+    const response = await apiClient.get(`/campus/exams/${id}`);
+    return response.data;
+  }
+
+  async createExam(data: {
+    class_id: string;
+    name: string;
+    exam_date?: string;
+    max_marks?: number;
+    passing_marks?: number;
+  }): Promise<Exam> {
+    const response = await apiClient.post("/campus/exams", data);
+    return response.data;
+  }
+
+  async submitGrades(
+    examId: string,
+    grades: { student_id: string; marks_obtained: number }[],
+  ): Promise<void> {
+    await apiClient.post(`/campus/exams/${examId}/grades`, { grades });
+  }
+
+  async publishExam(examId: string): Promise<Exam> {
+    const response = await apiClient.post(`/campus/exams/${examId}/publish`);
+    return response.data;
   }
 }
 

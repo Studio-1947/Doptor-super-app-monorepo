@@ -244,22 +244,43 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 
 ### High — required for "fully functional" campus/office
 
-- [ ] **H-1** 🟠 Build campus **results/grades**: no backend tables/endpoints exist at
-      all; `app/campus/results/page.tsx` is 100% hardcoded mock data with a fake
-      `setTimeout` loading state.
-- [ ] **H-2** 🟠 Build/wire campus **timetable**: no dedicated backend model (schedule is
-      just a JSON blob per class); `app/campus/timetable/page.tsx` is a dead route
-      (`redirect('/campus')`) despite a working `features/campus/TimeTable.tsx`
-      component that's never mounted.
+- [x] **H-1** ~~Build campus results/grades~~ — done 2026-07-03: new `exams` and
+      `exam_grades` tables (org-scoped), `POST/GET /campus/exams`,
+      `POST /campus/exams/:id/grades` (bulk, upsert-per-student), `POST
+      /campus/exams/:id/publish`, `GET /campus/results/summary` (per-exam
+      average/pass-rate computed server-side + org-wide summary counts).
+      `app/campus/results/page.tsx` now fetches real data, no more mock/setTimeout.
+      Verified end-to-end live: create exam → submit grades → average/pass-rate compute
+      correctly → publish → summary counts update correctly.
+      **Found while testing, not fixed (separate, deeper pre-existing bug, new item
+      M-10 below)**: the frontend's "Create Class" dialog calls `POST /campus/classes`,
+      which doesn't exist on the backend at all (404) — that flow has never worked.
+- [x] **H-2** ~~Wire campus timetable~~ — done 2026-07-03: replaced the dead
+      `redirect('/campus')` route with a real page that fetches `GET /campus/classes`
+      and renders the existing (previously unmounted) `features/campus/TimeTable.tsx`
+      component. While building this, found and fixed a **broad cross-tenant data leak**
+      spanning most of the campus module's read endpoints — `getFacultyList`,
+      `getFaculty`, `getStudentList`, `getStudent`, `getCourses`, `getDepartments`, and
+      `getAllClasses` (classes specifically) had no organisation scoping at all, so any
+      authenticated user of any org could see every other org's faculty/student PII,
+      courses, and departments. All now scoped from `req.user.organisation_id`, verified
+      live with two separate orgs (Org B correctly sees zero of Org A's data). Also fixed
+      `createCourse`/`createDepartment` missing `.returning()` (silently returned empty
+      responses) while touching the same methods.
 - [x] **H-3** ~~Wire office/admin page to real data~~ — done 2026-07-03: stats
       (departments, roles, members, pending invites) and a Roles & Permissions table are
       now real, sourced from `departmentService`/`roleService`/`usersService`. The
       fictional "policies" concept had no backing schema anywhere — replaced entirely
       rather than left half-mocked; a real policy engine (if wanted) is new scope, not
       tracked here yet.
-- [ ] **H-4** 🟠 Wire **office/reports** page to real data — currently fully hardcoded,
-      no backend report-generation endpoints exist either (only unrelated
-      `analytics/overview`).
+- [x] **H-4** ~~Wire office/reports page to real data~~ — done 2026-07-03: the
+      "report generation" concept had no backing schema anywhere (same situation as
+      H-3's fake "policies"), so replaced it with real file analytics rather than a
+      fabricated report list — new `GET /files/analytics` (org-scoped, same
+      `@Permissions("read:documents")` guard as the registry) returning status/category/
+      priority breakdowns and average age of open files, computed server-side from real
+      `files` rows. Verified live: created 2 files with different categories/priorities,
+      confirmed the breakdown counts came back correct.
 - [x] **H-5** ~~Wire office/team page to real data~~ — done 2026-07-03: roster now comes
       from `usersService.list({organisationId})` (extended backend `findAll` to join
       department + primary role), stats computed from real data, resend-invite wired
@@ -321,6 +342,12 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       `handleConnection` never verifies the socket's identity, and `sendMessage` trusts a
       client-supplied `payload.userId` instead of one derived from an authenticated
       session, so any connected client can send messages impersonating any user.
+- [ ] **M-10** 🟡 Found 2026-07-03 while testing H-1: `POST /campus/classes` doesn't
+      exist on the backend at all (404) despite the frontend's `CreateClassDialog.tsx`
+      calling it — "Create Class" has never worked. Also the dialog only collects
+      `name`/`departmentId`, but `academic_classes` requires `course_id` and
+      `faculty_id` (both NOT NULL) — the form needs those fields added before a working
+      endpoint can even be wired up correctly.
 
 ### Low / cleanup
 

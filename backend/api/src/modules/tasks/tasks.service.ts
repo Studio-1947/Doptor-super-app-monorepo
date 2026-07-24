@@ -1,62 +1,89 @@
 import { Injectable, NotFoundException, Inject } from "@nestjs/common";
-import { eq, and, like, isNull, isNotNull } from "drizzle-orm";
+import { eq, and, like, desc } from "drizzle-orm";
 import { tasks } from "../../database/drizzle/schema/task.schema";
-import { CreateTaskDto, UpdateTaskDto, AssignTaskDto } from "./dto";
+import {
+  CreateTaskDto,
+  UpdateTaskDto,
+  AssignTaskDto,
+  TASK_STATUSES,
+} from "./dto";
 import { DRIZZLE } from "../../database/drizzle/database.module";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import * as schema from "../../database/drizzle/schema";
+import { USER_SUMMARY_COLUMNS } from "../../common/constants/safe-user-columns";
 
 @Injectable()
 export class TasksService {
-  constructor(@Inject(DRIZZLE) private db: PostgresJsDatabase) {}
+  constructor(
+    @Inject(DRIZZLE) private db: PostgresJsDatabase<typeof schema>,
+  ) {}
 
-  async create(createTaskDto: CreateTaskDto) {
+  private async findTaskInOrg(id: string, organisationId: string) {
+    const task = await this.db.query.tasks.findFirst({
+      where: and(eq(tasks.id, id), eq(tasks.organisation_id, organisationId)),
+    });
+    if (!task) {
+      throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+    return task;
+  }
+
+  async create(
+    createTaskDto: CreateTaskDto,
+    userId: string,
+    organisationId: string,
+  ) {
     const [task] = await this.db
       .insert(tasks)
-      .values(createTaskDto)
+      .values({
+        ...createTaskDto,
+        organisation_id: organisationId,
+        created_by: userId,
+      })
       .returning();
 
     return task;
   }
 
-  async findAll(filters?: {
-    organisation_id?: string;
-    assigned_to?: string;
-    is_completed?: boolean;
-    search?: string;
-  }) {
-    let query = this.db.select().from(tasks);
-
-    const conditions = [];
-
-    if (filters?.organisation_id) {
-      conditions.push(eq(tasks.organisation_id, filters.organisation_id));
-    }
+  async findAll(
+    organisationId: string,
+    filters?: {
+      assigned_to?: string;
+      status?: string;
+      search?: string;
+    },
+  ) {
+    const conditions = [eq(tasks.organisation_id, organisationId)];
 
     if (filters?.assigned_to) {
       conditions.push(eq(tasks.assigned_to, filters.assigned_to));
     }
 
-    if (filters?.is_completed !== undefined) {
-      conditions.push(eq(tasks.is_completed, filters.is_completed));
+    if (filters?.status) {
+      conditions.push(eq(tasks.status, filters.status));
     }
 
     if (filters?.search) {
       conditions.push(like(tasks.title, `%${filters.search}%`));
     }
 
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions)) as any;
-    }
-
-    return await query;
+    return await this.db.query.tasks.findMany({
+      where: and(...conditions),
+      orderBy: [desc(tasks.created_at)],
+      with: {
+        assignee: { columns: USER_SUMMARY_COLUMNS },
+      },
+    });
   }
 
-  async findOne(id: string) {
-    const [task] = await this.db
-      .select()
-      .from(tasks)
-      .where(eq(tasks.id, id))
-      .limit(1);
+  async findOne(id: string, organisationId: string) {
+    const task = await this.db.query.tasks.findFirst({
+      where: and(eq(tasks.id, id), eq(tasks.organisation_id, organisationId)),
+      with: {
+        assignee: { columns: USER_SUMMARY_COLUMNS },
+        creator: { columns: USER_SUMMARY_COLUMNS },
+      },
+    });
 
     if (!task) {
       throw new NotFoundException(`Task with ID ${id} not found`);
@@ -65,50 +92,63 @@ export class TasksService {
     return task;
   }
 
-  async update(id: string, updateTaskDto: UpdateTaskDto) {
+  async update(
+    id: string,
+    organisationId: string,
+    updateTaskDto: UpdateTaskDto,
+  ) {
+    await this.findTaskInOrg(id, organisationId);
+
     if (Object.keys(updateTaskDto).length === 0) {
-      return this.findOne(id);
+      return this.findOne(id, organisationId);
     }
 
     const [updatedTask] = await this.db
       .update(tasks)
       .set({ ...updateTaskDto, updated_at: new Date() })
-      .where(eq(tasks.id, id))
+      .where(
+        and(eq(tasks.id, id), eq(tasks.organisation_id, organisationId)),
+      )
       .returning();
-
-    if (!updatedTask) {
-      throw new NotFoundException(`Task with ID ${id} not found`);
-    }
 
     return updatedTask;
   }
 
-  async assignTask(id: string, assignTaskDto: AssignTaskDto) {
-    return this.update(id, { assigned_to: assignTaskDto.user_id });
+  async assignTask(
+    id: string,
+    organisationId: string,
+    assignTaskDto: AssignTaskDto,
+  ) {
+    return this.update(id, organisationId, {
+      assigned_to: assignTaskDto.user_id,
+    });
   }
 
-  async updateStatus(id: string, is_completed: boolean) {
-    return this.update(id, { is_completed });
+  async updateStatus(
+    id: string,
+    organisationId: string,
+    status: (typeof TASK_STATUSES)[number],
+  ) {
+    return this.update(id, organisationId, {
+      status,
+      is_completed: status === "done",
+    });
   }
 
-  async remove(id: string) {
+  async remove(id: string, organisationId: string) {
+    await this.findTaskInOrg(id, organisationId);
+
     const [deletedTask] = await this.db
       .delete(tasks)
-      .where(eq(tasks.id, id))
+      .where(
+        and(eq(tasks.id, id), eq(tasks.organisation_id, organisationId)),
+      )
       .returning();
-
-    if (!deletedTask) {
-      throw new NotFoundException(`Task with ID ${id} not found`);
-    }
 
     return { message: "Task deleted successfully", task: deletedTask };
   }
 
   async getMyTasks(userId: string, organisationId: string) {
-    return this.findAll({
-      organisation_id: organisationId,
-      assigned_to: userId,
-      is_completed: false,
-    });
+    return this.findAll(organisationId, { assigned_to: userId });
   }
 }

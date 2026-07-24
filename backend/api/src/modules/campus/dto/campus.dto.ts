@@ -304,3 +304,50 @@ export class UpdateClassDto {
   @IsOptional()
   courseId?: string;
 }
+
+export class CreateExamDto {
+  @ApiProperty({ example: "123e4567-e89b-12d3-a456-426614174000" })
+  @IsUUID()
+  @IsNotEmpty()
+  class_id: string;
+
+  @ApiProperty({ example: "Midterm 1" })
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({ example: "2026-08-15", required: false })
+  @IsDateString()
+  @IsOptional()
+  exam_date?: string;
+
+  @ApiProperty({ example: 100, required: false })
+  @IsInt()
+  @IsOptional()
+  max_marks?: number;
+
+  @ApiProperty({ example: 40, required: false })
+  @IsInt()
+  @IsOptional()
+  passing_marks?: number;
+}
+
+export class GradeRowDto {
+  @ApiProperty({ example: "123e4567-e89b-12d3-a456-426614174000" })
+  @IsUUID()
+  @IsNotEmpty()
+  student_id: string;
+
+  @ApiProperty({ example: 78 })
+  @IsInt()
+  marks_obtained: number;
+}
+
+export class SubmitGradesDto {
+  @ApiProperty({ type: [GradeRowDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => GradeRowDto)
+  grades: GradeRowDto[];
+}

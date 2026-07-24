@@ -26,6 +26,16 @@ export interface File {
   currentHolder?: UserSummary;
 }
 
+export interface FileAttachment {
+  id: string;
+  file_id: string;
+  original_name: string;
+  mime_type: string;
+  size_bytes: number;
+  created_at: string;
+  uploadedBy?: UserSummary;
+}
+
 export interface FileMovement {
   id: string;
   file_id: string;
@@ -66,6 +76,14 @@ export interface CreateFileData {
   dueDate?: string;
 }
 
+export interface FileAnalytics {
+  totalFiles: number;
+  byStatus: Record<string, number>;
+  byCategory: Record<string, number>;
+  byPriority: Record<string, number>;
+  averageOpenFileAgeDays: number;
+}
+
 class FilesService {
   async getInbox(): Promise<File[]> {
     const response = await apiClient.get("/files/inbox");
@@ -87,6 +105,42 @@ class FilesService {
       params: { search: params?.search, status: params?.status },
     });
     return response.data;
+  }
+
+  async getAnalytics(): Promise<FileAnalytics> {
+    const response = await apiClient.get("/files/analytics");
+    return response.data;
+  }
+
+  async getAttachments(fileId: string): Promise<FileAttachment[]> {
+    const response = await apiClient.get(`/files/${fileId}/attachments`);
+    return response.data;
+  }
+
+  async uploadAttachment(fileId: string, file: globalThis.File): Promise<FileAttachment> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await apiClient.post(
+      `/files/${fileId}/attachments`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    return response.data;
+  }
+
+  async downloadAttachment(attachmentId: string, filename: string): Promise<void> {
+    const response = await apiClient.get(
+      `/files/attachments/${attachmentId}/download`,
+      { responseType: "blob" },
+    );
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   }
 
   async getFile(id: string): Promise<FileDetails> {

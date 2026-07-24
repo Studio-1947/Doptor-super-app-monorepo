@@ -84,3 +84,6 @@ web-build/
 
 # Drizzle
 drizzle/meta/
+
+# Uploaded file attachments (local disk storage, dev only)
+backend/api/uploads/

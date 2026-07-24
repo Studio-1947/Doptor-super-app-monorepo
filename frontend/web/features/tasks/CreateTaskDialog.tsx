@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, Button } from '@doptor/shared';
 import { Calendar, User, Tag, AlignLeft, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { MOCK_USERS } from './tasks-mock.db';
-import { TaskPriority, TaskType } from './tasks-mock.db';
+import { usersService, UserListItem } from '@/services/users.service';
+import { CreateTaskPayload, TaskPriority } from '@/services/tasks.service';
+
+type TaskType = "general" | "file-review" | "meeting" | "approval";
 
 interface CreateTaskDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: (task: any) => void;
+    onSuccess: (payload: CreateTaskPayload) => Promise<void> | void;
 }
 
 export function CreateTaskDialog({ isOpen, onClose, onSuccess }: CreateTaskDialogProps) {
@@ -21,6 +23,12 @@ export function CreateTaskDialog({ isOpen, onClose, onSuccess }: CreateTaskDialo
     const [dueDate, setDueDate] = useState('');
     const [assignee, setAssignee] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [orgUsers, setOrgUsers] = useState<UserListItem[]>([]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        usersService.list().then(setOrgUsers).catch(() => setOrgUsers([]));
+    }, [isOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -30,24 +38,23 @@ export function CreateTaskDialog({ isOpen, onClose, onSuccess }: CreateTaskDialo
         }
 
         setIsSubmitting(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        const newTask = {
-            title,
-            description,
-            priority,
-            type,
-            dueDate: dueDate || new Date().toISOString(),
-            assigneeId: assignee || 'u1', // Default to current user if empty
-            tags: [type]
-        };
-
-        toast.success('Task created successfully');
-        setIsSubmitting(false);
-        onSuccess(newTask);
-        resetForm();
-        onClose();
+        try {
+            await onSuccess({
+                title,
+                description: description || undefined,
+                priority,
+                due_date: dueDate || undefined,
+                assigned_to: assignee || undefined,
+                tags: [type],
+            });
+            toast.success('Task created successfully');
+            resetForm();
+            onClose();
+        } catch {
+            toast.error('Failed to create task');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const resetForm = () => {
@@ -166,9 +173,9 @@ export function CreateTaskDialog({ isOpen, onClose, onSuccess }: CreateTaskDialo
                                 onChange={(e) => setAssignee(e.target.value)}
                                 className="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 appearance-none bg-white"
                             >
-                                <option value="">Select User</option>
-                                {MOCK_USERS.map(user => (
-                                    <option key={user.id} value={user.id}>{user.name}</option>
+                                <option value="">Unassigned</option>
+                                {orgUsers.map(user => (
+                                    <option key={user.id} value={user.id}>{user.first_name} {user.last_name}</option>
                                 ))}
                             </select>
                         </div>

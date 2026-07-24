@@ -16,10 +16,14 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
-  ApiBody,
 } from "@nestjs/swagger";
 import { TasksService } from "./tasks.service";
-import { CreateTaskDto, UpdateTaskDto, AssignTaskDto } from "./dto";
+import {
+  CreateTaskDto,
+  UpdateTaskDto,
+  AssignTaskDto,
+  UpdateTaskStatusDto,
+} from "./dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 
 @ApiTags("Tasks")
@@ -35,43 +39,40 @@ export class TasksController {
     status: 201,
     description: "The task has been successfully created",
   })
-  create(@Body() createTaskDto: CreateTaskDto) {
-    return this.tasksService.create(createTaskDto);
+  create(@Body() createTaskDto: CreateTaskDto, @Request() req) {
+    return this.tasksService.create(
+      createTaskDto,
+      req.user.id,
+      req.user.organisation_id,
+    );
   }
 
   @Get()
-  @ApiOperation({ summary: "Get all tasks" })
-  @ApiQuery({
-    name: "organisation_id",
-    required: false,
-    description: "Filter by organisation UUID",
-  })
+  @ApiOperation({ summary: "Get all tasks in the caller's organisation" })
   @ApiQuery({
     name: "assigned_to",
     required: false,
     description: "Filter by assigned user UUID",
   })
   @ApiQuery({
-    name: "is_completed",
+    name: "status",
     required: false,
-    enum: ["true", "false"],
-    description: "Filter by completion status",
+    description: "Filter by status",
   })
   @ApiQuery({
     name: "search",
     required: false,
-    description: "Search by task title or description",
+    description: "Search by task title",
   })
   findAll(
-    @Query("organisation_id") organisationId?: string,
+    @Request() req,
     @Query("assigned_to") assignedTo?: string,
-    @Query("is_completed") isCompleted?: string,
+    @Query("status") status?: string,
     @Query("search") search?: string,
   ) {
-    return this.tasksService.findAll({
-      organisation_id: organisationId,
+    return this.tasksService.findAll(req.user.organisation_id, {
       assigned_to: assignedTo,
-      is_completed: isCompleted === "true",
+      status,
       search,
     });
   }
@@ -84,40 +85,55 @@ export class TasksController {
 
   @Get(":id")
   @ApiOperation({ summary: "Get task by ID" })
-  findOne(@Param("id") id: string) {
-    return this.tasksService.findOne(id);
+  findOne(@Param("id") id: string, @Request() req) {
+    return this.tasksService.findOne(id, req.user.organisation_id);
   }
 
   @Patch(":id")
   @ApiOperation({ summary: "Update task" })
-  update(@Param("id") id: string, @Body() updateTaskDto: UpdateTaskDto) {
-    return this.tasksService.update(id, updateTaskDto);
+  update(
+    @Param("id") id: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+    @Request() req,
+  ) {
+    return this.tasksService.update(
+      id,
+      req.user.organisation_id,
+      updateTaskDto,
+    );
   }
 
   @Post(":id/assign")
   @ApiOperation({ summary: "Assign task to a user" })
-  assignTask(@Param("id") id: string, @Body() assignTaskDto: AssignTaskDto) {
-    return this.tasksService.assignTask(id, assignTaskDto);
+  assignTask(
+    @Param("id") id: string,
+    @Body() assignTaskDto: AssignTaskDto,
+    @Request() req,
+  ) {
+    return this.tasksService.assignTask(
+      id,
+      req.user.organisation_id,
+      assignTaskDto,
+    );
   }
 
   @Patch(":id/status")
-  @ApiOperation({ summary: "Update task completion status" })
-  @ApiBody({
-    schema: {
-      type: "object",
-      properties: { is_completed: { type: "boolean" } },
-    },
-  })
+  @ApiOperation({ summary: "Update task status (todo/in-progress/review/done)" })
   updateStatus(
     @Param("id") id: string,
-    @Body("is_completed") isCompleted: boolean,
+    @Body() body: UpdateTaskStatusDto,
+    @Request() req,
   ) {
-    return this.tasksService.updateStatus(id, isCompleted);
+    return this.tasksService.updateStatus(
+      id,
+      req.user.organisation_id,
+      body.status,
+    );
   }
 
   @Delete(":id")
   @ApiOperation({ summary: "Delete task" })
-  remove(@Param("id") id: string) {
-    return this.tasksService.remove(id);
+  remove(@Param("id") id: string, @Request() req) {
+    return this.tasksService.remove(id, req.user.organisation_id);
   }
 }

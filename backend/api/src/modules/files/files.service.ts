@@ -1,8 +1,11 @@
 import { Injectable, Inject, NotFoundException } from "@nestjs/common";
+import * as fs from "fs";
+import * as path from "path";
 import {
   files,
   fileMovements,
   noteSheets,
+  fileAttachments,
 } from "../../database/drizzle/schema";
 import { eq, desc, and, like, or } from "drizzle-orm";
 import { DRIZZLE } from "../../database/drizzle/database.module";
@@ -14,6 +17,8 @@ import {
   RejectFileDto,
 } from "./dto";
 import { USER_SUMMARY_COLUMNS } from "../../common/constants/safe-user-columns";
+
+export const UPLOAD_DIR = path.join(process.cwd(), "uploads", "files");
 
 @Injectable()
 export class FilesService {
@@ -323,5 +328,118 @@ export class FilesService {
         currentHolder: { columns: USER_SUMMARY_COLUMNS },
       },
     });
+  }
+
+  async getAnalytics(organisationId: string) {
+    const orgFiles = await this.db
+      .select({
+        status: files.status,
+        category: files.category,
+        priority: files.priority,
+        created_at: files.created_at,
+        updated_at: files.updated_at,
+      })
+      .from(files)
+      .where(eq(files.organisation_id, organisationId));
+
+    const byStatus: Record<string, number> = {};
+    const byCategory: Record<string, number> = {};
+    const byPriority: Record<string, number> = {};
+    let openAgeSumDays = 0;
+    let openCount = 0;
+    const now = Date.now();
+
+    for (const f of orgFiles) {
+      byStatus[f.status] = (byStatus[f.status] || 0) + 1;
+      const category = f.category || "Uncategorised";
+      byCategory[category] = (byCategory[category] || 0) + 1;
+      byPriority[f.priority] = (byPriority[f.priority] || 0) + 1;
+
+      if (f.status === "active") {
+        openAgeSumDays +=
+          (now - new Date(f.created_at).getTime()) / (1000 * 60 * 60 * 24);
+        openCount += 1;
+      }
+    }
+
+    return {
+      totalFiles: orgFiles.length,
+      byStatus,
+      byCategory,
+      byPriority,
+      averageOpenFileAgeDays:
+        openCount > 0 ? Math.round((openAgeSumDays / openCount) * 10) / 10 : 0,
+    };
+  }
+
+  // --- Attachments ---
+
+  private async findFileInOrg(fileId: string, organisationId: string) {
+    const file = await this.db.query.files.findFirst({
+      where: and(
+        eq(files.id, fileId),
+        eq(files.organisation_id, organisationId),
+      ),
+    });
+    if (!file) throw new NotFoundException("File not found");
+    return file;
+  }
+
+  async addAttachment(
+    fileId: string,
+    organisationId: string,
+    userId: string,
+    upload: {
+      originalname: string;
+      filename: string;
+      mimetype: string;
+      size: number;
+    },
+  ) {
+    await this.findFileInOrg(fileId, organisationId); // 404s + org-check
+
+    const [attachment] = await this.db
+      .insert(fileAttachments)
+      .values({
+        file_id: fileId,
+        uploaded_by: userId,
+        original_name: upload.originalname,
+        stored_name: upload.filename,
+        mime_type: upload.mimetype,
+        size_bytes: upload.size,
+      })
+      .returning();
+    return attachment;
+  }
+
+  async getAttachments(fileId: string, organisationId: string) {
+    await this.findFileInOrg(fileId, organisationId);
+    return await this.db.query.fileAttachments.findMany({
+      where: eq(fileAttachments.file_id, fileId),
+      orderBy: [desc(fileAttachments.created_at)],
+      with: {
+        uploadedBy: { columns: USER_SUMMARY_COLUMNS },
+      },
+    });
+  }
+
+  async getAttachmentForDownload(
+    attachmentId: string,
+    organisationId: string,
+  ) {
+    const attachment = await this.db.query.fileAttachments.findFirst({
+      where: eq(fileAttachments.id, attachmentId),
+      with: { file: true },
+    });
+    if (!attachment || attachment.file.organisation_id !== organisationId) {
+      throw new NotFoundException("Attachment not found");
+    }
+
+    const diskPath = path.join(UPLOAD_DIR, attachment.stored_name);
+    if (!fs.existsSync(diskPath)) {
+      throw new NotFoundException("Attachment file is missing on disk");
+    }
+
+    return { attachment, diskPath };
   }
 }

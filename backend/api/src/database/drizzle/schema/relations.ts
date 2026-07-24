@@ -6,8 +6,16 @@ import {
   academicClasses,
   enrollments,
   studentAttendance,
+  exams,
+  examGrades,
 } from "./campus.schema";
-import { files, fileMovements, noteSheets } from "./files.schema";
+import {
+  files,
+  fileMovements,
+  noteSheets,
+  fileAttachments,
+} from "./files.schema";
+import { tasks } from "./task.schema";
 
 // Users Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -89,6 +97,42 @@ export const studentAttendanceRelations = relations(
   }),
 );
 
+// Exams / Grades Relations
+export const examsRelations = relations(exams, ({ one, many }) => ({
+  class: one(academicClasses, {
+    fields: [exams.class_id],
+    references: [academicClasses.id],
+  }),
+  createdBy: one(users, {
+    fields: [exams.created_by],
+    references: [users.id],
+  }),
+  grades: many(examGrades),
+}));
+
+export const examGradesRelations = relations(examGrades, ({ one }) => ({
+  exam: one(exams, {
+    fields: [examGrades.exam_id],
+    references: [exams.id],
+  }),
+  student: one(users, {
+    fields: [examGrades.student_id],
+    references: [users.id],
+  }),
+}));
+
+// Tasks Relations
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  assignee: one(users, {
+    fields: [tasks.assigned_to],
+    references: [users.id],
+  }),
+  creator: one(users, {
+    fields: [tasks.created_by],
+    references: [users.id],
+  }),
+}));
+
 // Files (E-File System) Relations
 export const filesRelations = relations(files, ({ one, many }) => ({
   initiator: one(users, {
@@ -101,7 +145,22 @@ export const filesRelations = relations(files, ({ one, many }) => ({
   }),
   movements: many(fileMovements),
   notes: many(noteSheets),
+  attachments: many(fileAttachments),
 }));
+
+export const fileAttachmentsRelations = relations(
+  fileAttachments,
+  ({ one }) => ({
+    file: one(files, {
+      fields: [fileAttachments.file_id],
+      references: [files.id],
+    }),
+    uploadedBy: one(users, {
+      fields: [fileAttachments.uploaded_by],
+      references: [users.id],
+    }),
+  }),
+);
 
 export const fileMovementsRelations = relations(fileMovements, ({ one }) => ({
   file: one(files, {
