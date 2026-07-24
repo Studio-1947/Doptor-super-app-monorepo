@@ -4,6 +4,9 @@ import { organisations } from "./organisation.schema";
 export const roles = pgTable("roles", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
+  // Shown in the Roles & Permissions UI so an admin can tell the default roles
+  // apart without reading their permission sets.
+  description: text("description"),
   organisation_id: uuid("organisation_id")
     .references(() => organisations.id)
     .notNull(),

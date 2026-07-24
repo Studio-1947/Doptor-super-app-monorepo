@@ -20,6 +20,11 @@ import { refreshTokens } from "../../database/drizzle/schema/refresh-token.schem
 import { auditLogs } from "../../database/drizzle/schema/audit-log.schema";
 import { DEFAULT_PERMISSIONS } from "../../database/drizzle/default-permissions";
 import {
+  DEFAULT_OFFICE_ROLES,
+  OWNER_ROLE_NAME,
+  resolveRolePermissions,
+} from "../../database/drizzle/default-roles";
+import {
   RegisterDto,
   LoginDto,
   RegisterOrganisationDto,
@@ -177,22 +182,7 @@ export class AuthService {
           created_at: users.created_at,
         });
 
-      // 3. Create Organisation Admin role
-      const [adminRole] = await tx
-        .insert(roles)
-        .values({
-          name: "Organisation Admin",
-          organisation_id: newOrg.id,
-        })
-        .returning();
-
-      // 4. Assign role to user
-      await tx.insert(userRoles).values({
-        user_id: newUser.id,
-        role_id: adminRole.id,
-      });
-
-      // 5. Seed default permissions for this org and grant them all to the admin role
+      // 3. Seed this org's permission rows.
       const insertedPermissions = await tx
         .insert(permissions)
         .values(
@@ -204,12 +194,51 @@ export class AuthService {
         )
         .returning();
 
-      await tx.insert(rolePermissions).values(
-        insertedPermissions.map((p) => ({
-          role_id: adminRole.id,
-          permission_id: p.id,
-        })),
+      const permissionByKey = new Map(
+        insertedPermissions.map((p) => [`${p.action}:${p.resource}`, p.id]),
       );
+
+      // 4. Create the standard office roles, not just an admin. An org that
+      // starts with one role forces every new member to be an admin or to have
+      // permissions hand-assigned before they can do anything.
+      const createdRoles = await tx
+        .insert(roles)
+        .values(
+          DEFAULT_OFFICE_ROLES.map((role) => ({
+            name: role.name,
+            description: role.description,
+            organisation_id: newOrg.id,
+          })),
+        )
+        .returning();
+
+      const roleIdByName = new Map(createdRoles.map((r) => [r.name, r.id]));
+
+      // 5. Grant each role its default permission set.
+      const grants = DEFAULT_OFFICE_ROLES.flatMap((role) => {
+        const roleId = roleIdByName.get(role.name);
+        if (!roleId) return [];
+        return resolveRolePermissions(role)
+          .map((p) => permissionByKey.get(`${p.action}:${p.resource}`))
+          .filter((permissionId): permissionId is string => Boolean(permissionId))
+          .map((permissionId) => ({ role_id: roleId, permission_id: permissionId }));
+      });
+
+      if (grants.length > 0) {
+        await tx.insert(rolePermissions).values(grants);
+      }
+
+      // 6. The registering user owns the organisation.
+      const ownerRoleId = roleIdByName.get(OWNER_ROLE_NAME);
+      if (!ownerRoleId) {
+        throw new Error(
+          `Role "${OWNER_ROLE_NAME}" missing from DEFAULT_OFFICE_ROLES`,
+        );
+      }
+      await tx.insert(userRoles).values({
+        user_id: newUser.id,
+        role_id: ownerRoleId,
+      });
 
       return { newUser, newOrg };
     });

@@ -180,6 +180,42 @@ documented deviation (Decision C values — see below).
       trail — all org-scoped and permission-gated. **Code complete; not yet verified against a
       live database.**
 
+### Phase 2.5 — Standard office roles at onboarding ✅ done 2026-07-24
+
+Registration created exactly **one** role, `Organisation Admin`, granted everything. Every
+other member therefore had to be made an admin or have permissions hand-assigned before they
+could do anything — which is also why gating tasks in Phase 1 was risky.
+
+New `default-roles.ts` defines the roles a standard office starts with, each with a
+least-privilege default grant:
+
+| Role | Intent |
+|---|---|
+| **Organisation Admin** | Everything, including settings, roles and members |
+| **Department Head** | Runs a department — approves files and leave, owns the team's work |
+| **Manager** | Leads a team — assigns work, moves files, but **cannot approve** |
+| **Staff** | Does assigned work, raises and forwards files, punches attendance |
+| **HR Manager** | Owns attendance, leave approvals and the people directory |
+| **Auditor** | Read-only across the organisation, for review |
+
+- All six are created at registration (`auth.service.ts`) and granted their sets in the same
+  transaction as the org.
+- `db:sync-permissions` backfills them into existing orgs. It **does not** re-grant defaults
+  to roles that already exist — an admin may have tuned those deliberately.
+- `roles.description` added (migration `0012`, nullable/additive) so the Roles & Permissions
+  UI can distinguish them. `seed.ts` now shares these definitions instead of keeping its own
+  drifting list, and grants every role its set rather than only the two admin roles.
+- A typo in a permission ref throws at module load rather than silently granting a string the
+  guard will never match.
+
+**Deliberately not included:** campus roles (Professor, Principal, Student). Campus is frozen;
+add a campus set alongside this one when it resumes. The seed keeps them as inert demo
+fixtures with no permissions.
+
+**These are a starting point, not policy** — admins retune per role in the UI. If the split
+doesn't match how your customers actually work, `default-roles.ts` is the single place to
+change it.
+
 ### Phase 3 — Notifications
 *Deliberately before attendance: it is the connective tissue the other pillars need.*
 
