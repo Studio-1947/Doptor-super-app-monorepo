@@ -1,12 +1,13 @@
-# Uncommitted Work — Full Reference
+# July 2026 — What shipped in commit `5a7394a`
 
-**Written:** 2026-07-24 · **Branch:** `main` · **Last commit:** `b66c61a` (2026-07-03 16:12)
+**Written:** 2026-07-24 · **Commit:** `5a7394a` · **Branch:** `main`
 
-Everything below is **uncommitted** — 27 modified files, 9 new files, 1 deletion.
-Roughly **+1327 / −583** lines. Nothing here has been pushed or deployed.
+Reference for commit `5a7394a` ("feat: implement campus, files, and tasks modules…"),
+a 37-file / ~9000-line commit that bundles **three unrelated work sessions**. The commit
+message doesn't distinguish them, hence this document.
 
-There are **three separate work sessions** in this working tree, reconstructed from file
-mtimes. They are independent of each other and can be committed separately.
+Sessions were reconstructed from file mtimes before the commit was made. Note the
+cross-tenant security fix in Session 1 — it is easy to miss inside a feature commit.
 
 | # | When | Theme | Status |
 |---|---|---|---|
@@ -224,21 +225,17 @@ Status/priority values are constrained by `@IsIn(...)` against `TASK_STATUSES` /
 4. **Session 3 is unverified.** Sessions 1 and 2 have explicit "verified live" notes; the
    tasks work has none. The breaking API changes above are the risk area.
 
-5. **The porting plan is not started.** `docs/PORTING-PLAN-tracker-to-doptor.md` (written today)
-   locks Decisions A–D for porting task-tracker features into Doptor and explicitly says
-   "Nothing is built yet — ready to start Phase 0." Note its Decision A/B/C would **rework**
-   session 3's schema: departments owning `DEPT-12` task refs, `labels` tables replacing the
-   `tags` jsonb column, and text→Postgres-enum migration for status/priority.
+5. **Session 3's schema will be reworked.** `docs/OFFICE-ROADMAP.md` Phase 2 (absorbing the
+   porting plan's Decisions A–C) replaces the `tags` jsonb column with `labels` tables and
+   migrates status/priority from `text` to Postgres enums. Expected, but it's a data
+   migration rather than a clean column add.
 
-## Suggested commit split
+---
 
-```
-1. feat(campus): add exams/grades + wire results & timetable pages
-   ^ include the org-scoping leak fix, or split it out as its own fix: commit first
-2. feat(office): file attachments upload/download + file analytics
-3. feat(tasks): status/priority/due-date/tags + org-scope all task endpoints
-4. docs: task-tracker porting plan
-```
+## Superseded by
 
-The cross-tenant leak fix is arguably worth its own commit ahead of everything else — it's a
-security fix and reviewers should see it in isolation rather than buried in a feature commit.
+- **`docs/OFFICE-ROADMAP.md`** — the current plan. Office is now the primary product and
+  campus is frozen (decided 2026-07-24), so the campus work above is complete-and-parked,
+  not a foundation to build on.
+- **`docs/PORTING-PLAN-tracker-to-doptor.md`** — still the detailed schema spec for tasks
+  and HR attendance; absorbed into the roadmap as Phases 2 and 4.
