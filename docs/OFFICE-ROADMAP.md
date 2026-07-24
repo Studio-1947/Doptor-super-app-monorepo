@@ -216,6 +216,45 @@ fixtures with no permissions.
 doesn't match how your customers actually work, `default-roles.ts` is the single place to
 change it.
 
+---
+
+## Verification — 2026-07-24 ✅ Phases 1, 2 and 2.5 pass against a live database
+
+Run against a real Postgres 16 with the built API, exercising HTTP endpoints (so guards,
+DTO validation and route ordering are all in the path). **53 checks, 53 passed.**
+
+Covered: onboarding creates all six roles with correct grants · `read:files` gate ·
+registry pagination shape · reference generation (`FIN-1`, `FIN-2`) · **five concurrent
+creates produce five distinct references** (the atomic counter holds) · multi-assignee ·
+label toggle on/off · comments · subtasks, and rejection of a subtask-of-a-subtask ·
+`is_completed`/`completed_at` derived from status · department immutability · unknown enum
+query params rejected · archive hidden by default and visible with `include_archived` ·
+`top_level_only` · LIKE wildcards escaped · case-insensitive search · pagination ·
+per-field audit with before/after · **cross-org isolation for tasks and departments**.
+
+Role grants were checked directly in the database: Organisation Admin 46 (all), Department
+Head 20, Manager 15, HR Manager 12, Staff 12, Auditor 7 — Staff holds no approve, delete or
+user-management permission, as designed.
+
+### Three things verification caught that typechecking could not
+
+1. **`drizzle-kit push:pg` partially applies and then fails.** Against a database holding
+   the pre-Phase-2 `tasks` table, `push` created the new tables and enum *types*, then died
+   on the enum conversion — leaving the DB half-migrated, with `status` still `text` and
+   `department_id`/`number`/`is_archived` missing. Recovered by applying
+   `0011_short_valkyrie.sql` directly; `push:pg` then reported no changes.
+   **This is what would have happened on the VPS.**
+2. **Departments had no tenant scoping at all** (backlog M-13) — a cross-tenant leak of the
+   same class as the campus one, and now on the critical path because task references come
+   from departments.
+3. **Same-second token issuance returned a 500** (backlog M-14) — a pre-existing bug that
+   broke register-then-login and any double-clicked login.
+
+The hand-edited enum migration was also tested in isolation on a scratch database: drizzle's
+generated statement fails with `column "status" cannot be cast automatically`, while the
+edited version converts both columns, **preserves existing row values**, and restores the
+defaults as the enum type.
+
 ### Phase 3 — Notifications
 *Deliberately before attendance: it is the connective tissue the other pillars need.*
 

@@ -375,6 +375,25 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       every other role. `db:sync-permissions` (see M-7) grants `tasks` permissions to all
       existing roles, preserving today's effective access; admins can tighten per-role
       afterwards from the Roles & Permissions UI.
+- [x] **M-13** 🔴 ~~`departments` module had no tenant scoping~~ — found and fixed
+      2026-07-24 while verifying Phase 2 against a live database. Same class of
+      cross-tenant leak as the campus one fixed in `5a7394a`:
+      `POST /departments` took `organisation_id` from the **request body**, so any
+      authenticated user could create a department inside any other organisation;
+      `GET /departments` took an **optional** org query param and returned every
+      organisation's departments when it was omitted; and `GET/PATCH/DELETE
+      /departments/:id` had **no org check at all**, so any user could read, rename or
+      delete any other org's department by id. All five now scope from
+      `req.user.organisation_id`, `organisation_id` is gone from the DTO, and
+      `@Permissions` gates were added. Cross-org access returns 404, not 403, so ids
+      aren't probeable. Verified live with two orgs.
+- [x] **M-14** 🟠 ~~Same-second token issuance returned a 500~~ — found and fixed
+      2026-07-24. `generateTokens` signed the refresh token from `{ sub, email }` only;
+      JWT `iat`/`exp` are second-granular, so two refresh tokens minted for one user in
+      the same second were byte-identical and collided with the UNIQUE constraint on
+      `refresh_tokens.token`. Reachable in normal use — register-then-login, a
+      double-clicked login button, or any two logins in the same second. Refresh tokens
+      now carry a random `jti`; the access token payload is unchanged.
 - [x] **M-12** ~~`attendance` schema column-name mismatch~~ — done 2026-07-24: the Drizzle
       property was `s_present: boolean("is_present")`, so the TS property name didn't match
       the DB column. Renamed the property to `is_present`. No source referenced the old
