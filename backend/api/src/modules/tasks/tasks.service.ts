@@ -316,16 +316,31 @@ export class TasksService {
       );
     }
 
-    // Assignee and label live in join tables, so filter via a subquery rather
-    // than joining — keeps the row shape (and the relational `with` below) intact.
+    // Assignee and label live in join tables. These use `inArray` against a
+    // built subquery rather than a raw `sql` EXISTS: inside the relational query
+    // builder (db.query.tasks.findMany) the primary table is aliased, and a raw
+    // template mis-qualifies columns belonging to other tables — a correlated
+    // `task_assignees.task_id` came out as `tasks.task_id`, which does not exist.
     if (filters.assigned_to) {
       conditions.push(
-        sql`exists (select 1 from ${taskAssignees} where ${taskAssignees.task_id} = ${tasks.id} and ${taskAssignees.user_id} = ${filters.assigned_to})`,
+        inArray(
+          tasks.id,
+          this.db
+            .select({ id: taskAssignees.task_id })
+            .from(taskAssignees)
+            .where(eq(taskAssignees.user_id, filters.assigned_to)),
+        ),
       );
     }
     if (filters.label_id) {
       conditions.push(
-        sql`exists (select 1 from ${taskLabels} where ${taskLabels.task_id} = ${tasks.id} and ${taskLabels.label_id} = ${filters.label_id})`,
+        inArray(
+          tasks.id,
+          this.db
+            .select({ id: taskLabels.task_id })
+            .from(taskLabels)
+            .where(eq(taskLabels.label_id, filters.label_id)),
+        ),
       );
     }
 
