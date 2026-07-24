@@ -17,21 +17,12 @@ import {
   RejectFileDto,
 } from "./dto";
 import { USER_SUMMARY_COLUMNS } from "../../common/constants/safe-user-columns";
+import { containsPattern } from "../../common/utils/escape-like";
 
 export const UPLOAD_DIR = path.join(process.cwd(), "uploads", "files");
 
 const DEFAULT_REGISTRY_PAGE_SIZE = 25;
 const MAX_REGISTRY_PAGE_SIZE = 100;
-
-/**
- * Escapes Postgres LIKE/ILIKE wildcards in user-supplied search input so that a
- * term containing `%` or `_` matches those characters literally instead of
- * behaving as a wildcard (backlog M-9). The backslash escape character itself
- * must be escaped first, or it would escape the escapes we add afterwards.
- */
-function escapeLikePattern(input: string): string {
-  return input.replace(/\\/g, "\\\\").replace(/[%_]/g, "\\$&");
-}
 
 const sqlCount = () => sql<number>`cast(count(*) as int)`;
 
@@ -340,7 +331,7 @@ export class FilesService {
     }
 
     if (search) {
-      const term = `%${escapeLikePattern(search)}%`;
+      const term = containsPattern(search);
       conditions.push(
         or(ilike(files.subject, term), ilike(files.file_number, term))!,
       );
