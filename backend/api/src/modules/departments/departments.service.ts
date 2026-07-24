@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, Inject } from "@nestjs/common";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { departments } from "../../database/drizzle/schema/department.schema";
 import { CreateDepartmentDto, UpdateDepartmentDto } from "./dto";
 import { DRIZZLE } from "../../database/drizzle/database.module";
@@ -9,32 +9,40 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 export class DepartmentsService {
   constructor(@Inject(DRIZZLE) private db: PostgresJsDatabase) {}
 
-  async create(createDepartmentDto: CreateDepartmentDto) {
+  async create(data: CreateDepartmentDto, organisationId: string) {
     const [department] = await this.db
       .insert(departments)
-      .values(createDepartmentDto)
+      .values({
+        name: data.name,
+        code: data.code,
+        description: data.description,
+        head_of_dept_id: data.head_of_dept_id,
+        task_prefix: data.task_prefix,
+        // Taken from the authenticated user, never from the request body.
+        organisation_id: organisationId,
+      })
       .returning();
 
     return department;
   }
 
-  async findAll(organisationId?: string) {
-    let query = this.db.select().from(departments);
-
-    if (organisationId) {
-      query = query.where(
-        eq(departments.organisation_id, organisationId),
-      ) as any;
-    }
-
-    return await query;
+  async findAll(organisationId: string) {
+    return await this.db
+      .select()
+      .from(departments)
+      .where(eq(departments.organisation_id, organisationId));
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, organisationId: string) {
     const [department] = await this.db
       .select()
       .from(departments)
-      .where(eq(departments.id, id))
+      .where(
+        and(
+          eq(departments.id, id),
+          eq(departments.organisation_id, organisationId),
+        ),
+      )
       .limit(1);
 
     if (!department) {
@@ -44,11 +52,20 @@ export class DepartmentsService {
     return department;
   }
 
-  async update(id: string, updateDepartmentDto: UpdateDepartmentDto) {
+  async update(
+    id: string,
+    organisationId: string,
+    data: UpdateDepartmentDto,
+  ) {
     const [updatedDepartment] = await this.db
       .update(departments)
-      .set({ ...updateDepartmentDto, updated_at: new Date() })
-      .where(eq(departments.id, id))
+      .set({ ...data, updated_at: new Date() })
+      .where(
+        and(
+          eq(departments.id, id),
+          eq(departments.organisation_id, organisationId),
+        ),
+      )
       .returning();
 
     if (!updatedDepartment) {
@@ -58,10 +75,15 @@ export class DepartmentsService {
     return updatedDepartment;
   }
 
-  async remove(id: string) {
+  async remove(id: string, organisationId: string) {
     const [deletedDepartment] = await this.db
       .delete(departments)
-      .where(eq(departments.id, id))
+      .where(
+        and(
+          eq(departments.id, id),
+          eq(departments.organisation_id, organisationId),
+        ),
+      )
       .returning();
 
     if (!deletedDepartment) {

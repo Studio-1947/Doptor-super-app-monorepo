@@ -3,7 +3,12 @@ import apiClient from "../lib/api-client";
 export interface Department {
   id: string;
   name: string;
+  code?: string | null;
   description?: string;
+  head_of_dept_id?: string | null;
+  /** Prefix for task references from this department, e.g. ENG-12. */
+  task_prefix?: string | null;
+  task_seq?: number;
   organisation_id: string;
   created_at: string;
   updated_at: string;
@@ -11,14 +16,20 @@ export interface Department {
 
 export interface CreateDepartmentDto {
   name: string;
+  code?: string;
   description?: string;
-  organisation_id: string;
+  head_of_dept_id?: string;
+  task_prefix?: string;
 }
 
 class DepartmentService {
-  async getAll(organisationId?: string): Promise<Department[]> {
-    const params = organisationId ? { organisation_id: organisationId } : {};
-    const response = await apiClient.get("/departments", { params });
+  /**
+   * Always returns the caller's own organisation. The API scopes this from the
+   * authenticated user — it no longer accepts an organisation filter, which
+   * previously returned every organisation's departments when omitted.
+   */
+  async getAll(): Promise<Department[]> {
+    const response = await apiClient.get("/departments");
     return response.data;
   }
 
