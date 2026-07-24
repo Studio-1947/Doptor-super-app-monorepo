@@ -14,15 +14,21 @@
  *
  * What it does, per organisation:
  *   1. Inserts any DEFAULT_PERMISSIONS row the org is missing.
- *   2. Grants every permission to "Organisation Admin" / "Super Admin" roles,
+ *   2. Creates any DEFAULT_OFFICE_ROLES role the org is missing, and grants it
+ *      its full default permission set. Orgs registered before the standard
+ *      role set existed have only "Organisation Admin", which forced every new
+ *      member to be an admin or to have permissions hand-assigned.
+ *      Roles that already exist are NOT re-granted their defaults — an admin
+ *      may have tuned them deliberately and that should not be undone.
+ *   3. Grants every permission to "Organisation Admin" / "Super Admin" roles,
  *      restoring the invariant those roles are created with.
- *   3. Grants `<action>:files` to any role that already holds the matching
+ *   4. Grants `<action>:files` to any role that already holds the matching
  *      `<action>:documents`, because the e-file system used to borrow the
  *      `documents` permissions — this preserves existing access exactly.
- *   4. Grants `tasks` permissions to every role, because the tasks endpoints
- *      were previously ungated (any authenticated user could use them).
- *      This introduces enforcement without changing who can currently do what;
- *      admins can then tighten per-role from the Roles & Permissions UI.
+ *   5. Grants `tasks` permissions to every pre-existing role, because the tasks
+ *      endpoints were previously ungated (any authenticated user could use
+ *      them). This introduces enforcement without changing who can currently do
+ *      what; admins can then tighten per-role from the Roles & Permissions UI.
  *
  * Run with:  pnpm --filter api db:sync-permissions
  */
@@ -34,6 +40,11 @@ import { roles } from "./schema/role.schema";
 import { permissions } from "./schema/permission.schema";
 import { rolePermissions } from "./schema/role-permission.schema";
 import { DEFAULT_PERMISSIONS } from "./default-permissions";
+import {
+  DEFAULT_OFFICE_ROLES,
+  ALL_PERMISSION_ROLES,
+  resolveRolePermissions,
+} from "./default-roles";
 
 // `dotenv` is not a declared dependency of this package — it only resolves via
 // hoisting, and it isn't needed in the container (docker-compose injects env
@@ -54,8 +65,6 @@ if (!connectionString) {
 const client = postgres(connectionString);
 const db = drizzle(client);
 
-const ALL_PERMISSION_ROLES = ["Organisation Admin", "Super Admin"];
-
 /** Actions the e-file system used to borrow from the `documents` resource. */
 const FILES_FROM_DOCUMENTS_ACTIONS = [
   "create",
@@ -72,6 +81,8 @@ async function main() {
 
   let totalInserted = 0;
   let totalGranted = 0;
+  let totalRolesCreated = 0;
+  const newRoleIds = new Set<string>();
 
   for (const org of allOrgs) {
     console.log(`— ${org.name} (${org.id})`);
@@ -113,10 +124,35 @@ async function main() {
     );
 
     // Roles + their current grants, for this org.
-    const orgRoles = await db
+    let orgRoles = await db
       .select()
       .from(roles)
       .where(eq(roles.organisation_id, org.id));
+
+    // Create any standard office role the org is missing. Orgs registered
+    // before the default role set existed have only "Organisation Admin", so
+    // every member had to be an admin or be hand-granted permissions.
+    const missingRoles = DEFAULT_OFFICE_ROLES.filter(
+      (r) => !orgRoles.some((existing) => existing.name === r.name),
+    );
+    if (missingRoles.length > 0) {
+      const created = await db
+        .insert(roles)
+        .values(
+          missingRoles.map((r) => ({
+            name: r.name,
+            description: r.description,
+            organisation_id: org.id,
+          })),
+        )
+        .returning();
+      orgRoles = [...orgRoles, ...created];
+      created.forEach((r) => newRoleIds.add(r.id));
+      totalRolesCreated += created.length;
+      console.log(
+        `   + ${created.length} role(s): ${created.map((r) => r.name).join(", ")}`,
+      );
+    }
 
     if (orgRoles.length === 0) {
       console.log(`   · no roles, nothing to grant\n`);
@@ -152,6 +188,22 @@ async function main() {
         continue;
       }
 
+      // 3. Roles this script just created get their full default set.
+      // Roles that already existed are left alone apart from the targeted
+      // migrations below — an admin may have tuned them deliberately, and
+      // silently re-granting the defaults would undo that.
+      if (newRoleIds.has(role.id)) {
+        const definition = DEFAULT_OFFICE_ROLES.find(
+          (r) => r.name === role.name,
+        );
+        if (definition) {
+          for (const p of resolveRolePermissions(definition)) {
+            addGrant(role.id, permissionByKey.get(`${p.action}:${p.resource}`)?.id);
+          }
+          continue;
+        }
+      }
+
       const roleGrantIds = new Set(
         existingGrants
           .filter((g) => g.role_id === role.id)
@@ -163,14 +215,14 @@ async function main() {
           .map((p) => `${p.action}:${p.resource}`),
       );
 
-      // 3. files mirrors whatever the role already had on documents.
+      // 4. files mirrors whatever the role already had on documents.
       for (const action of FILES_FROM_DOCUMENTS_ACTIONS) {
         if (roleKeys.has(`${action}:documents`)) {
           addGrant(role.id, permissionByKey.get(`${action}:files`)?.id);
         }
       }
 
-      // 4. tasks were previously ungated — preserve that access for everyone.
+      // 5. tasks were previously ungated — preserve that access for everyone.
       for (const p of orgPermissions.filter((x) => x.resource === "tasks")) {
         addGrant(role.id, p.id);
       }
@@ -187,7 +239,7 @@ async function main() {
   }
 
   console.log(
-    `✅ Done. ${totalInserted} permission row(s) created, ${totalGranted} grant(s) added.`,
+    `✅ Done. ${totalRolesCreated} role(s) created, ${totalInserted} permission row(s) created, ${totalGranted} grant(s) added.`,
   );
 }
 

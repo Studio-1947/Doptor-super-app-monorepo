@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsUUID, IsOptional } from "class-validator";
+import {
+  IsNotEmpty,
+  IsString,
+  IsUUID,
+  IsOptional,
+  MaxLength,
+} from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateDepartmentDto {
@@ -11,8 +17,17 @@ export class CreateDepartmentDto {
   name: string;
 
   @ApiProperty({
+    example: "ENG",
+    description: "Short code for the department",
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  code?: string;
+
+  @ApiProperty({
     example: "Responsible for product development",
-    description: "Description of the department",
     required: false,
   })
   @IsString()
@@ -20,30 +35,55 @@ export class CreateDepartmentDto {
   description?: string;
 
   @ApiProperty({
-    example: "123e4567-e89b-12d3-a456-426614174000",
-    description: "The UUID of the organisation",
+    description: "UUID of the user heading this department",
+    required: false,
   })
   @IsUUID()
-  @IsNotEmpty()
-  organisation_id: string;
+  @IsOptional()
+  head_of_dept_id?: string;
+
+  @ApiProperty({
+    example: "ENG",
+    description:
+      "Prefix for task references from this department (e.g. ENG-12). " +
+      "Falls back to the department code or name when unset.",
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(10)
+  task_prefix?: string;
+
+  // NOTE: organisation_id is deliberately absent. It is taken from the
+  // authenticated user — accepting it from the body let any authenticated user
+  // create a department inside any other organisation.
 }
 
 export class UpdateDepartmentDto {
-  @ApiProperty({
-    example: "Software Engineering",
-    description: "The new name of the department",
-    required: false,
-  })
+  @ApiProperty({ example: "Software Engineering", required: false })
   @IsString()
   @IsOptional()
   name?: string;
 
-  @ApiProperty({
-    example: "Updated description",
-    description: "The new description",
-    required: false,
-  })
+  @ApiProperty({ example: "ENG", required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  code?: string;
+
+  @ApiProperty({ example: "Updated description", required: false })
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiProperty({ required: false })
+  @IsUUID()
+  @IsOptional()
+  head_of_dept_id?: string;
+
+  @ApiProperty({ example: "ENG", required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(10)
+  task_prefix?: string;
 }

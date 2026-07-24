@@ -9,6 +9,11 @@ import { users } from "./schema/user.schema";
 import { courses, academicClasses } from "./schema/campus.schema";
 import * as bcrypt from "bcrypt";
 import { DEFAULT_PERMISSIONS } from "./default-permissions";
+import {
+  DEFAULT_OFFICE_ROLES,
+  resolveRolePermissions,
+  type RoleDefinition,
+} from "./default-roles";
 
 dotenv.config();
 
@@ -16,19 +21,23 @@ const connectionString = process.env.DATABASE_URL!;
 const client = postgres(connectionString);
 const db = drizzle(client);
 
-// Default roles for the system
-const DEFAULT_ROLES = [
-  { name: "Super Admin", description: "Full system access" },
-  { name: "Organisation Admin", description: "Full organisation access" },
-  { name: "Department Head", description: "Department management" },
-  { name: "Manager", description: "Team management" },
-  { name: "Staff", description: "Regular employee" },
-  { name: "Field Worker", description: "Field operations" },
-  { name: "Professor", description: "Academic staff" },
-  { name: "Principal", description: "Campus head" },
-  { name: "Student", description: "Student access" },
-  { name: "Volunteer", description: "Volunteer network member" },
-  { name: "Coordinator", description: "Program coordinator" },
+// The demo org gets the same office roles a real registration creates, so the
+// seed can't drift from production onboarding. "Super Admin" is seed-only (it
+// exists for the demo super-admin login) and the campus/network roles below are
+// demo fixtures for the frozen verticals — they carry no permissions.
+const SEED_EXTRA_ROLES: RoleDefinition[] = [
+  { name: "Super Admin", description: "Full system access", permissions: "*" },
+  { name: "Field Worker", description: "Field operations", permissions: [] },
+  { name: "Professor", description: "Academic staff", permissions: [] },
+  { name: "Principal", description: "Campus head", permissions: [] },
+  { name: "Student", description: "Student access", permissions: [] },
+  { name: "Volunteer", description: "Volunteer network member", permissions: [] },
+  { name: "Coordinator", description: "Program coordinator", permissions: [] },
+];
+
+const DEFAULT_ROLES: RoleDefinition[] = [
+  ...DEFAULT_OFFICE_ROLES,
+  ...SEED_EXTRA_ROLES,
 ];
 
 async function seed() {
@@ -61,6 +70,7 @@ async function seed() {
         .insert(roles)
         .values({
           name: role.name,
+          description: role.description,
           organisation_id: demoOrg.id,
         })
         .returning();
@@ -84,29 +94,28 @@ async function seed() {
     }
     console.log(`✅ Created ${createdPermissions.length} permissions`);
 
-    // Assign all permissions to Super Admin and Org Admin
+    // Grant each role its defined permission set. Previously only Super Admin
+    // and Organisation Admin were granted anything, so every other seeded role
+    // was inert — the same gap real registrations had.
     console.log("🔗 Assigning permissions to roles...");
-    const superAdminRole = createdRoles.find((r) => r.name === "Super Admin");
-    const orgAdminRole = createdRoles.find(
-      (r) => r.name === "Organisation Admin",
+    const permissionIdByKey = new Map(
+      createdPermissions.map((p) => [`${p.action}:${p.resource}`, p.id]),
     );
 
-    if (superAdminRole) {
-      const rolePermissionValues = createdPermissions.map((p) => ({
-        role_id: superAdminRole.id,
-        permission_id: p.id,
-      }));
-      await db.insert(rolePermissions).values(rolePermissionValues);
-      console.log(`  ✅ Assigned all permissions to Super Admin`);
-    }
+    for (const definition of DEFAULT_ROLES) {
+      const role = createdRoles.find((r) => r.name === definition.name);
+      if (!role) continue;
 
-    if (orgAdminRole) {
-      const rolePermissionValues = createdPermissions.map((p) => ({
-        role_id: orgAdminRole.id,
-        permission_id: p.id,
-      }));
-      await db.insert(rolePermissions).values(rolePermissionValues);
-      console.log(`  ✅ Assigned all permissions to Organisation Admin`);
+      const values = resolveRolePermissions(definition)
+        .map((p) => permissionIdByKey.get(`${p.action}:${p.resource}`))
+        .filter((id): id is string => Boolean(id))
+        .map((permission_id) => ({ role_id: role.id, permission_id }));
+
+      if (values.length === 0) continue;
+      await db.insert(rolePermissions).values(values);
+      console.log(
+        `  ✅ ${definition.name}: ${values.length} permission(s)`,
+      );
     }
 
     // Create a demo super admin user

@@ -141,21 +141,119 @@ documented deviation (Decision C values — see below).
 > Run `push:pg` afterwards if you like — it should then be a no-op. Existing lowercase
 > values match the enum labels exactly, so the cast preserves data.
 
-**2b — service** (next): atomic ref generation and per-field audit writes in the same
-transaction as the mutation; multi-assignee, labels, comments, subtasks, archive/restore.
+**2b/2c — service, controller, DTOs ✅ done 2026-07-24**
 
-**2c — controller/DTOs**, **2d — Next.js frontend**.
+- Atomic reference generation: `create()` claims the next number with a single
+  `UPDATE departments SET task_seq = task_seq + 1 … RETURNING` inside the create
+  transaction, so concurrent creates can't collide on a number.
+- Per-field audit rows written in the **same transaction** as the mutation.
+- Multi-assignee, label CRUD + toggle, comments, one-level subtasks, archive/restore.
+- `findAll` gains filtering (status, priority, department, label, assignee, archived,
+  top-level-only), escaped ILIKE search, sorting, and pagination.
+- New endpoints for labels, assignees, comments, archive, and `GET /tasks/:id/history`.
+- A task's **department is immutable after create** — changing it would either duplicate a
+  reference number or silently renumber the task, so `update()` rejects `department_id`.
+- `is_completed`/`completed_at` are derived from `status` rather than independently
+  settable, so they can't drift out of sync.
 
-- [ ] Schema: `department_id` + `number` for `DEPT-12` refs, `parent_task_id`, `completed_at`,
-      `is_archived`; new `task_assignees`, `labels`/`task_labels`, `task_comments`,
-      `task_attachments`, `task_audit_logs`.
-- [ ] Migrate `tags jsonb` → `labels` tables (Decision B) and status/priority text → PG enums
-      (Decision C). **Note:** both now rework schema that shipped in `5a7394a` — that's fine
-      and expected, but it is a data migration, not just a column add.
-- [ ] Service: atomic ref generation + per-field audit writes **in the same transaction**.
-- [ ] Frontend: Kanban/List/Table + detail drawer with inline edit, labels, comments, history.
+**2d — Next.js frontend ✅ done 2026-07-24**
+
+- `services/tasks.service.ts` retyped against the new API (paginated list, labels,
+  assignees, comments, history).
+- Board cards show reference, labels, multi-assignee avatars, subtask/comment counts;
+  archived tasks are toggleable. Board requests the server max page rather than
+  paginating — pagination inside a kanban column reads as missing data.
+- New `TaskDetailDrawer.tsx`: inline title/description edit, status/priority/due-date,
+  assignee add-remove, label toggle, comments, and the audit history timeline.
+- Deleted `TaskList.tsx` and `TaskDetail.tsx` — hardcoded-mock components never imported.
+
+**Still outstanding in Phase 2:**
+- [ ] List/Table view (the board is the only view; the old mock List was deleted).
+- [ ] Task attachments UI — the `task_attachments` table and its file/link invariant exist,
+      but nothing writes to it yet. Reuse the Phase 1 upload machinery from `files`.
+- [ ] Backfill + drop the deprecated `tasks.tags` and `tasks.assigned_to` columns, then
+      tighten `department_id` to NOT NULL.
+- [ ] Add the `task_attachments` file-or-link CHECK constraint once drizzle-orm is
+      upgraded (0.29 has no `check()` helper; the invariant is enforced in the service).
+
 - **Exit:** a task has a ref, multiple assignees, labels, comments, subtasks, and a full audit
-      trail — all org-scoped and permission-gated.
+      trail — all org-scoped and permission-gated. **Code complete; not yet verified against a
+      live database.**
+
+### Phase 2.5 — Standard office roles at onboarding ✅ done 2026-07-24
+
+Registration created exactly **one** role, `Organisation Admin`, granted everything. Every
+other member therefore had to be made an admin or have permissions hand-assigned before they
+could do anything — which is also why gating tasks in Phase 1 was risky.
+
+New `default-roles.ts` defines the roles a standard office starts with, each with a
+least-privilege default grant:
+
+| Role | Intent |
+|---|---|
+| **Organisation Admin** | Everything, including settings, roles and members |
+| **Department Head** | Runs a department — approves files and leave, owns the team's work |
+| **Manager** | Leads a team — assigns work, moves files, but **cannot approve** |
+| **Staff** | Does assigned work, raises and forwards files, punches attendance |
+| **HR Manager** | Owns attendance, leave approvals and the people directory |
+| **Auditor** | Read-only across the organisation, for review |
+
+- All six are created at registration (`auth.service.ts`) and granted their sets in the same
+  transaction as the org.
+- `db:sync-permissions` backfills them into existing orgs. It **does not** re-grant defaults
+  to roles that already exist — an admin may have tuned those deliberately.
+- `roles.description` added (migration `0012`, nullable/additive) so the Roles & Permissions
+  UI can distinguish them. `seed.ts` now shares these definitions instead of keeping its own
+  drifting list, and grants every role its set rather than only the two admin roles.
+- A typo in a permission ref throws at module load rather than silently granting a string the
+  guard will never match.
+
+**Deliberately not included:** campus roles (Professor, Principal, Student). Campus is frozen;
+add a campus set alongside this one when it resumes. The seed keeps them as inert demo
+fixtures with no permissions.
+
+**These are a starting point, not policy** — admins retune per role in the UI. If the split
+doesn't match how your customers actually work, `default-roles.ts` is the single place to
+change it.
+
+---
+
+## Verification — 2026-07-24 ✅ Phases 1, 2 and 2.5 pass against a live database
+
+Run against a real Postgres 16 with the built API, exercising HTTP endpoints (so guards,
+DTO validation and route ordering are all in the path). **53 checks, 53 passed.**
+
+Covered: onboarding creates all six roles with correct grants · `read:files` gate ·
+registry pagination shape · reference generation (`FIN-1`, `FIN-2`) · **five concurrent
+creates produce five distinct references** (the atomic counter holds) · multi-assignee ·
+label toggle on/off · comments · subtasks, and rejection of a subtask-of-a-subtask ·
+`is_completed`/`completed_at` derived from status · department immutability · unknown enum
+query params rejected · archive hidden by default and visible with `include_archived` ·
+`top_level_only` · LIKE wildcards escaped · case-insensitive search · pagination ·
+per-field audit with before/after · **cross-org isolation for tasks and departments**.
+
+Role grants were checked directly in the database: Organisation Admin 46 (all), Department
+Head 20, Manager 15, HR Manager 12, Staff 12, Auditor 7 — Staff holds no approve, delete or
+user-management permission, as designed.
+
+### Three things verification caught that typechecking could not
+
+1. **`drizzle-kit push:pg` partially applies and then fails.** Against a database holding
+   the pre-Phase-2 `tasks` table, `push` created the new tables and enum *types*, then died
+   on the enum conversion — leaving the DB half-migrated, with `status` still `text` and
+   `department_id`/`number`/`is_archived` missing. Recovered by applying
+   `0011_short_valkyrie.sql` directly; `push:pg` then reported no changes.
+   **This is what would have happened on the VPS.**
+2. **Departments had no tenant scoping at all** (backlog M-13) — a cross-tenant leak of the
+   same class as the campus one, and now on the critical path because task references come
+   from departments.
+3. **Same-second token issuance returned a 500** (backlog M-14) — a pre-existing bug that
+   broke register-then-login and any double-clicked login.
+
+The hand-edited enum migration was also tested in isolation on a scratch database: drizzle's
+generated statement fails with `column "status" cannot be cast automatically`, while the
+edited version converts both columns, **preserves existing row values**, and restores the
+defaults as the enum type.
 
 ### Phase 3 — Notifications
 *Deliberately before attendance: it is the connective tissue the other pillars need.*
