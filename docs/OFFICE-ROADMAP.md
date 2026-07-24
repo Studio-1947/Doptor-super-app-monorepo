@@ -176,16 +176,9 @@ documented deviation (Decision C values — see below).
 - [ ] Add the `task_attachments` file-or-link CHECK constraint once drizzle-orm is
       upgraded (0.29 has no `check()` helper; the invariant is enforced in the service).
 
-- [ ] Schema: `department_id` + `number` for `DEPT-12` refs, `parent_task_id`, `completed_at`,
-      `is_archived`; new `task_assignees`, `labels`/`task_labels`, `task_comments`,
-      `task_attachments`, `task_audit_logs`.
-- [ ] Migrate `tags jsonb` → `labels` tables (Decision B) and status/priority text → PG enums
-      (Decision C). **Note:** both now rework schema that shipped in `5a7394a` — that's fine
-      and expected, but it is a data migration, not just a column add.
-- [ ] Service: atomic ref generation + per-field audit writes **in the same transaction**.
-- [ ] Frontend: Kanban/List/Table + detail drawer with inline edit, labels, comments, history.
 - **Exit:** a task has a ref, multiple assignees, labels, comments, subtasks, and a full audit
-      trail — all org-scoped and permission-gated.
+      trail — all org-scoped and permission-gated. **Code complete; not yet verified against a
+      live database.**
 
 ### Phase 3 — Notifications
 *Deliberately before attendance: it is the connective tissue the other pillars need.*
