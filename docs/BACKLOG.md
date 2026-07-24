@@ -305,10 +305,15 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 - [ ] **H-7** 🟠 Add real file/attachment upload (multer + storage backend) to
       `documents` and `files` modules — both are metadata-only today, so the e-Dak
       file-movement system can't actually carry an attached document.
-- [ ] **H-8** 🟠 Wire **tasks** frontend to the real `tasks` backend module — Kanban UI
-      (`features/tasks/TaskKanban.tsx`) runs entirely off `tasks-mock.db.ts`; no
-      `services/tasks.service.ts` exists despite the backend having full CRUD +
-      assignment + status endpoints ready to use.
+- [x] **H-8** ~~Wire tasks frontend to the real tasks backend~~ — done in two steps.
+      2026-07-06: `services/tasks.service.ts` created, `tasks-mock.db.ts` deleted, Kanban
+      wired to real CRUD. 2026-07-24 (Office roadmap Phase 2d): rebuilt against the deeper
+      task model — board cards show reference (`FIN-12`), labels, multi-assignee avatars,
+      subtask/comment counts; new `TaskDetailDrawer.tsx` provides inline title/description
+      edit, status/priority/due-date, assignee add-remove, label toggle, comments, and the
+      audit history timeline. Also deleted `TaskList.tsx` and `TaskDetail.tsx`, which were
+      hardcoded-mock components never imported anywhere (`TaskDetail` is superseded by the
+      new drawer). A real List/Table view is still outstanding — see roadmap Phase 2.
 - [ ] **H-9** 🟠 Wire **workflows** and **documents** frontends similarly — no
       `services/workflows.service.ts` or `documents.service.ts` exist despite real
       backend CRUD.

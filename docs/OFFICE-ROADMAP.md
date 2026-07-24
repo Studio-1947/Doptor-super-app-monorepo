@@ -141,10 +141,40 @@ documented deviation (Decision C values — see below).
 > Run `push:pg` afterwards if you like — it should then be a no-op. Existing lowercase
 > values match the enum labels exactly, so the cast preserves data.
 
-**2b — service** (next): atomic ref generation and per-field audit writes in the same
-transaction as the mutation; multi-assignee, labels, comments, subtasks, archive/restore.
+**2b/2c — service, controller, DTOs ✅ done 2026-07-24**
 
-**2c — controller/DTOs**, **2d — Next.js frontend**.
+- Atomic reference generation: `create()` claims the next number with a single
+  `UPDATE departments SET task_seq = task_seq + 1 … RETURNING` inside the create
+  transaction, so concurrent creates can't collide on a number.
+- Per-field audit rows written in the **same transaction** as the mutation.
+- Multi-assignee, label CRUD + toggle, comments, one-level subtasks, archive/restore.
+- `findAll` gains filtering (status, priority, department, label, assignee, archived,
+  top-level-only), escaped ILIKE search, sorting, and pagination.
+- New endpoints for labels, assignees, comments, archive, and `GET /tasks/:id/history`.
+- A task's **department is immutable after create** — changing it would either duplicate a
+  reference number or silently renumber the task, so `update()` rejects `department_id`.
+- `is_completed`/`completed_at` are derived from `status` rather than independently
+  settable, so they can't drift out of sync.
+
+**2d — Next.js frontend ✅ done 2026-07-24**
+
+- `services/tasks.service.ts` retyped against the new API (paginated list, labels,
+  assignees, comments, history).
+- Board cards show reference, labels, multi-assignee avatars, subtask/comment counts;
+  archived tasks are toggleable. Board requests the server max page rather than
+  paginating — pagination inside a kanban column reads as missing data.
+- New `TaskDetailDrawer.tsx`: inline title/description edit, status/priority/due-date,
+  assignee add-remove, label toggle, comments, and the audit history timeline.
+- Deleted `TaskList.tsx` and `TaskDetail.tsx` — hardcoded-mock components never imported.
+
+**Still outstanding in Phase 2:**
+- [ ] List/Table view (the board is the only view; the old mock List was deleted).
+- [ ] Task attachments UI — the `task_attachments` table and its file/link invariant exist,
+      but nothing writes to it yet. Reuse the Phase 1 upload machinery from `files`.
+- [ ] Backfill + drop the deprecated `tasks.tags` and `tasks.assigned_to` columns, then
+      tighten `department_id` to NOT NULL.
+- [ ] Add the `task_attachments` file-or-link CHECK constraint once drizzle-orm is
+      upgraded (0.29 has no `check()` helper; the invariant is enforced in the service).
 
 - [ ] Schema: `department_id` + `number` for `DEPT-12` refs, `parent_task_id`, `completed_at`,
       `is_archived`; new `task_assignees`, `labels`/`task_labels`, `task_comments`,
