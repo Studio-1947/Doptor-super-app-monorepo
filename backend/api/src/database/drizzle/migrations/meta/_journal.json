@@ -78,6 +78,13 @@
       "when": 1783317651455,
       "tag": "0010_fair_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1784889334939,
+      "tag": "0011_short_valkyrie",
+      "breakpoints": true
     }
   ]
 }

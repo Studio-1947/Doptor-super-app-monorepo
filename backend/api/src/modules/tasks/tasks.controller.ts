@@ -9,6 +9,7 @@ import {
   UseGuards,
   Query,
   Request,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -23,7 +24,9 @@ import {
   UpdateTaskDto,
   AssignTaskDto,
   UpdateTaskStatusDto,
+  TASK_STATUSES,
 } from "./dto";
+import type { TaskStatus } from "./tasks.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { PermissionsGuard } from "../../common/guards/permissions.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
@@ -61,6 +64,7 @@ export class TasksController {
   @ApiQuery({
     name: "status",
     required: false,
+    enum: TASK_STATUSES,
     description: "Filter by status",
   })
   @ApiQuery({
@@ -74,9 +78,17 @@ export class TasksController {
     @Query("status") status?: string,
     @Query("search") search?: string,
   ) {
+    // Query params bypass the DTO pipeline, so `status` is validated here
+    // rather than cast — an unknown value is a client error, not an empty list.
+    if (status && !TASK_STATUSES.includes(status as TaskStatus)) {
+      throw new BadRequestException(
+        `status must be one of: ${TASK_STATUSES.join(", ")}`,
+      );
+    }
+
     return this.tasksService.findAll(req.user.organisation_id, {
       assigned_to: assignedTo,
-      status,
+      status: status as TaskStatus | undefined,
       search,
     });
   }
