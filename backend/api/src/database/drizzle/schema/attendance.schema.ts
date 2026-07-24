@@ -9,7 +9,7 @@ export const attendance = pgTable("attendance", {
     .notNull(),
   check_in: timestamp("check_in"),
   check_out: timestamp("check_out"),
-  s_present: boolean("is_present").default(true),
+  is_present: boolean("is_present").default(true),
   organisation_id: uuid("organisation_id")
     .references(() => organisations.id)
     .notNull(),

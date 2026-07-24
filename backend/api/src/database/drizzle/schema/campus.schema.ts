@@ -78,3 +78,36 @@ export const studentAttendance = pgTable("student_attendance", {
     .notNull(), // Faculty who marked it
   created_at: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const exams = pgTable("exams", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organisation_id: uuid("organisation_id")
+    .references(() => organisations.id, { onDelete: "cascade" })
+    .notNull(),
+  class_id: uuid("class_id")
+    .references(() => academicClasses.id)
+    .notNull(),
+  name: text("name").notNull(), // e.g. "Midterm 1"
+  exam_date: date("exam_date"),
+  max_marks: integer("max_marks").default(100).notNull(),
+  passing_marks: integer("passing_marks").default(40).notNull(),
+  status: text("status").default("draft").notNull(), // 'draft' | 'published'
+  created_by: uuid("created_by")
+    .references(() => users.id)
+    .notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const examGrades = pgTable("exam_grades", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  exam_id: uuid("exam_id")
+    .references(() => exams.id, { onDelete: "cascade" })
+    .notNull(),
+  student_id: uuid("student_id")
+    .references(() => users.id)
+    .notNull(),
+  marks_obtained: integer("marks_obtained").notNull(),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
+});

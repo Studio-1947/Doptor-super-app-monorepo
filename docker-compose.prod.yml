@@ -25,6 +25,11 @@ services:
     # Bound to localhost only; the host nginx reverse-proxies to it.
     ports:
       - "127.0.0.1:5000:5000"
+    volumes:
+      # File attachment uploads are stored on local disk under $cwd/uploads
+      # (cwd is /app per the Dockerfile's CMD) — without this, every
+      # redeploy/restart would silently wipe every uploaded attachment.
+      - doptor-uploads-data:/app/uploads
     environment:
       NODE_ENV: production
       PORT: 5000
@@ -58,3 +63,4 @@ services:
 
 volumes:
   doptor-postgres-data:
+  doptor-uploads-data:

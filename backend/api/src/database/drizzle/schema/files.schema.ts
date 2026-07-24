@@ -6,6 +6,7 @@ import {
   boolean,
   jsonb,
   date,
+  integer,
 } from "drizzle-orm/pg-core";
 import { users } from "./user.schema";
 import { organisations } from "./organisation.schema";
@@ -61,5 +62,20 @@ export const noteSheets = pgTable("note_sheets", {
   content: text("content").notNull(), // The actual note content
   version: text("version").default("1"),
   is_final: boolean("is_final").default(true),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const fileAttachments = pgTable("file_attachments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  file_id: uuid("file_id")
+    .references(() => files.id, { onDelete: "cascade" })
+    .notNull(),
+  uploaded_by: uuid("uploaded_by")
+    .references(() => users.id)
+    .notNull(),
+  original_name: text("original_name").notNull(),
+  stored_name: text("stored_name").notNull(), // filename on disk, uuid-based
+  mime_type: text("mime_type").notNull(),
+  size_bytes: integer("size_bytes").notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
 });

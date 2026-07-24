@@ -1,20 +1,29 @@
 "use client";
 
-import { Home, ClipboardList, CheckSquare, MessageSquare, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useRole } from '@/features/auth/RoleContext';
+import { useVertical } from '@/contexts/VerticalContext';
+import { verticalMenus } from './Sidebar';
 
-const tabs = [
-    { icon: Home, label: 'Home', href: '/' },
-    { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
-    { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
-    { icon: MessageSquare, label: 'Chat', href: '/chat' },
-    { icon: Menu, label: 'Menu', href: '/menu' },
-];
+const MAX_TABS = 4;
 
 export function BottomNav() {
     const pathname = usePathname();
+    const { role } = useRole();
+    const { activeVertical } = useVertical();
+
+    const verticalSpecific = verticalMenus[activeVertical];
+    const roleSpecific = verticalSpecific[role] || [];
+    const commonMenus = verticalSpecific['all'] || [];
+    const menuItems = [...commonMenus, ...roleSpecific].slice(0, MAX_TABS);
+
+    const tabs = [
+        ...menuItems,
+        { icon: Menu, label: 'Menu', href: '/menu' },
+    ];
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-6 py-2 z-50 md:hidden pb-4 transition-colors">

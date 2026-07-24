@@ -1,29 +1,35 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Plus,
     MoreHorizontal,
     Calendar,
-    MessageSquare,
-    Paperclip,
     Search,
     Filter
 } from 'lucide-react';
 import { Card, Button } from '@doptor/shared';
-import {
-    MOCK_TASKS,
-    Task,
-    TaskStatus,
-    createTask,
-    MOCK_USERS
-} from './tasks-mock.db';
+import { toast } from 'sonner';
+import { tasksService, Task, TaskStatus, CreateTaskPayload } from '@/services/tasks.service';
 import { CreateTaskDialog } from './CreateTaskDialog';
 
 export function TaskKanban() {
-    const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    const loadTasks = () => {
+        tasksService
+            .list()
+            .then(setTasks)
+            .catch(() => toast.error('Failed to load tasks'))
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        loadTasks();
+    }, []);
 
     const columns: { id: TaskStatus; title: string; color: string }[] = [
         { id: 'todo', title: 'To Do', color: 'bg-slate-500' },
@@ -41,16 +47,23 @@ export function TaskKanban() {
         }
     };
 
-    const handleCreateTask = (newTaskData: any) => {
-        const newTask = createTask(newTaskData);
-        setTasks([...tasks, newTask]);
+    const handleCreateTask = async (payload: CreateTaskPayload) => {
+        const newTask = await tasksService.create(payload);
+        setTasks(prev => [newTask, ...prev]);
         setIsCreateModalOpen(false);
     };
 
-    const moveTask = (taskId: string, newStatus: TaskStatus) => {
+    const moveTask = async (taskId: string, newStatus: TaskStatus) => {
+        const previous = tasks;
         setTasks(tasks.map(t =>
             t.id === taskId ? { ...t, status: newStatus } : t
         ));
+        try {
+            await tasksService.updateStatus(taskId, newStatus);
+        } catch {
+            toast.error('Failed to update task status');
+            setTasks(previous);
+        }
     };
 
     const filteredTasks = tasks.filter(t =>
@@ -111,7 +124,11 @@ export function TaskKanban() {
 
                             {/* Task List */}
                             <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">
-                                {filteredTasks
+                                {loading ? (
+                                    Array.from({ length: 2 }).map((_, i) => (
+                                        <div key={i} className="h-28 rounded-lg bg-slate-100 animate-pulse" />
+                                    ))
+                                ) : filteredTasks
                                     .filter(task => task.status === column.id)
                                     .map(task => (
                                         <Card
@@ -140,7 +157,9 @@ export function TaskKanban() {
                                             </div>
 
                                             <h3 className="font-semibold text-slate-900 mb-1 leading-snug">{task.title}</h3>
-                                            <p className="text-xs text-slate-500 line-clamp-2 mb-3">{task.description}</p>
+                                            {task.description && (
+                                                <p className="text-xs text-slate-500 line-clamp-2 mb-3">{task.description}</p>
+                                            )}
 
                                             {/* Tags */}
                                             <div className="flex flex-wrap gap-1.5 mb-3">
@@ -153,36 +172,30 @@ export function TaskKanban() {
 
                                             {/* Footer */}
                                             <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                                                <div className="flex items-center gap-3 text-slate-400">
-                                                    {task.comments !== undefined && (
-                                                        <div className="flex items-center gap-1 text-xs">
-                                                            <MessageSquare size={14} />
-                                                            <span>{task.comments}</span>
-                                                        </div>
-                                                    )}
-                                                    {task.attachments !== undefined && (
-                                                        <div className="flex items-center gap-1 text-xs">
-                                                            <Paperclip size={14} />
-                                                            <span>{task.attachments}</span>
-                                                        </div>
+                                                <div className="flex items-center gap-2">
+                                                    {task.due_date && (
+                                                        <span className={`text-[10px] font-medium ${new Date(task.due_date) < new Date() ? 'text-red-500' : 'text-slate-400'
+                                                            }`}>
+                                                            {new Date(task.due_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                                                        </span>
                                                     )}
                                                 </div>
 
-                                                <div className="flex items-center gap-2">
-                                                    {task.dueDate && (
-                                                        <span className={`text-[10px] font-medium ${new Date(task.dueDate) < new Date() ? 'text-red-500' : 'text-slate-400'
-                                                            }`}>
-                                                            {new Date(task.dueDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-                                                        </span>
-                                                    )}
-                                                    {/* Assignee Avatar */}
-                                                    <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-200" title={MOCK_USERS.find(u => u.id === task.assigneeId)?.name}>
-                                                        {MOCK_USERS.find(u => u.id === task.assigneeId)?.avatar || 'U'}
+                                                {/* Assignee Avatar */}
+                                                {task.assignee && (
+                                                    <div
+                                                        className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-indigo-200"
+                                                        title={`${task.assignee.first_name} ${task.assignee.last_name}`}
+                                                    >
+                                                        {task.assignee.first_name?.[0]}{task.assignee.last_name?.[0]}
                                                     </div>
-                                                </div>
+                                                )}
                                             </div>
                                         </Card>
                                     ))}
+                                {!loading && filteredTasks.filter(t => t.status === column.id).length === 0 && (
+                                    <p className="text-xs text-slate-400 text-center py-6">No tasks here</p>
+                                )}
                             </div>
 
                             {/* Add Button Footer */}

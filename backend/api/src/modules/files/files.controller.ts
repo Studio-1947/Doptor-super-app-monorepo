@@ -6,10 +6,20 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   Request,
+  Res,
+  NotFoundException,
 } from "@nestjs/common";
-import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
-import { FilesService } from "./files.service";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { diskStorage } from "multer";
+import type { Response } from "express";
+import * as fs from "fs";
+import * as crypto from "crypto";
+import * as path from "path";
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from "@nestjs/swagger";
+import { FilesService, UPLOAD_DIR } from "./files.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { PermissionsGuard } from "../../common/guards/permissions.guard";
@@ -23,6 +33,8 @@ import {
   ApproveFileDto,
   RejectFileDto,
 } from "./dto";
+
+const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024; // 20 MB
 
 @ApiTags("Files (E-File System)")
 @ApiBearerAuth()
@@ -55,7 +67,7 @@ export class FilesController {
 
   @Get("registry")
   @UseGuards(PermissionsGuard)
-  @Permissions("read:documents")
+  @Permissions("read:files")
   @ApiOperation({
     summary: "Get the full organisation-wide file registry (searchable)",
   })
@@ -63,18 +75,86 @@ export class FilesController {
     @Request() req,
     @Query("search") search?: string,
     @Query("status") status?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
   ) {
-    return this.filesService.getRegistry(
-      req.user.organisation_id,
+    return this.filesService.getRegistry(req.user.organisation_id, {
       search,
       status,
-    );
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
+  @Get("analytics")
+  @UseGuards(PermissionsGuard)
+  @Permissions("read:files")
+  @ApiOperation({
+    summary: "Get organisation-wide file analytics (status/category/priority breakdown)",
+  })
+  getAnalytics(@Request() req) {
+    return this.filesService.getAnalytics(req.user.organisation_id);
+  }
+
+  @Get("attachments/:attachmentId/download")
+  @ApiOperation({ summary: "Download a file attachment" })
+  async downloadAttachment(
+    @Param("attachmentId") attachmentId: string,
+    @Request() req,
+    @Res() res: Response,
+  ) {
+    const { attachment, diskPath } =
+      await this.filesService.getAttachmentForDownload(
+        attachmentId,
+        req.user.organisation_id,
+      );
+    res.download(diskPath, attachment.original_name);
   }
 
   @Get(":id")
   @ApiOperation({ summary: "Get file details by ID" })
   findOne(@Param("id") id: string) {
     return this.filesService.findOne(id);
+  }
+
+  @Get(":id/attachments")
+  @ApiOperation({ summary: "List attachments on a file" })
+  getAttachments(@Param("id") id: string, @Request() req) {
+    return this.filesService.getAttachments(id, req.user.organisation_id);
+  }
+
+  @Post(":id/attachments")
+  @ApiConsumes("multipart/form-data")
+  @ApiOperation({ summary: "Upload an attachment to a file" })
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+          cb(null, UPLOAD_DIR);
+        },
+        filename: (req, file, cb) => {
+          const ext = path.extname(file.originalname);
+          cb(null, `${crypto.randomUUID()}${ext}`);
+        },
+      }),
+      limits: { fileSize: MAX_ATTACHMENT_SIZE },
+    }),
+  )
+  async uploadAttachment(
+    @Param("id") id: string,
+    @Request() req,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new NotFoundException("No file was uploaded");
+    }
+    return this.filesService.addAttachment(
+      id,
+      req.user.organisation_id,
+      req.user.id,
+      file,
+    );
   }
 
   @Post(":id/forward")

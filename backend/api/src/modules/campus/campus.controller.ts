@@ -22,6 +22,8 @@ import {
   BulkCreateStudentsDto,
   BulkCreateFacultyDto,
   UpdateClassDto,
+  CreateExamDto,
+  SubmitGradesDto,
 } from "./dto";
 
 @Controller("campus")
@@ -32,13 +34,13 @@ export class CampusController {
   // --- Faculty ---
 
   @Get("faculty")
-  getFacultyList() {
-    return this.campusService.getFacultyList();
+  getFacultyList(@Request() req) {
+    return this.campusService.getFacultyList(req.user.organisation_id);
   }
 
   @Get("faculty/:id")
-  getFaculty(@Param("id") id: string) {
-    return this.campusService.getFaculty(id);
+  getFaculty(@Param("id") id: string, @Request() req) {
+    return this.campusService.getFaculty(id, req.user.organisation_id);
   }
 
   @Post("faculty")
@@ -67,13 +69,13 @@ export class CampusController {
   // --- Students ---
 
   @Get("students")
-  getStudentList() {
-    return this.campusService.getStudentList();
+  getStudentList(@Request() req) {
+    return this.campusService.getStudentList(req.user.organisation_id);
   }
 
   @Get("students/:id")
-  getStudent(@Param("id") id: string) {
-    return this.campusService.getStudent(id);
+  getStudent(@Param("id") id: string, @Request() req) {
+    return this.campusService.getStudent(id, req.user.organisation_id);
   }
 
   @Post("students")
@@ -102,13 +104,13 @@ export class CampusController {
   // --- Courses ---
 
   @Get("courses")
-  getCourses() {
-    return this.campusService.getCourses();
+  getCourses(@Request() req) {
+    return this.campusService.getCourses(req.user.organisation_id);
   }
 
   @Post("courses")
-  createCourse(@Body() body: CreateCourseDto) {
-    return this.campusService.createCourse(body);
+  createCourse(@Body() body: CreateCourseDto, @Request() req) {
+    return this.campusService.createCourse(body, req.user.organisation_id);
   }
 
   @Delete("courses/:id")
@@ -119,13 +121,16 @@ export class CampusController {
   // --- Departments ---
 
   @Get("departments")
-  getDepartments() {
-    return this.campusService.getDepartments();
+  getDepartments(@Request() req) {
+    return this.campusService.getDepartments(req.user.organisation_id);
   }
 
   @Post("departments")
-  createDepartment(@Body() body: CreateDepartmentDto) {
-    return this.campusService.createDepartment(body);
+  createDepartment(@Body() body: CreateDepartmentDto, @Request() req) {
+    return this.campusService.createDepartment(
+      body,
+      req.user.organisation_id,
+    );
   }
 
   // --- Academic Years ---
@@ -148,8 +153,8 @@ export class CampusController {
   }
 
   @Get("classes")
-  getAllClasses() {
-    return this.campusService.getAllClasses();
+  getAllClasses(@Request() req) {
+    return this.campusService.getAllClasses(req.user.organisation_id);
   }
 
   @Get("attendance/:classId")
@@ -202,5 +207,49 @@ export class CampusController {
   @Put("classes/:id")
   updateClass(@Param("id") id: string, @Body() body: UpdateClassDto) {
     return this.campusService.updateClass(id, body);
+  }
+
+  // --- Exams / Grades ---
+
+  @Get("results/summary")
+  getResultsSummary(@Request() req) {
+    return this.campusService.getResultsSummary(req.user.organisation_id);
+  }
+
+  @Get("exams")
+  getExams(@Request() req, @Query("classId") classId?: string) {
+    return this.campusService.getExams(req.user.organisation_id, classId);
+  }
+
+  @Get("exams/:id")
+  getExam(@Param("id") id: string, @Request() req) {
+    return this.campusService.getExam(id, req.user.organisation_id);
+  }
+
+  @Post("exams")
+  createExam(@Body() body: CreateExamDto, @Request() req) {
+    return this.campusService.createExam(
+      body,
+      req.user.id,
+      req.user.organisation_id,
+    );
+  }
+
+  @Post("exams/:id/grades")
+  submitGrades(
+    @Param("id") id: string,
+    @Body() body: SubmitGradesDto,
+    @Request() req,
+  ) {
+    return this.campusService.submitGrades(
+      id,
+      req.user.organisation_id,
+      body,
+    );
+  }
+
+  @Post("exams/:id/publish")
+  publishExam(@Param("id") id: string, @Request() req) {
+    return this.campusService.publishExam(id, req.user.organisation_id);
   }
 }

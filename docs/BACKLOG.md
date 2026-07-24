@@ -10,6 +10,59 @@ live backlog; check items off in place and add new ones as they're found.
 
 ---
 
+## 0. Campus/Office navigational separation (2026-07-03)
+
+Fixed the data plumbing that was undermining "Campus and Office should feel like
+separate products": `VerticalContext.tsx` was hardcoding all 4 verticals as enabled
+for every org (real `enabled_verticals` never wired up), and `RoleContext.tsx` was
+silently defaulting every user to `'super_admin'` nav (derived from a `user.role`
+field that doesn't exist on the real `/auth/me` response). Also fixed: hardcoded
+`"Acme Corp"`/`"John Doe"` in Header/Sidebar, clicking the vertical icon rail not
+actually navigating anywhere, and `BottomNav` being a fully static tab list.
+
+- [x] Real `enabled_verticals` wired from `organisationService.getById` — verified
+      live: a plain member with zero permissions can fetch their own org (no
+      `@Permissions` restriction on `GET /organisations/:id`), and the response shape
+      matches exactly what `VerticalContext` expects.
+- [x] Real role derivation via `AuthContext`'s existing (previously-unused)
+      `hasAnyRole` helpers, with a name-mapping shim since DB role names ("Organisation
+      Admin", "Professor") don't match the frontend's legacy snake_case enum.
+- [x] `activeVertical` now derived from the URL (`usePathname`), not independent
+      click-state — fixes drift on deep links/back-forward, and clicking the icon rail
+      now actually navigates to `/campus` or `/office`.
+- [x] Shared `verticalTheme` token map (`VerticalContext.tsx`) replacing the
+      icon-rail-only color constants; applied to `Header`, `VerticalSwitcher`, and new
+      `app/campus/layout.tsx` / `app/office/layout.tsx` wrappers.
+- [x] `BottomNav` now reuses `Sidebar`'s `verticalMenus` instead of a hardcoded tab list.
+- [x] **Recheck round (same day)**: 8-angle review found the icon rail hid disabled
+      verticals from the switcher but never stopped a direct/bookmarked URL from fully
+      rendering one anyway (`/campus` worked even for an office-only org) — fixed with a
+      client-side redirect-to-`/` guard in `VerticalContext.tsx` once `enabledVerticals`
+      has actually loaded. Also fixed: a real backend role name not in the hardcoded
+      priority list (e.g. a custom/renamed org role) silently downgraded to the same
+      `'student'` default as an unauthenticated user — now falls back to `'staff'`
+      instead. A third finding (role briefly defaulting to `'student'` during the
+      auth-loading window) was investigated and found **not reachable in practice** —
+      `AuthGuard.tsx` blocks the whole app shell behind a spinner until loading
+      completes, so no user ever sees that state. Production build (`next build`)
+      verified clean after fixes.
+- [ ] **Not yet done**: migrating existing ad-hoc emerald/indigo Tailwind classes
+      scattered across a few campus/office pages onto the shared token system (left
+      as-is this pass, flagged for new/touched pages going forward).
+- [ ] **Not yet done**: `middleware.ts` still does no real server-side route
+      protection (reads a `user_role` cookie nothing sets) — deferred by explicit
+      decision, since backend already enforces real permission checks per-endpoint.
+      Fixing it properly requires a token-storage strategy change (localStorage →
+      cookie) — separate, bigger decision.
+- **Verification caveat**: no browser-automation tool (Playwright/chromium-cli) was
+  available in this environment, so this was verified via `tsc --noEmit` (clean),
+  a live backend check of the one new runtime call (`GET /organisations/:id`, confirmed
+  working for zero-permission users), and manual code trace — **not** a real rendered
+  click-through. Recommend a manual pass in a browser (or `/run-skill-generator` to
+  set up Playwright for this repo) before considering this fully verified.
+
+---
+
 ## 1. Onboarding flow (role-based nodes)
 
 ### Current state
@@ -175,38 +228,69 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       counts); now fetches once and derives both client-side, matching the pattern
       already used correctly on the team page. Also removed an unused `ArrowRight` import
       left over from the old mocked page.
-- [ ] **M-7** 🟡 No dedicated `files` permission resource exists in
-      `DEFAULT_PERMISSIONS` — the new registry guard (C-9) reuses `read:documents` as
-      the closest fit. A real e-Dak-specific permission set (e.g. `files:read`,
-      `files:approve`) would let file-level access be tuned independently of the
-      generic `documents` module.
-- [ ] **M-8** 🟡 `GET /files/registry` has no pagination (`db.query.files.findMany`
-      with no `.limit()`) — a new, unbounded-result-set endpoint. Fine at current scale,
-      but will need `limit`/`offset` or cursor pagination before an org accumulates
-      thousands of files.
-- [ ] **M-9** 🟡 `files.service.ts getRegistry`'s `search` param uses raw `like()`
-      against user input — Postgres `LIKE` wildcard characters (`%`, `_`) in a search
-      term aren't escaped, so a search containing a literal `_` can match more broadly
-      than intended. Minor UX correctness issue, not a security risk.
+- [x] **M-7** ~~No dedicated `files` permission resource~~ — done 2026-07-24 (Office
+      roadmap Phase 1): added a `files` resource to `DEFAULT_PERMISSIONS`
+      (create/read/update/delete/forward/approve); `/files/registry` and
+      `/files/analytics` now guard on `read:files` instead of borrowing
+      `read:documents`.
+      **Required a backfill** — `permissions` rows are per-org and only created at org
+      registration, so a new resource simply doesn't exist for already-registered orgs
+      and the guard would have 403'd everyone. New idempotent
+      `src/database/drizzle/sync-permissions.ts` (`pnpm --filter api db:sync-permissions`)
+      inserts missing rows per org and grants `<action>:files` to any role that already
+      held the matching `<action>:documents`, preserving existing access exactly.
+      **Must be run once against each environment before/with this deploy.**
+- [x] **M-8** ~~`GET /files/registry` has no pagination~~ — done 2026-07-24: `page`/`limit`
+      query params (default 25, max 100), returning
+      `{ data, total, page, limit, totalPages }` instead of a bare array. Count and page
+      query run concurrently. **Breaking response-shape change** — `frontend/web` updated.
+      The registry page's stat tiles previously counted the loaded array, which would have
+      silently become per-page counts; they now come from `GET /files/analytics`, which is
+      org-wide and already existed.
+- [x] **M-9** ~~`getRegistry` search uses raw `like()`~~ — done 2026-07-24: user input is
+      escaped for `%`, `_` and `\` before interpolation, and the search switched from
+      `like` to `ilike` so the registry search box is case-insensitive (it was
+      case-sensitive, which is not what a search box should do).
 
 ### High — required for "fully functional" campus/office
 
-- [ ] **H-1** 🟠 Build campus **results/grades**: no backend tables/endpoints exist at
-      all; `app/campus/results/page.tsx` is 100% hardcoded mock data with a fake
-      `setTimeout` loading state.
-- [ ] **H-2** 🟠 Build/wire campus **timetable**: no dedicated backend model (schedule is
-      just a JSON blob per class); `app/campus/timetable/page.tsx` is a dead route
-      (`redirect('/campus')`) despite a working `features/campus/TimeTable.tsx`
-      component that's never mounted.
+- [x] **H-1** ~~Build campus results/grades~~ — done 2026-07-03: new `exams` and
+      `exam_grades` tables (org-scoped), `POST/GET /campus/exams`,
+      `POST /campus/exams/:id/grades` (bulk, upsert-per-student), `POST
+      /campus/exams/:id/publish`, `GET /campus/results/summary` (per-exam
+      average/pass-rate computed server-side + org-wide summary counts).
+      `app/campus/results/page.tsx` now fetches real data, no more mock/setTimeout.
+      Verified end-to-end live: create exam → submit grades → average/pass-rate compute
+      correctly → publish → summary counts update correctly.
+      **Found while testing, not fixed (separate, deeper pre-existing bug, new item
+      M-10 below)**: the frontend's "Create Class" dialog calls `POST /campus/classes`,
+      which doesn't exist on the backend at all (404) — that flow has never worked.
+- [x] **H-2** ~~Wire campus timetable~~ — done 2026-07-03: replaced the dead
+      `redirect('/campus')` route with a real page that fetches `GET /campus/classes`
+      and renders the existing (previously unmounted) `features/campus/TimeTable.tsx`
+      component. While building this, found and fixed a **broad cross-tenant data leak**
+      spanning most of the campus module's read endpoints — `getFacultyList`,
+      `getFaculty`, `getStudentList`, `getStudent`, `getCourses`, `getDepartments`, and
+      `getAllClasses` (classes specifically) had no organisation scoping at all, so any
+      authenticated user of any org could see every other org's faculty/student PII,
+      courses, and departments. All now scoped from `req.user.organisation_id`, verified
+      live with two separate orgs (Org B correctly sees zero of Org A's data). Also fixed
+      `createCourse`/`createDepartment` missing `.returning()` (silently returned empty
+      responses) while touching the same methods.
 - [x] **H-3** ~~Wire office/admin page to real data~~ — done 2026-07-03: stats
       (departments, roles, members, pending invites) and a Roles & Permissions table are
       now real, sourced from `departmentService`/`roleService`/`usersService`. The
       fictional "policies" concept had no backing schema anywhere — replaced entirely
       rather than left half-mocked; a real policy engine (if wanted) is new scope, not
       tracked here yet.
-- [ ] **H-4** 🟠 Wire **office/reports** page to real data — currently fully hardcoded,
-      no backend report-generation endpoints exist either (only unrelated
-      `analytics/overview`).
+- [x] **H-4** ~~Wire office/reports page to real data~~ — done 2026-07-03: the
+      "report generation" concept had no backing schema anywhere (same situation as
+      H-3's fake "policies"), so replaced it with real file analytics rather than a
+      fabricated report list — new `GET /files/analytics` (org-scoped, same
+      `@Permissions("read:documents")` guard as the registry) returning status/category/
+      priority breakdowns and average age of open files, computed server-side from real
+      `files` rows. Verified live: created 2 files with different categories/priorities,
+      confirmed the breakdown counts came back correct.
 - [x] **H-5** ~~Wire office/team page to real data~~ — done 2026-07-03: roster now comes
       from `usersService.list({organisationId})` (extended backend `findAll` to join
       department + primary role), stats computed from real data, resend-invite wired
@@ -268,6 +352,29 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       `handleConnection` never verifies the socket's identity, and `sendMessage` trusts a
       client-supplied `payload.userId` instead of one derived from an authenticated
       session, so any connected client can send messages impersonating any user.
+- [ ] **M-10** 🟡 Found 2026-07-03 while testing H-1: `POST /campus/classes` doesn't
+      exist on the backend at all (404) despite the frontend's `CreateClassDialog.tsx`
+      calling it — "Create Class" has never worked. Also the dialog only collects
+      `name`/`departmentId`, but `academic_classes` requires `course_id` and
+      `faculty_id` (both NOT NULL) — the form needs those fields added before a working
+      endpoint can even be wired up correctly.
+      *(Campus is frozen as of 2026-07-24 — see `docs/OFFICE-ROADMAP.md`. Not being worked.)*
+- [x] **M-11** ~~Tasks endpoints had no RBAC~~ — done 2026-07-24 (Office roadmap Phase 1):
+      `tasks.controller.ts` was `@UseGuards(JwtAuthGuard)` only, so any authenticated org
+      member could update or delete any task in their org. Now gated with
+      `create/read/update/delete/assign:tasks`. `GET /tasks/my-tasks` is deliberately left
+      ungated — it only ever returns tasks already assigned to the caller in their own org,
+      and gating it would stop a user seeing their own work.
+      **Note:** `tasks` permission *rows* already existed for every org, but were only
+      *granted* to `Organisation Admin`/`Super Admin`, so gating alone would have cut off
+      every other role. `db:sync-permissions` (see M-7) grants `tasks` permissions to all
+      existing roles, preserving today's effective access; admins can tighten per-role
+      afterwards from the Roles & Permissions UI.
+- [x] **M-12** ~~`attendance` schema column-name mismatch~~ — done 2026-07-24: the Drizzle
+      property was `s_present: boolean("is_present")`, so the TS property name didn't match
+      the DB column. Renamed the property to `is_present`. No source referenced the old
+      name (only stale `dist/` build output), so nothing else needed changing. Cleared
+      ahead of Office roadmap Phase 4, which builds HR attendance on this table.
 
 ### Low / cleanup
 

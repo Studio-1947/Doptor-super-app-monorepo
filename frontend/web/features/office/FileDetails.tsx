@@ -12,6 +12,7 @@ import { FileActionPanel } from './FileActionPanel';
 import { ReturnFileModal } from './ReturnFileModal';
 import { ApproveRejectModal } from './ApproveRejectModal';
 import ForwardFileModal from './ForwardFileModal';
+import { FileAttachmentsPanel } from './FileAttachmentsPanel';
 import { toast } from 'sonner';
 
 interface FileDetailsProps {
@@ -210,6 +211,8 @@ export default function FileDetails({ fileId, onClose, onUpdate }: FileDetailsPr
                                 )}
                             </div>
                         </Card>
+
+                        <FileAttachmentsPanel fileId={file.id} />
                     </div>
                 </div>
             </div>

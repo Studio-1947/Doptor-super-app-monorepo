@@ -1,7 +1,9 @@
 "use client";
 
 import { Search, Bell, ChevronDown, Building2, Shield } from 'lucide-react';
-import { useRole, UserRole } from '@/features/auth/RoleContext';
+import { useRole } from '@/features/auth/RoleContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useVertical, verticalTheme } from '@/contexts/VerticalContext';
 import Image from 'next/image';
 import { ThemeToggle } from '../ui/ThemeToggle';
 
@@ -32,21 +34,29 @@ const SharpButton = ({
 };
 
 export function Header() {
-    const { role, setRole } = useRole();
+    const { role } = useRole();
+    const { user } = useAuth();
+    const { activeVertical, organisation } = useVertical();
+    const theme = verticalTheme[activeVertical];
 
-    const roles: UserRole[] = ['super_admin', 'org_admin', 'manager', 'staff', 'student'];
+    const displayName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email || 'User';
+    const avatarName = displayName === user?.email ? (user?.email?.split('@')[0] ?? 'User') : displayName;
 
     return (
         <header className="h-16 px-4 md:px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl sticky top-0 z-10">
             {/* Left: Org Switcher - SHARP */}
             <div className="flex items-center gap-4">
-                <button className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-900 p-2 rounded-none transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-800">
-                    <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-none flex items-center justify-center text-primary-600 dark:text-primary-400 border border-primary-200 dark:border-primary-800">
+                <button className={`flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-900 p-2 rounded-none transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-800`}>
+                    <div className={`w-8 h-8 rounded-none flex items-center justify-center border ${theme.bgClass} ${theme.textClass} ${theme.borderClass}`}>
                         <Building2 size={18} />
                     </div>
                     <div className="hidden md:block text-left">
-                        <p className="text-sm font-black text-slate-900 dark:text-white leading-none uppercase tracking-tight">Acme Corp</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-0.5">Organisation</p>
+                        <p className="text-sm font-black text-slate-900 dark:text-white leading-none uppercase tracking-tight">
+                            {organisation?.name ?? '...'}
+                        </p>
+                        <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${theme.textClass}`}>
+                            {activeVertical === 'core' ? 'Organisation' : theme.label}
+                        </p>
                     </div>
                     <ChevronDown size={14} className="text-slate-400 dark:text-slate-500" />
                 </button>
@@ -71,19 +81,6 @@ export function Header() {
 
                 <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 mx-1 hidden md:block" />
 
-                {/* Role Switcher (Dev Mode) - SHARP */}
-                <div className="hidden md:flex items-center gap-2 mr-2">
-                    <select
-                        value={role}
-                        onChange={(e) => setRole(e.target.value as UserRole)}
-                        className="text-[10px] font-black border border-slate-200 dark:border-slate-800 rounded-none px-2 py-1 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 focus:outline-none focus:border-primary-500 uppercase tracking-widest"
-                    >
-                        {roles.map(r => (
-                            <option key={r} value={r}>{r.replace('_', ' ').toUpperCase()}</option>
-                        ))}
-                    </select>
-                </div>
-
                 {/* Role Badge - SHARP */}
                 <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-none bg-primary-900 dark:bg-primary-600 text-white text-[10px] font-black uppercase tracking-[0.15em]">
                     <Shield size={12} fill="currentColor" />
@@ -98,7 +95,7 @@ export function Header() {
                 {/* Avatar is the ONLY thing that can be round, but let's make it square for Doptor OS vibe */}
                 <div className="w-8 h-8 rounded-none bg-slate-900 dark:bg-slate-800 overflow-hidden border border-slate-900 dark:border-slate-700 relative">
                     <Image
-                        src={`https://ui-avatars.com/api/?name=John+Doe&background=0f172a&color=fff&bold=true`}
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(avatarName)}&background=0f172a&color=fff&bold=true`}
                         alt="Profile"
                         fill
                         className="object-cover"
