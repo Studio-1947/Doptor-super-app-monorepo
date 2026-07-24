@@ -777,7 +777,15 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, { expiresIn: "15m" }),
-      this.jwtService.signAsync(payload, { expiresIn: "7d" }),
+      // The refresh token carries a unique `jti`. JWT `iat`/`exp` only have
+      // second granularity, so without it two refresh tokens minted for the
+      // same user within the same second are byte-identical — and
+      // `refresh_tokens.token` is UNIQUE, so the second insert threw a 500.
+      // That hit any register-then-login and any double-clicked login.
+      this.jwtService.signAsync(
+        { ...payload, jti: crypto.randomUUID() },
+        { expiresIn: "7d" },
+      ),
     ]);
 
     // Store refresh token in database
