@@ -25,15 +25,18 @@ import {
   UpdateTaskStatusDto,
 } from "./dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { PermissionsGuard } from "../../common/guards/permissions.guard";
+import { Permissions } from "../../common/decorators/permissions.decorator";
 
 @ApiTags("Tasks")
 @ApiBearerAuth()
 @Controller("tasks")
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
+  @Permissions("create:tasks")
   @ApiOperation({ summary: "Create a new task" })
   @ApiResponse({
     status: 201,
@@ -48,6 +51,7 @@ export class TasksController {
   }
 
   @Get()
+  @Permissions("read:tasks")
   @ApiOperation({ summary: "Get all tasks in the caller's organisation" })
   @ApiQuery({
     name: "assigned_to",
@@ -77,6 +81,9 @@ export class TasksController {
     });
   }
 
+  // Deliberately NOT permission-gated: this only ever returns tasks already
+  // assigned to the caller within their own organisation, so it leaks nothing.
+  // Requiring `read:tasks` here would stop a user from seeing their own work.
   @Get("my-tasks")
   @ApiOperation({ summary: "Get tasks assigned to the current user" })
   getMyTasks(@Request() req) {
@@ -84,12 +91,14 @@ export class TasksController {
   }
 
   @Get(":id")
+  @Permissions("read:tasks")
   @ApiOperation({ summary: "Get task by ID" })
   findOne(@Param("id") id: string, @Request() req) {
     return this.tasksService.findOne(id, req.user.organisation_id);
   }
 
   @Patch(":id")
+  @Permissions("update:tasks")
   @ApiOperation({ summary: "Update task" })
   update(
     @Param("id") id: string,
@@ -104,6 +113,7 @@ export class TasksController {
   }
 
   @Post(":id/assign")
+  @Permissions("assign:tasks")
   @ApiOperation({ summary: "Assign task to a user" })
   assignTask(
     @Param("id") id: string,
@@ -118,6 +128,7 @@ export class TasksController {
   }
 
   @Patch(":id/status")
+  @Permissions("update:tasks")
   @ApiOperation({ summary: "Update task status (todo/in-progress/review/done)" })
   updateStatus(
     @Param("id") id: string,
@@ -132,6 +143,7 @@ export class TasksController {
   }
 
   @Delete(":id")
+  @Permissions("delete:tasks")
   @ApiOperation({ summary: "Delete task" })
   remove(@Param("id") id: string, @Request() req) {
     return this.tasksService.remove(id, req.user.organisation_id);

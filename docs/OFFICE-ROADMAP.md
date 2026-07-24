@@ -63,21 +63,41 @@ Files is the strongest pillar, it deserves its own resource rather than borrowin
 
 Sequenced so that each phase unblocks the next. Phases 2 and 4 are the porting-plan work.
 
-### Phase 1 — Foundation & hardening
-*Small, high-leverage, unblocks everything. Do this first.*
+### Phase 1 — Foundation & hardening ✅ *code complete 2026-07-24*
+*Small, high-leverage, unblocks everything.*
 
 - [ ] **Apply migrations 0008–0010 to the VPS** (manual — see below). Nothing else can ship
-      until the deployed DB matches the code.
-- [ ] Add a **`files` permission resource** to `DEFAULT_PERMISSIONS` (create/read/update/
-      delete/forward/approve) and switch `files.controller.ts` off `read:documents` (M-7).
-- [ ] Add `@Permissions(...)` to **tasks** controller — permissions already exist, just
-      unenforced. Today any authenticated org member can delete any task in their org.
-- [ ] **Paginate `GET /files/registry`** (M-8) — currently unbounded `findMany`.
-- [ ] Fix `getRegistry`'s raw `like()` search (M-9).
-- [ ] Fix the **`attendance` schema bug**: column is declared
-      `s_present: boolean("is_present")` — the TS property name doesn't match the DB column.
-      Fix or drop the table before Phase 4 builds on it.
-- **Exit:** deployed DB current; every Office endpoint permission-gated; files registry paginated.
+      until the deployed DB matches the code. ← **still outstanding, blocks deploy**
+- [ ] **Run `db:sync-permissions` on every environment** (see below). ← **outstanding**
+- [x] Added a **`files` permission resource** to `DEFAULT_PERMISSIONS` (create/read/update/
+      delete/forward/approve); `files.controller.ts` off `read:documents` (M-7).
+- [x] Added `@Permissions(...)` to the **tasks** controller (M-11). `GET /tasks/my-tasks`
+      intentionally left ungated — it only returns the caller's own tasks.
+- [x] **Paginated `GET /files/registry`** (M-8) — `page`/`limit`, default 25, max 100.
+      Response shape is now `{ data, total, page, limit, totalPages }`; frontend updated,
+      and the registry stat tiles now read org-wide counts from `/files/analytics` instead
+      of counting the loaded page.
+- [x] Fixed `getRegistry` search (M-9) — escaped `%`/`_`/`\`, and switched `like` → `ilike`
+      so search is case-insensitive.
+- [x] Fixed the **`attendance` schema bug** — `s_present` → `is_present` (M-12).
+- **Exit:** every Office endpoint permission-gated; files registry paginated. **Not fully
+  exited until the migrations and permission sync have actually been run.**
+
+> **⚠️ Deploy gate for Phase 1.** `permissions` rows are per-organisation and are created
+> only when an org registers. Adding the `files` resource and gating tasks therefore
+> requires a backfill, or real users get 403s. Run on the VPS **after** deploying this code:
+> ```bash
+> cd /var/www/Doptor-super-app-monorepo
+> docker compose -f docker-compose.prod.yml exec api \
+>   sh -c "cd backend/api && pnpm db:sync-permissions"
+> ```
+> `ts-node` is available in the runtime image (the Dockerfile copies the full install,
+> devDependencies included — the same reason `npx drizzle-kit push:pg` works). If that ever
+> changes, `pnpm db:sync-permissions:dist` runs the compiled build instead.
+>
+> The script is **idempotent** — safe to re-run. It grants `<action>:files` to whichever
+> roles already held `<action>:documents`, and grants `tasks` permissions to every role,
+> so nobody's effective access changes on deploy. Admins tighten per-role afterwards.
 
 ### Phase 2 — Tasks depth *(= porting plan Phases 1–2)*
 Follow `PORTING-PLAN-tracker-to-doptor.md` §3 Phase 1–2 as written. Decisions A–D hold.

@@ -228,19 +228,29 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       counts); now fetches once and derives both client-side, matching the pattern
       already used correctly on the team page. Also removed an unused `ArrowRight` import
       left over from the old mocked page.
-- [ ] **M-7** 🟡 No dedicated `files` permission resource exists in
-      `DEFAULT_PERMISSIONS` — the new registry guard (C-9) reuses `read:documents` as
-      the closest fit. A real e-Dak-specific permission set (e.g. `files:read`,
-      `files:approve`) would let file-level access be tuned independently of the
-      generic `documents` module.
-- [ ] **M-8** 🟡 `GET /files/registry` has no pagination (`db.query.files.findMany`
-      with no `.limit()`) — a new, unbounded-result-set endpoint. Fine at current scale,
-      but will need `limit`/`offset` or cursor pagination before an org accumulates
-      thousands of files.
-- [ ] **M-9** 🟡 `files.service.ts getRegistry`'s `search` param uses raw `like()`
-      against user input — Postgres `LIKE` wildcard characters (`%`, `_`) in a search
-      term aren't escaped, so a search containing a literal `_` can match more broadly
-      than intended. Minor UX correctness issue, not a security risk.
+- [x] **M-7** ~~No dedicated `files` permission resource~~ — done 2026-07-24 (Office
+      roadmap Phase 1): added a `files` resource to `DEFAULT_PERMISSIONS`
+      (create/read/update/delete/forward/approve); `/files/registry` and
+      `/files/analytics` now guard on `read:files` instead of borrowing
+      `read:documents`.
+      **Required a backfill** — `permissions` rows are per-org and only created at org
+      registration, so a new resource simply doesn't exist for already-registered orgs
+      and the guard would have 403'd everyone. New idempotent
+      `src/database/drizzle/sync-permissions.ts` (`pnpm --filter api db:sync-permissions`)
+      inserts missing rows per org and grants `<action>:files` to any role that already
+      held the matching `<action>:documents`, preserving existing access exactly.
+      **Must be run once against each environment before/with this deploy.**
+- [x] **M-8** ~~`GET /files/registry` has no pagination~~ — done 2026-07-24: `page`/`limit`
+      query params (default 25, max 100), returning
+      `{ data, total, page, limit, totalPages }` instead of a bare array. Count and page
+      query run concurrently. **Breaking response-shape change** — `frontend/web` updated.
+      The registry page's stat tiles previously counted the loaded array, which would have
+      silently become per-page counts; they now come from `GET /files/analytics`, which is
+      org-wide and already existed.
+- [x] **M-9** ~~`getRegistry` search uses raw `like()`~~ — done 2026-07-24: user input is
+      escaped for `%`, `_` and `\` before interpolation, and the search switched from
+      `like` to `ilike` so the registry search box is case-insensitive (it was
+      case-sensitive, which is not what a search box should do).
 
 ### High — required for "fully functional" campus/office
 
@@ -348,6 +358,23 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       `name`/`departmentId`, but `academic_classes` requires `course_id` and
       `faculty_id` (both NOT NULL) — the form needs those fields added before a working
       endpoint can even be wired up correctly.
+      *(Campus is frozen as of 2026-07-24 — see `docs/OFFICE-ROADMAP.md`. Not being worked.)*
+- [x] **M-11** ~~Tasks endpoints had no RBAC~~ — done 2026-07-24 (Office roadmap Phase 1):
+      `tasks.controller.ts` was `@UseGuards(JwtAuthGuard)` only, so any authenticated org
+      member could update or delete any task in their org. Now gated with
+      `create/read/update/delete/assign:tasks`. `GET /tasks/my-tasks` is deliberately left
+      ungated — it only ever returns tasks already assigned to the caller in their own org,
+      and gating it would stop a user seeing their own work.
+      **Note:** `tasks` permission *rows* already existed for every org, but were only
+      *granted* to `Organisation Admin`/`Super Admin`, so gating alone would have cut off
+      every other role. `db:sync-permissions` (see M-7) grants `tasks` permissions to all
+      existing roles, preserving today's effective access; admins can tighten per-role
+      afterwards from the Roles & Permissions UI.
+- [x] **M-12** ~~`attendance` schema column-name mismatch~~ — done 2026-07-24: the Drizzle
+      property was `s_present: boolean("is_present")`, so the TS property name didn't match
+      the DB column. Renamed the property to `is_present`. No source referenced the old
+      name (only stale `dist/` build output), so nothing else needed changing. Cleared
+      ahead of Office roadmap Phase 4, which builds HR attendance on this table.
 
 ### Low / cleanup
 

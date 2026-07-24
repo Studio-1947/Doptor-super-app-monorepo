@@ -7,7 +7,7 @@ import {
   noteSheets,
   fileAttachments,
 } from "../../database/drizzle/schema";
-import { eq, desc, and, like, or } from "drizzle-orm";
+import { eq, desc, and, ilike, or, sql } from "drizzle-orm";
 import { DRIZZLE } from "../../database/drizzle/database.module";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../database/drizzle/schema";
@@ -19,6 +19,21 @@ import {
 import { USER_SUMMARY_COLUMNS } from "../../common/constants/safe-user-columns";
 
 export const UPLOAD_DIR = path.join(process.cwd(), "uploads", "files");
+
+const DEFAULT_REGISTRY_PAGE_SIZE = 25;
+const MAX_REGISTRY_PAGE_SIZE = 100;
+
+/**
+ * Escapes Postgres LIKE/ILIKE wildcards in user-supplied search input so that a
+ * term containing `%` or `_` matches those characters literally instead of
+ * behaving as a wildcard (backlog M-9). The backslash escape character itself
+ * must be escaped first, or it would escape the escapes we add afterwards.
+ */
+function escapeLikePattern(input: string): string {
+  return input.replace(/\\/g, "\\\\").replace(/[%_]/g, "\\$&");
+}
+
+const sqlCount = () => sql<number>`cast(count(*) as int)`;
 
 @Injectable()
 export class FilesService {
@@ -302,9 +317,22 @@ export class FilesService {
 
   async getRegistry(
     organisationId: string,
-    search?: string,
-    status?: string,
+    options: {
+      search?: string;
+      status?: string;
+      page?: number;
+      limit?: number;
+    } = {},
   ) {
+    const { search, status } = options;
+
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.min(
+      MAX_REGISTRY_PAGE_SIZE,
+      Math.max(1, options.limit || DEFAULT_REGISTRY_PAGE_SIZE),
+    );
+    const offset = (page - 1) * limit;
+
     const conditions = [eq(files.organisation_id, organisationId)];
 
     if (status) {
@@ -312,22 +340,35 @@ export class FilesService {
     }
 
     if (search) {
+      const term = `%${escapeLikePattern(search)}%`;
       conditions.push(
-        or(
-          like(files.subject, `%${search}%`),
-          like(files.file_number, `%${search}%`),
-        )!,
+        or(ilike(files.subject, term), ilike(files.file_number, term))!,
       );
     }
 
-    return await this.db.query.files.findMany({
-      where: and(...conditions),
-      orderBy: [desc(files.updated_at)],
-      with: {
-        initiator: { columns: USER_SUMMARY_COLUMNS },
-        currentHolder: { columns: USER_SUMMARY_COLUMNS },
-      },
-    });
+    const where = and(...conditions);
+
+    const [rows, [{ count: total }]] = await Promise.all([
+      this.db.query.files.findMany({
+        where,
+        orderBy: [desc(files.updated_at)],
+        limit,
+        offset,
+        with: {
+          initiator: { columns: USER_SUMMARY_COLUMNS },
+          currentHolder: { columns: USER_SUMMARY_COLUMNS },
+        },
+      }),
+      this.db.select({ count: sqlCount() }).from(files).where(where),
+    ]);
+
+    return {
+      data: rows,
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    };
   }
 
   async getAnalytics(organisationId: string) {

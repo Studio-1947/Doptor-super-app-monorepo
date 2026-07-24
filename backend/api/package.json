@@ -20,6 +20,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:seed": "ts-node src/database/drizzle/seed.ts",
+    "db:sync-permissions": "ts-node src/database/drizzle/sync-permissions.ts",
+    "db:sync-permissions:dist": "node dist/database/drizzle/sync-permissions.js",
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "drizzle-kit push:pg"
   },

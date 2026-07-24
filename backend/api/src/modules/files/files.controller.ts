@@ -67,7 +67,7 @@ export class FilesController {
 
   @Get("registry")
   @UseGuards(PermissionsGuard)
-  @Permissions("read:documents")
+  @Permissions("read:files")
   @ApiOperation({
     summary: "Get the full organisation-wide file registry (searchable)",
   })
@@ -75,17 +75,20 @@ export class FilesController {
     @Request() req,
     @Query("search") search?: string,
     @Query("status") status?: string,
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
   ) {
-    return this.filesService.getRegistry(
-      req.user.organisation_id,
+    return this.filesService.getRegistry(req.user.organisation_id, {
       search,
       status,
-    );
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   @Get("analytics")
   @UseGuards(PermissionsGuard)
-  @Permissions("read:documents")
+  @Permissions("read:files")
   @ApiOperation({
     summary: "Get organisation-wide file analytics (status/category/priority breakdown)",
   })

@@ -76,6 +76,14 @@ export interface CreateFileData {
   dueDate?: string;
 }
 
+export interface PaginatedFiles {
+  data: File[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface FileAnalytics {
   totalFiles: number;
   byStatus: Record<string, number>;
@@ -100,9 +108,19 @@ class FilesService {
     return response.data;
   }
 
-  async getRegistry(params?: { search?: string; status?: string }): Promise<File[]> {
+  async getRegistry(params?: {
+    search?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedFiles> {
     const response = await apiClient.get("/files/registry", {
-      params: { search: params?.search, status: params?.status },
+      params: {
+        search: params?.search,
+        status: params?.status,
+        page: params?.page,
+        limit: params?.limit,
+      },
     });
     return response.data;
   }

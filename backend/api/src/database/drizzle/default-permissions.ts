@@ -51,6 +51,15 @@ export const DEFAULT_PERMISSIONS = [
   { resource: "documents", action: "delete" },
   { resource: "documents", action: "download" },
 
+  // E-File system (distinct from `documents` — the file registry, movements,
+  // note sheets and approvals). Previously borrowed `documents` permissions.
+  { resource: "files", action: "create" },
+  { resource: "files", action: "read" },
+  { resource: "files", action: "update" },
+  { resource: "files", action: "delete" },
+  { resource: "files", action: "forward" },
+  { resource: "files", action: "approve" },
+
   // Attendance management
   { resource: "attendance", action: "create" },
   { resource: "attendance", action: "read" },

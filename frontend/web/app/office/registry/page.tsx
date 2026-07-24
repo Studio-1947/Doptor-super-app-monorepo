@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ReadyUI } from '@/components/ReadyUI';
-import { FileText, Archive, Clock, CheckCircle2, ArrowRight } from 'lucide-react';
-import { filesService, File as RegistryFile } from '@/services/files.service';
+import { FileText, Archive, Clock, CheckCircle2, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { filesService, File as RegistryFile, FileAnalytics } from '@/services/files.service';
 
 const STATUS_STYLES: Record<string, string> = {
     active: 'text-blue-600 border-blue-100 bg-blue-50',
@@ -17,25 +17,35 @@ const STATUS_STYLES: Record<string, string> = {
 export default function RegistryPage() {
     const router = useRouter();
     const [files, setFiles] = useState<RegistryFile[] | null>(null);
-
-    const loadRegistry = () => {
-        filesService.getRegistry().then(setFiles).catch(() => setFiles([]));
-    };
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    // Stats are org-wide, so they come from /files/analytics rather than being
+    // counted off the current page — otherwise they'd only describe one page.
+    const [analytics, setAnalytics] = useState<FileAnalytics | null>(null);
 
     useEffect(() => {
-        loadRegistry();
+        filesService
+            .getRegistry({ page })
+            .then((res) => {
+                setFiles(res.data);
+                setTotalPages(res.totalPages);
+            })
+            .catch(() => setFiles([]));
+    }, [page]);
+
+    useEffect(() => {
+        filesService.getAnalytics().then(setAnalytics).catch(() => setAnalytics(null));
     }, []);
 
-    const total = files?.length ?? 0;
-    const active = files?.filter((f) => f.status === 'active').length ?? 0;
-    const closed = files?.filter((f) => f.status === 'closed' || f.status === 'archived').length ?? 0;
-    const approved = files?.filter((f) => f.status === 'approved').length ?? 0;
+    const byStatus = analytics?.byStatus ?? {};
+    const closed = (byStatus.closed ?? 0) + (byStatus.archived ?? 0);
+    const show = (value: number) => (analytics === null ? '-' : String(value));
 
     const stats = [
-        { label: 'Total Files', value: files === null ? '-' : String(total), icon: FileText, color: 'bg-primary-500' },
-        { label: 'Active', value: files === null ? '-' : String(active), icon: Clock, color: 'bg-blue-500' },
-        { label: 'Approved', value: files === null ? '-' : String(approved), icon: CheckCircle2, color: 'bg-emerald-500' },
-        { label: 'Closed/Archived', value: files === null ? '-' : String(closed), icon: Archive, color: 'bg-slate-500' },
+        { label: 'Total Files', value: show(analytics?.totalFiles ?? 0), icon: FileText, color: 'bg-primary-500' },
+        { label: 'Active', value: show(byStatus.active ?? 0), icon: Clock, color: 'bg-blue-500' },
+        { label: 'Approved', value: show(byStatus.approved ?? 0), icon: CheckCircle2, color: 'bg-emerald-500' },
+        { label: 'Closed/Archived', value: show(closed), icon: Archive, color: 'bg-slate-500' },
     ] as any[];
 
     return (
@@ -101,6 +111,30 @@ export default function RegistryPage() {
                     </tbody>
                 </table>
             </div>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Page {page} of {totalPages}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            disabled={page <= 1}
+                            className="inline-flex items-center gap-1 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-900 border border-slate-200 hover:border-primary-500 hover:text-primary-600 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                        >
+                            <ChevronLeft size={14} /> Prev
+                        </button>
+                        <button
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={page >= totalPages}
+                            className="inline-flex items-center gap-1 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-900 border border-slate-200 hover:border-primary-500 hover:text-primary-600 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                        >
+                            Next <ChevronRight size={14} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </ReadyUI>
     );
 }
