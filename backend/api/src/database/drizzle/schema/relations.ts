@@ -15,7 +15,15 @@ import {
   noteSheets,
   fileAttachments,
 } from "./files.schema";
-import { tasks } from "./task.schema";
+import {
+  tasks,
+  taskAssignees,
+  labels,
+  taskLabels,
+  taskComments,
+  taskAttachments,
+  taskAuditLogs,
+} from "./task.schema";
 
 // Users Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -122,13 +130,91 @@ export const examGradesRelations = relations(examGrades, ({ one }) => ({
 }));
 
 // Tasks Relations
-export const tasksRelations = relations(tasks, ({ one }) => ({
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
+  // Legacy single assignee — superseded by `assignees`, kept until backfilled.
   assignee: one(users, {
     fields: [tasks.assigned_to],
     references: [users.id],
   }),
   creator: one(users, {
     fields: [tasks.created_by],
+    references: [users.id],
+  }),
+  department: one(departments, {
+    fields: [tasks.department_id],
+    references: [departments.id],
+  }),
+  parent: one(tasks, {
+    fields: [tasks.parent_task_id],
+    references: [tasks.id],
+    relationName: "task_subtasks",
+  }),
+  subtasks: many(tasks, { relationName: "task_subtasks" }),
+  assignees: many(taskAssignees),
+  labels: many(taskLabels),
+  comments: many(taskComments),
+  attachments: many(taskAttachments),
+  auditLogs: many(taskAuditLogs),
+}));
+
+export const taskAssigneesRelations = relations(taskAssignees, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskAssignees.task_id],
+    references: [tasks.id],
+  }),
+  user: one(users, {
+    fields: [taskAssignees.user_id],
+    references: [users.id],
+  }),
+}));
+
+export const labelsRelations = relations(labels, ({ many }) => ({
+  tasks: many(taskLabels),
+}));
+
+export const taskLabelsRelations = relations(taskLabels, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskLabels.task_id],
+    references: [tasks.id],
+  }),
+  label: one(labels, {
+    fields: [taskLabels.label_id],
+    references: [labels.id],
+  }),
+}));
+
+export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskComments.task_id],
+    references: [tasks.id],
+  }),
+  author: one(users, {
+    fields: [taskComments.author_id],
+    references: [users.id],
+  }),
+}));
+
+export const taskAttachmentsRelations = relations(
+  taskAttachments,
+  ({ one }) => ({
+    task: one(tasks, {
+      fields: [taskAttachments.task_id],
+      references: [tasks.id],
+    }),
+    uploadedBy: one(users, {
+      fields: [taskAttachments.uploaded_by],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const taskAuditLogsRelations = relations(taskAuditLogs, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskAuditLogs.task_id],
+    references: [tasks.id],
+  }),
+  actor: one(users, {
+    fields: [taskAuditLogs.actor_id],
     references: [users.id],
   }),
 }));

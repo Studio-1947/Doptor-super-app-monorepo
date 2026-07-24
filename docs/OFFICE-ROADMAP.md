@@ -100,7 +100,51 @@ Sequenced so that each phase unblocks the next. Phases 2 and 4 are the porting-p
 > so nobody's effective access changes on deploy. Admins tighten per-role afterwards.
 
 ### Phase 2 — Tasks depth *(= porting plan Phases 1–2)*
-Follow `PORTING-PLAN-tracker-to-doptor.md` §3 Phase 1–2 as written. Decisions A–D hold.
+Follow `PORTING-PLAN-tracker-to-doptor.md` §3 Phase 1–2. Decisions A–D hold, with one
+documented deviation (Decision C values — see below).
+
+**2a — schema + migration ✅ done 2026-07-24 (migration `0011_short_valkyrie`)**
+
+- `departments` gains `task_prefix` + `task_seq` (default 0) — Decision A.
+- `tasks` gains `department_id`, `number`, `parent_task_id`, `completed_at`, `is_archived`,
+  with a unique index on `(department_id, number)` backing the `DEPT-12` ref.
+- New tables: `task_assignees`, `labels`, `task_labels`, `task_comments`,
+  `task_attachments`, `task_audit_logs` — all org-scoped.
+- `status`/`priority` converted from `text` to Postgres enums.
+
+> **Deviation from Decision C.** The plan specified adopting the tracker's UPPERCASE enum
+> values (`'TODO'`, `'MEDIUM'`). We kept Doptor's existing lowercase values. Decision C's
+> stated purpose was preventing drift, which the enum type delivers by itself; re-casing
+> would mean a data migration plus churn through the DTOs and the entire web frontend, for
+> no benefit now that the tracker is a reference implementation rather than a merge target.
+
+> **Two columns are deliberately kept rather than dropped**, against the deploy constraint
+> that nothing destructive happens in the same step that adds its replacement:
+> - `tasks.tags` (jsonb) — superseded by `labels`/`task_labels` (Decision B), but dropping
+>   it here would make `push:pg` delete live data. Migrate, then drop.
+> - `tasks.assigned_to` — superseded by `task_assignees`. Backfill, then drop.
+>
+> `department_id` is **nullable** for the same reason (Decision A calls it required). The
+> service requires it on create, so new rows always have it; tighten to NOT NULL after
+> existing rows are backfilled.
+
+> **⚠️ This migration cannot be applied with `drizzle-kit push:pg`.** drizzle-kit generated
+> a bare `ALTER COLUMN "status" SET DATA TYPE task_status`, which Postgres rejects — there
+> is no automatic text→enum cast, and a column's `DEFAULT` must be dropped before its type
+> can change. `0011_short_valkyrie.sql` has been **hand-edited** to drop the default,
+> convert with an explicit `USING`, and restore the default. Apply that file directly:
+> ```bash
+> docker compose -f docker-compose.prod.yml exec -T postgres \
+>   psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+>   < backend/api/src/database/drizzle/migrations/0011_short_valkyrie.sql
+> ```
+> Run `push:pg` afterwards if you like — it should then be a no-op. Existing lowercase
+> values match the enum labels exactly, so the cast preserves data.
+
+**2b — service** (next): atomic ref generation and per-field audit writes in the same
+transaction as the mutation; multi-assignee, labels, comments, subtasks, archive/restore.
+
+**2c — controller/DTOs**, **2d — Next.js frontend**.
 
 - [ ] Schema: `department_id` + `number` for `DEPT-12` refs, `parent_task_id`, `completed_at`,
       `is_archived`; new `task_assignees`, `labels`/`task_labels`, `task_comments`,

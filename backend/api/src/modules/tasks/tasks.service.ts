@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException, Inject } from "@nestjs/common";
 import { eq, and, like, desc } from "drizzle-orm";
-import { tasks } from "../../database/drizzle/schema/task.schema";
+import {
+  tasks,
+  taskStatusEnum,
+} from "../../database/drizzle/schema/task.schema";
+
+export type TaskStatus = (typeof taskStatusEnum.enumValues)[number];
 import {
   CreateTaskDto,
   UpdateTaskDto,
@@ -49,7 +54,7 @@ export class TasksService {
     organisationId: string,
     filters?: {
       assigned_to?: string;
-      status?: string;
+      status?: TaskStatus;
       search?: string;
     },
   ) {
