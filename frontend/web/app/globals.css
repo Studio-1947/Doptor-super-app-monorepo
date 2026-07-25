@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Loading animations for app/loading.tsx. Defined globally because the
+ * component references them via Tailwind arbitrary-value classes
+ * (`animate-[loading-bar_...]`), which need the keyframes in global scope —
+ * styled-jsx would have scoped them to the component and broken the reference.
+ */
+@keyframes loading-bar {
+    0% { transform: translateY(-100%); }
+    50% { transform: translateY(1200%); }
+    100% { transform: translateY(-100%); }
+}
+@keyframes loading-progress {
+    0% { transform: scaleX(0); transform-origin: left; }
+    40% { transform: scaleX(1); transform-origin: left; }
+    60% { transform: scaleX(1); transform-origin: right; }
+    100% { transform: scaleX(0); transform-origin: right; }
+}

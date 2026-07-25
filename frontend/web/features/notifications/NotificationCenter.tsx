@@ -1,156 +1,159 @@
 "use client";
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-    Bell,
-    Check,
-    CheckCheck,
-    Info,
-    AlertTriangle,
-    CheckCircle2,
-    XCircle,
-    MessageCircle,
-    X
+    Bell, Check, CheckCheck, CheckSquare, MessageCircle,
+    Send, ThumbsUp, XCircle, Loader2,
 } from 'lucide-react';
-import { Card, Button } from '@doptor/shared';
 import { useRouter } from 'next/navigation';
 import {
-    MOCK_NOTIFICATIONS,
-    Notification,
-    getNotifications,
-    markAsRead,
-    markAllAsRead
-} from './notifications-mock.db';
+    notificationsService,
+    AppNotification,
+} from '@/services/notifications.service';
 
+const PAGE_SIZE = 20;
+
+function iconFor(type: string) {
+    switch (type) {
+        case 'task_assigned': return <CheckSquare size={16} className="text-blue-500" />;
+        case 'task_commented': return <MessageCircle size={16} className="text-purple-500" />;
+        case 'file_forwarded': return <Send size={16} className="text-indigo-500" />;
+        case 'file_approved': return <ThumbsUp size={16} className="text-emerald-500" />;
+        case 'file_rejected': return <XCircle size={16} className="text-red-500" />;
+        default: return <Bell size={16} className="text-slate-500" />;
+    }
+}
+
+/**
+ * Full-page notification list (route: /notifications). The header bell shows
+ * only the most recent few; this view paginates the whole history. Both read
+ * from the same real notifications service.
+ */
 export function NotificationCenter() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
-    const [notifications, setNotifications] = useState<Notification[]>(getNotifications('u1'));
-    const [isOpen, setIsOpen] = useState(false); // For dropdown mode if needed, but managing as panel/page here for now
+    const [items, setItems] = useState<AppNotification[]>([]);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [unread, setUnread] = useState(0);
+    const [loading, setLoading] = useState(true);
 
-    const unreadCount = notifications.filter(n => !n.isRead).length;
+    const load = useCallback(() => {
+        setLoading(true);
+        Promise.all([
+            notificationsService.list({ page, limit: PAGE_SIZE, unreadOnly: activeTab === 'unread' }),
+            notificationsService.unreadCount(),
+        ])
+            .then(([list, count]) => {
+                setItems(list.data);
+                setTotalPages(list.totalPages);
+                setUnread(count);
+            })
+            .catch(() => setItems([]))
+            .finally(() => setLoading(false));
+    }, [page, activeTab]);
 
-    const handleMarkRead = (id: string, e: React.MouseEvent) => {
+    useEffect(() => { load(); }, [load]);
+
+    const switchTab = (tab: 'all' | 'unread') => { setActiveTab(tab); setPage(1); };
+
+    const markOne = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        markAsRead(id);
-        setNotifications([...notifications]); // Trigger re-render
+        try {
+            await notificationsService.markRead(id);
+            setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)));
+            setUnread((u) => Math.max(0, u - 1));
+        } catch { /* ignore */ }
     };
 
-    const handleMarkAllRead = () => {
-        markAllAsRead('u1');
-        setNotifications([...notifications]);
+    const markAll = async () => {
+        try {
+            await notificationsService.markAllRead();
+            setUnread(0);
+            if (activeTab === 'unread') load();
+            else setItems((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })));
+        } catch { /* ignore */ }
     };
 
-    const handleNotificationClick = (notification: Notification) => {
-        if (!notification.isRead) {
-            markAsRead(notification.id);
-            setNotifications([...notifications]);
+    const open = async (n: AppNotification) => {
+        if (!n.read_at) {
+            try {
+                await notificationsService.markRead(n.id);
+                setUnread((u) => Math.max(0, u - 1));
+            } catch { /* navigation proceeds regardless */ }
         }
-        if (notification.link) {
-            router.push(notification.link);
-        }
-    };
-
-    const filteredNotifications = activeTab === 'all'
-        ? notifications
-        : notifications.filter(n => !n.isRead);
-
-    const getIcon = (type: Notification['type']) => {
-        switch (type) {
-            case 'info': return <Info size={16} className="text-blue-500" />;
-            case 'warning': return <AlertTriangle size={16} className="text-orange-500" />;
-            case 'success': return <CheckCircle2 size={16} className="text-emerald-500" />;
-            case 'error': return <XCircle size={16} className="text-red-500" />;
-            case 'mention': return <MessageCircle size={16} className="text-purple-500" />;
-            default: return <Bell size={16} className="text-slate-500" />;
-        }
+        if (n.link) router.push(n.link);
     };
 
     return (
-        <div className="w-full max-w-sm bg-white border border-slate-200 rounded-xl shadow-lg flex flex-col h-[500px]">
-            {/* Header */}
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between shrink-0">
-                <h3 className="font-bold text-slate-900 flex items-center gap-2">
+        <div className="w-full max-w-2xl mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm flex flex-col">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     Notifications
-                    {unreadCount > 0 && (
-                        <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
-                            {unreadCount}
+                    {unread > 0 && (
+                        <span className="bg-primary-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
+                            {unread}
                         </span>
                     )}
                 </h3>
-                {unreadCount > 0 && (
-                    <button
-                        onClick={handleMarkAllRead}
-                        className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
-                    >
+                {unread > 0 && (
+                    <button onClick={markAll} className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
                         <CheckCheck size={14} /> Mark all read
                     </button>
                 )}
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-slate-100 shrink-0">
-                <button
-                    onClick={() => setActiveTab('all')}
-                    className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'all'
-                        ? 'text-primary-600 border-primary-500 bg-primary-50/50'
-                        : 'text-slate-500 border-transparent hover:bg-slate-50'
-                        }`}
-                >
-                    All
-                </button>
-                <button
-                    onClick={() => setActiveTab('unread')}
-                    className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 ${activeTab === 'unread'
-                        ? 'text-primary-600 border-primary-500 bg-primary-50/50'
-                        : 'text-slate-500 border-transparent hover:bg-slate-50'
-                        }`}
-                >
-                    Unread
-                </button>
+            <div className="flex border-b border-slate-100 dark:border-slate-800 shrink-0">
+                {(['all', 'unread'] as const).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => switchTab(tab)}
+                        className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 capitalize ${activeTab === tab ? 'text-primary-600 border-primary-500 bg-primary-50/50 dark:bg-primary-900/10' : 'text-slate-500 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    >
+                        {tab}
+                    </button>
+                ))}
             </div>
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto scrollbar-thin">
-                {filteredNotifications.length === 0 ? (
+            <div className="flex-1 overflow-y-auto min-h-[300px]">
+                {loading ? (
+                    <div className="flex items-center justify-center h-48">
+                        <Loader2 className="animate-spin text-slate-400" size={22} />
+                    </div>
+                ) : items.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-48 text-slate-400 p-8 text-center">
                         <Bell size={32} className="mb-2 opacity-20" />
                         <p className="text-sm">No notifications to show</p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-slate-50">
-                        {filteredNotifications.map(notification => (
+                    <div className="divide-y divide-slate-50 dark:divide-slate-800">
+                        {items.map((n) => (
                             <div
-                                key={notification.id}
-                                onClick={() => handleNotificationClick(notification)}
-                                className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer relative group ${!notification.isRead ? 'bg-blue-50/30' : ''
-                                    }`}
+                                key={n.id}
+                                onClick={() => open(n)}
+                                className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer relative group ${!n.read_at ? 'bg-primary-50/30 dark:bg-primary-900/10' : ''}`}
                             >
-                                {!notification.isRead && (
-                                    <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary-500" />
-                                )}
-
+                                {!n.read_at && <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-primary-500" />}
                                 <div className="flex gap-3">
-                                    <div className={`mt-0.5 w-8 h-8 rounded-full border border-slate-100 flex items-center justify-center shrink-0 bg-white shadow-sm`}>
-                                        {getIcon(notification.type)}
+                                    <div className="mt-0.5 w-8 h-8 rounded-full border border-slate-100 dark:border-slate-700 flex items-center justify-center shrink-0 bg-white dark:bg-slate-800 shadow-sm">
+                                        {iconFor(n.type)}
                                     </div>
-
                                     <div className="flex-1 min-w-0">
-                                        <p className={`text-sm ${!notification.isRead ? 'font-semibold text-slate-900' : 'text-slate-700'}`}>
-                                            {notification.title}
+                                        <p className={`text-sm ${!n.read_at ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                                            {n.title}
                                         </p>
-                                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                                            {notification.message}
-                                        </p>
+                                        {n.body && (
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{n.body}</p>
+                                        )}
                                         <p className="text-[10px] text-slate-400 mt-1.5">
-                                            {new Date(notification.createdAt).toLocaleString()}
+                                            {n.actor ? `${n.actor.first_name} ${n.actor.last_name} · ` : ''}
+                                            {new Date(n.created_at).toLocaleString()}
                                         </p>
                                     </div>
-
-                                    {!notification.isRead && (
+                                    {!n.read_at && (
                                         <button
-                                            onClick={(e) => handleMarkRead(notification.id, e)}
-                                            className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-all self-start"
+                                            onClick={(e) => markOne(n.id, e)}
+                                            className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-full transition-all self-start"
                                             title="Mark as read"
                                         >
                                             <Check size={14} />
@@ -162,6 +165,30 @@ export function NotificationCenter() {
                     </div>
                 )}
             </div>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-800 shrink-0">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Page {page} of {totalPages}
+                    </span>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            disabled={page <= 1}
+                            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 hover:border-primary-500 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                        >
+                            Prev
+                        </button>
+                        <button
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            disabled={page >= totalPages}
+                            className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 hover:border-primary-500 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

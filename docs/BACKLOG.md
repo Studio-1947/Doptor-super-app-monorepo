@@ -348,8 +348,13 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       `revenue: 45231` are hardcoded mock values, comment admits it. Needs real
       session-count and (if applicable) revenue source, or the fields should be removed
       until backed by real data.
-- [ ] **M-4** 🟡 Build a real **notifications** backend — no module/table exists;
-      `features/notifications/notifications-mock.db.ts` is entirely self-contained mock.
+- [x] **M-4** ~~Build a real notifications backend~~ — done 2026-07-25 (Office roadmap
+      Phase 3). Org-scoped `notifications` table (migration `0013`), full API (list /
+      unread-count / mark-read / mark-all-read), producers wired from tasks
+      (assigned, commented) and files (forwarded, approved, rejected), and a live
+      `NotificationBell` in the app header. Verified end-to-end against a live DB (15
+      checks). If a `notifications-mock.db.ts` still exists in the frontend, it is now
+      dead — the bell uses the real `notifications.service.ts`.
 - [ ] **M-5** 🟡 `features/communication/CommunicationHub.tsx` also has mock-data
       fallbacks layered on top of C-3 — now that C-3 is fixed, verify the frontend
       actually calls the real endpoint end-to-end (mock removal + live test).

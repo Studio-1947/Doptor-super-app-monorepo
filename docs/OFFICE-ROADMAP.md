@@ -255,18 +255,33 @@ generated statement fails with `column "status" cannot be cast automatically`, w
 edited version converts both columns, **preserves existing row values**, and restores the
 defaults as the enum type.
 
-### Phase 3 — Notifications
-*Deliberately before attendance: it is the connective tissue the other pillars need.*
+### Phase 3 — Notifications ✅ done 2026-07-25
 
-Nothing exists today. Tasks, files, and leave approvals all need to tell someone something.
-Building this after Phase 2 means task events are the first producer and prove the design.
+- [x] `notifications` table (migration `0013`, additive) — org-scoped, one row per recipient
+      so read state is per-user; `type` free text, `data` jsonb payload for render+deep-link,
+      indexed on `(user_id, created_at)`.
+- [x] Producers: `task_assigned` (create + add-assignee), `task_commented` (to the task's
+      other assignees and its creator), `file_forwarded` (recipient), `file_approved`
+      (initiator + next holder), `file_rejected` (initiator).
+- [x] `GET /notifications` (paginated, `?unread_only`), `GET /notifications/unread-count`,
+      `PATCH /notifications/:id/read`, `PATCH /notifications/read-all`. Personal to the caller,
+      so JwtAuthGuard only (no `@Permissions`).
+- [x] Frontend: `NotificationBell` in the app header (mounted via AppShell, so on every
+      authenticated page) — unread badge, dropdown, mark-read-on-open with deep-link, 60s poll.
+- **Delivery:** in-app only, as planned. Email can piggyback the `email` module later.
+- **Verified live (15 checks):** assignment and comment notify the right people, the actor is
+  never self-notified, re-adding an existing assignee doesn't re-notify, read/read-all adjust
+  the count, one user can't mark another's notification read (404), file rejection notifies
+  the initiator.
 
-- [ ] `notifications` table (org-scoped, `user_id`, `type`, `payload` jsonb, `read_at`).
-- [ ] Emit from real events: task assigned/commented, file forwarded/approved/rejected.
-- [ ] `GET /notifications`, mark-read, unread count.
-- [ ] Frontend: bell + dropdown in the Office shell, unread badge.
-- [ ] Decide delivery: in-app only first. Email piggybacks the existing `email` module later.
-- **Exit:** assigning a task or forwarding a file notifies the recipient in-app.
+**Design choices worth carrying forward:**
+- Emission is **fire-and-forget** and happens **after** the producing transaction commits —
+  a notification failure can never roll back or 500 the action, nor reference a rolled-back
+  row.
+- `notifyMany` dedupes recipients and always drops the actor, so a producer can pass a whole
+  assignee list without special-casing self-notification.
+- The bell **polls** (60s) rather than using a socket — the office suite has no authenticated
+  socket yet (backlog M-6). If/when one lands, the bell can switch to push.
 
 ### Phase 4 — HR attendance & leave *(= porting plan Phases 3–4)*
 Follow `PORTING-PLAN-tracker-to-doptor.md` §3 Phase 3–4. `attendance:approve` already seeded.
