@@ -1,11 +1,12 @@
 "use client";
 
-import { Search, Bell, ChevronDown, Building2, Shield } from 'lucide-react';
+import { Search, ChevronDown, Building2, Shield } from 'lucide-react';
 import { useRole } from '@/features/auth/RoleContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVertical, verticalTheme } from '@/contexts/VerticalContext';
 import Image from 'next/image';
 import { ThemeToggle } from '../ui/ThemeToggle';
+import { NotificationBell } from './NotificationBell';
 
 // SharpButton implementation to avoid shared component dependency issues during build
 const SharpButton = ({ 
@@ -87,10 +88,7 @@ export function Header() {
                     <span>{role.replace('_', ' ')}</span>
                 </div>
 
-                <button className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors rounded-none hover:bg-slate-50 dark:hover:bg-slate-900 border border-transparent hover:border-slate-100 dark:hover:border-slate-800">
-                    <Bell size={20} />
-                    <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-none bg-primary-500"></span>
-                </button>
+                <NotificationBell />
 
                 {/* Avatar is the ONLY thing that can be round, but let's make it square for Doptor OS vibe */}
                 <div className="w-8 h-8 rounded-none bg-slate-900 dark:bg-slate-800 overflow-hidden border border-slate-900 dark:border-slate-700 relative">
