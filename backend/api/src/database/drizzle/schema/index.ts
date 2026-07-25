@@ -8,6 +8,8 @@ export * from "./user-role.schema";
 export * from "./organisation-module.schema";
 export * from "./department.schema";
 export * from "./task.schema";
+export * from "./notification.schema";
+export * from "./notification.relations";
 export * from "./workflow.schema";
 export * from "./document.schema";
 export * from "./attendance.schema";
