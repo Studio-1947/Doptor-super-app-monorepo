@@ -311,18 +311,35 @@ defaults as the enum type.
 > **Migration 0014 is hand-written** — drizzle-kit could not run here (missing `esbuild`).
 > It is plain additive DDL; `push:pg` or a direct psql apply both work.
 
-### Phase 5 — Documents & Workflows (revive the dead UIs)
-Both have backends and no frontend (H-9). Workflows is the riskier of the two.
+### Phase 5 — Documents & Workflows ✅ done 2026-07-27
 
-- [ ] **Documents:** wire the existing 169-LOC backend to a real UI. Reuse the Phase-1
-      attachment/upload machinery from `files` rather than inventing a second upload path.
-- [ ] **Workflows:** `definition` is currently an unvalidated jsonb blob — decide whether this
-      becomes a real approval-chain engine or gets **cut**. Recommend: define a narrow, typed
-      step schema (sequential approver chain) rather than a general workflow engine. A generic
-      engine is a product in itself and is not what an office tool needs.
-- [ ] Wire `workflows:approve` into the existing file approve/reject path so there's one
-      approval concept, not two.
-- **Exit:** no dead routes left in Office; one approval mechanism, not two.
+- [x] **Documents** — the metadata-only module (name + url, with the same body-supplied
+      tenancy holes as departments) is now a real org-scoped library: link documents **and**
+      file uploads (multer, 25 MB, own subfolder on the shared uploads volume) + download,
+      search + status filter, all endpoints permission-gated. Migration `0015`, additive.
+      The 136-line hardcoded `DocumentExplorer` mock is replaced with a real UI.
+- [x] **Approval lifecycle** — draft → pending_review → approved/rejected, with resubmit;
+      approve/reject notify the uploader (new `document_approved`/`document_rejected`
+      notifications).
+- [x] **Workflows decision — no generic engine.** Document approval *is* the concrete
+      approval workflow, gated by the existing `workflows:approve` permission — so that
+      permission set now has real meaning without a jsonb-driven engine nobody consumes. The
+      `workflows` module is kept but hardened (org-scoped, gated, `organisation_id` removed
+      from its DTO); it's a thin definition store, not wired to a UI.
+- **Exit:** ✅ no dead document route (real explorer); one approval concept
+      (`workflows:approve` gates documents; the e-file system keeps its own forward/approve).
+- **Verified live (16 checks):** create/list, invalid-url + draft-approve guards, full
+      submit → approve/reject → resubmit, create/approve permission splits, uploader
+      notifications, status filtering, and cross-org isolation for documents and workflows.
+
+> **Deferred / not built:** wiring `workflows:approve` into the *e-file* approve path too (it
+> keeps its own approval for now — two code paths, one permission concept), a document
+> detail/preview view, and folder organisation. The generic `workflows` jsonb engine is
+> intentionally **not** built — revisit only if a need appears that document/file approval
+> can't cover.
+
+> **Migration 0015 is hand-written** (drizzle-kit can't run here — missing `esbuild`).
+> Additive; `push:pg` or direct psql both work.
 
 ### Phase 6 — Analytics, onboarding & polish
 - [ ] De-mock `analytics.service.ts` — remove `activeSessions: 42` and friends (M-3).
@@ -348,6 +365,7 @@ Both have backends and no frontend (H-9). Workflows is the riskier of the two.
 | `0012_clean_wilson_fisk` | `push:pg` or psql | `roles.description` (additive). |
 | `0013_awesome_nomad` | `push:pg` or psql | `notifications` (additive). |
 | `0014_hr_attendance` | `push:pg` or psql | HR attendance tables (additive). Hand-written — drizzle-kit couldn't run here (missing esbuild). |
+| `0015_documents_workflow` | `push:pg` or psql | Documents approval columns + `document_status` enum; relaxes `documents.url` to nullable (additive). Hand-written. |
 
 Then, **after** the code is deployed, run once per environment:
 ```

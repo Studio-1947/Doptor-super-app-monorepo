@@ -314,9 +314,15 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       audit history timeline. Also deleted `TaskList.tsx` and `TaskDetail.tsx`, which were
       hardcoded-mock components never imported anywhere (`TaskDetail` is superseded by the
       new drawer). A real List/Table view is still outstanding — see roadmap Phase 2.
-- [ ] **H-9** 🟠 Wire **workflows** and **documents** frontends similarly — no
-      `services/workflows.service.ts` or `documents.service.ts` exist despite real
-      backend CRUD.
+- [x] **H-9** ~~Wire workflows & documents frontends~~ — done 2026-07-27 (Office roadmap
+      Phase 5). **Documents:** built `services/documents.service.ts` and a real
+      `DocumentExplorer` (replacing a 136-line hardcoded mock) — link + file upload,
+      download, search/status filter, and a draft → pending_review → approved/rejected
+      approval lifecycle. Backend was metadata-only with the same body-supplied tenancy
+      holes as departments (M-13 class); now org-scoped, permission-gated, migration `0015`.
+      **Workflows:** decided against a generic jsonb engine — document approval is the
+      concrete workflow, gated by the existing `workflows:approve`. The workflows module is
+      hardened (org-scoped + gated) but intentionally has no UI. Verified live (16 checks).
 
 ### Newly found + fixed 2026-07-03 (while building H-3/H-5/H-6)
 
