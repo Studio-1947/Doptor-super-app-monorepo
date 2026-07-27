@@ -66,9 +66,14 @@ Sequenced so that each phase unblocks the next. Phases 2 and 4 are the porting-p
 ### Phase 1 — Foundation & hardening ✅ *code complete 2026-07-24*
 *Small, high-leverage, unblocks everything.*
 
-- [ ] **Apply migrations 0008–0010 to the VPS** (manual — see below). Nothing else can ship
-      until the deployed DB matches the code. ← **still outstanding, blocks deploy**
-- [ ] **Run `db:sync-permissions` on every environment** (see below). ← **outstanding**
+- [x] **Apply migrations to the VPS** (manual — see below). ✅ done 2026-07-27. `0008`–`0010`
+      turned out to be already applied; `0011`–`0015` were applied that day, taking the dev
+      database from 28 tables to 39. See "VPS migration — 2026-07-27" below.
+- [x] **Run `db:sync-permissions` on every environment** — ✅ **N/A on dev**, deliberately
+      skipped. The script backfills orgs that predate the `files` resource and the Phase 2.5
+      roles; the dev database has **zero organisations**, so there is nothing to backfill and
+      new orgs get the full set at registration. Still required on any environment that has
+      real orgs predating this work.
 - [x] Added a **`files` permission resource** to `DEFAULT_PERMISSIONS` (create/read/update/
       delete/forward/approve); `files.controller.ts` off `read:documents` (M-7).
 - [x] Added `@Permissions(...)` to the **tasks** controller (M-11). `GET /tasks/my-tasks`
@@ -356,7 +361,7 @@ defaults as the enum type.
 - `.github/workflows/deploy.yml` triggers on **every push to `main`** and auto-deploys.
 - Migrations are **manual** on the VPS. **Apply them before pushing the code that needs them.**
 
-**Migration checklist for this branch** (`feat/office-phase-1-foundation`, unpushed):
+**Migration checklist** (merged to `main` via PR #5, `114130a`; all applied to dev 2026-07-27):
 
 | Migration | Apply with | Note |
 |---|---|---|
@@ -374,6 +379,50 @@ docker compose -f docker-compose.prod.yml exec api \
 ```
 This creates the six standard office roles (Phase 2.5) and the `files` permission resource
 (Phase 1) for any org that predates them.
+
+### VPS migration — 2026-07-27 ✅ dev database now matches the code
+
+The dev database was found sitting at **post-`0010`** while Phases 2–5 were already deployed
+as code — every task, notification, HR and document endpoint would have 500'd on first use.
+It also held **zero organisations and zero users**, which removed every risk this section was
+written to guard against: nothing to preserve through the enum cast, and no permission
+backfill needed.
+
+`0011`–`0015` were applied in order, each wrapped in its own transaction:
+
+```bash
+for m in 0011_short_valkyrie 0012_clean_wilson_fisk 0013_awesome_nomad \
+         0014_hr_attendance 0015_documents_workflow; do
+  docker compose -f docker-compose.prod.yml exec -T postgres \
+    psql -U doptor -d doptor -v ON_ERROR_STOP=1 --single-transaction \
+    < "backend/api/src/database/drizzle/migrations/$m.sql" || break
+done
+```
+
+`--single-transaction -v ON_ERROR_STOP=1` is the important part and supersedes the bare
+`psql <` command given for `0011` above: Postgres DDL is transactional, so a mid-file failure
+rolls the whole file back instead of leaving the half-migrated state that `push:pg` produced
+during Phase 2 verification.
+
+Result: 28 → **39 tables**, all four enum types (`task_status`, `task_priority`,
+`task_attachment_kind`, `document_status`), `tasks.status`/`priority` converted cleanly,
+`roles.description` present, and both logic-bearing constraints in place —
+`tasks_department_number_unique` (backs reference generation) and
+`attendance_records_user_date_unique` (one punch row per day). `tasks.tags` and
+`tasks.assigned_to` survived as intended. API restarted clean.
+
+> **⚠️ `push:pg` gives no usable signal on this project — do not trust it as verification.**
+> drizzle-kit 0.20.18 prints `[✓] Changes applied` unconditionally, whether it emitted
+> statements or none at all. Running it three times in a row printed the same line each time,
+> which reads like runaway schema churn and isn't. The reliable check is a schema diff:
+> ```bash
+> docker compose -f docker-compose.prod.yml exec -T postgres \
+>   pg_dump -U doptor -d doptor --schema-only > /tmp/before.sql
+> # ...run push:pg...
+> diff /tmp/before.sql /tmp/after.sql   # ignore pg_dump's random \restrict token
+> ```
+> Confirmed identical before and after, so the schema is converged and stable.
+> Also note `push:pg --verbose` is rejected by 0.20.18's arg parser when a config file is used.
 
 - `push:pg` fails/prompts on a `NOT NULL` column added to a populated table. Every new column
   stays nullable-or-defaulted, backfills, then tightens. Two columns (`tasks.tags`,

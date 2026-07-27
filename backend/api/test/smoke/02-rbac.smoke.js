@@ -20,12 +20,15 @@ async function req(method, path, { token, body } = {}) {
   return { status: res.status, data };
 }
 
-const sql = (q) => execSync(
-  `docker exec doptor-postgres psql -U doptor -d doptor -t -A -c "${
-    q.replace(/\s+/g, ' ').trim().replace(/"/g, '\\"')
-  }"`,
-  { encoding: 'utf8' },
-).trim().split('\n')[0].trim(); // psql appends the command status (e.g. "INSERT 0 1")
+// Override to seed against a remote environment, e.g.
+//   SMOKE_PSQL_CMD="ssh deploy@host docker exec -i doptor-postgres psql -U doptor -d doptor"
+const PSQL_CMD = process.env.SMOKE_PSQL_CMD
+  || 'docker exec -i doptor-postgres psql -U doptor -d doptor';
+
+// SQL goes in over stdin (`-f -`) rather than `-c "..."`, so it needs no quote escaping
+// and survives being tunnelled through ssh.
+const sql = (q) => execSync(`${PSQL_CMD} -t -A -f -`, { input: q, encoding: 'utf8' })
+  .trim().split('\n')[0].trim(); // psql appends the command status (e.g. "INSERT 0 1")
 
 const uniq = Date.now();
 

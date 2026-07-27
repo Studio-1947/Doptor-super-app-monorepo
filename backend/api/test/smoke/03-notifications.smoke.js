@@ -18,9 +18,12 @@ async function req(method, path, { token, body } = {}) {
   let data = null; try { data = text ? JSON.parse(text) : null; } catch { data = text; }
   return { status: res.status, data };
 }
-const sql = (q) => execSync(
-  `docker exec doptor-postgres psql -U doptor -d doptor -t -A -c "${q.replace(/\s+/g,' ').trim().replace(/"/g,'\\"')}"`,
-  { encoding: 'utf8' }).trim().split('\n')[0].trim();
+// Override to seed against a remote environment — see 02-rbac.smoke.js.
+const PSQL_CMD = process.env.SMOKE_PSQL_CMD
+  || 'docker exec -i doptor-postgres psql -U doptor -d doptor';
+
+const sql = (q) => execSync(`${PSQL_CMD} -t -A -f -`, { input: q, encoding: 'utf8' })
+  .trim().split('\n')[0].trim();
 
 const uniq = Date.now();
 
