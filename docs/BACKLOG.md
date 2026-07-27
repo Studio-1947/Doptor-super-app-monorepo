@@ -411,6 +411,13 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       name (only stale `dist/` build output), so nothing else needed changing. Cleared
       ahead of Office roadmap Phase 4, which builds HR attendance on this table.
 
+- [ ] **M-15** 🟡 Found 2026-07-27 during the first browser pass: `/admin` is listed in
+      `middleware.ts` as a public vertical root and a protected prefix, but
+      `app/admin/` has **no `page.tsx`** — only `/admin/departments`, `/admin/roles`
+      and `/admin/settings`. Next prefetches the bare root and gets a 404 (19 console
+      404s in one session). Nothing links to it, so no user-visible break today —
+      decide whether `/admin` gets a landing page or is dropped from middleware.
+
 ### Low / cleanup
 
 - [ ] **L-1** 🔵 `frontend/mobile/` has no application code beyond `package.json` — needs
