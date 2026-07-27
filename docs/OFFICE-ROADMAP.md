@@ -283,16 +283,33 @@ defaults as the enum type.
 - The bell **polls** (60s) rather than using a socket — the office suite has no authenticated
   socket yet (backlog M-6). If/when one lands, the bell can switch to push.
 
-### Phase 4 — HR attendance & leave *(= porting plan Phases 3–4)*
-Follow `PORTING-PLAN-tracker-to-doptor.md` §3 Phase 3–4. `attendance:approve` already seeded.
+### Phase 4 — HR attendance & leave ✅ done 2026-07-27 *(= porting plan Phases 3–4)*
 
-- [ ] Port `attendance_records` (GPS punch, unique `user_id+work_date`), `leave_types`,
-      `leave_balances`, `leave_requests` — all org-scoped.
-- [ ] Reconcile with / replace the thin `attendance` table (see the Phase 1 schema bug).
-- [ ] Punch in/out, leave request → approve/reject, balance computation.
-- [ ] Frontend: punch widget (geolocation), my-attendance calendar, leave form, admin
-      approval queue. Wire approvals into Phase 3 notifications.
-- **Exit:** punch in/out works; leave request → approval → balance decrements; org-isolated.
+- [x] `attendance_records` (GPS punch, unique `user_id+work_date`), `leave_types`,
+      `leave_balances`, `leave_requests` — all org-scoped (migration `0014`, additive).
+- [x] The thin `attendance` table is deprecated in place (not dropped — deploy safety) and
+      no longer written to; the new module replaces it entirely.
+- [x] Punch in/out (late after 09:30, one row per day, double-punch guarded); leave submit
+      (working-day count, Mon–Fri, holidays not modelled) → approve/reject with balance
+      movement inside a transaction that refuses to go negative; requester cancel restores
+      an approved balance. Approve/reject notify the requester (Phase 3 notifications).
+- [x] Frontend: punch card (browser geolocation), leave-balance tiles, my-leave with a
+      request form + cancel, and an admin approval queue shown only to
+      `approve:attendance` holders.
+- **Access:** self-service (punch, own leave) is JWT-only like `my-tasks`; admin actions
+      gated on `approve:attendance` (approve/reject, org views) and `update:attendance`
+      (leave types, balance allocation). Both permissions were already seeded — no re-seed.
+- **Verified live (32 checks):** full punch lifecycle + one-row-per-day, balance
+      allocate → approve (used++) → cancel (restored), insufficient-balance and re-approve
+      guards, admin/staff permission split, leave notifications, and cross-org isolation.
+
+> **Deferred within Phase 4:** a my-attendance *calendar* view (the data is served by
+> `GET /attendance/me`; only the calendar visualisation is unbuilt), leave-type management
+> UI (the API exists; admins currently allocate via API), and a holiday calendar so
+> working-day counts exclude public holidays.
+
+> **Migration 0014 is hand-written** — drizzle-kit could not run here (missing `esbuild`).
+> It is plain additive DDL; `push:pg` or a direct psql apply both work.
 
 ### Phase 5 — Documents & Workflows (revive the dead UIs)
 Both have backends and no frontend (H-9). Workflows is the riskier of the two.
@@ -317,15 +334,33 @@ Both have backends and no frontend (H-9). Workflows is the riskier of the two.
 
 ---
 
-## Deploy discipline (unchanged, still the main operational risk)
+## Deploy discipline (the main operational risk)
 
 - `.github/workflows/deploy.yml` triggers on **every push to `main`** and auto-deploys.
-- Migrations are **manual** on the VPS (`drizzle-kit push:pg`).
-- **Therefore: apply migrations to the VPS *before* pushing the code that needs them.**
-  Right now `5a7394a` is committed locally but unpushed, and 0008–0010 are unapplied. Pushing
-  before migrating will deploy code querying tables that don't exist.
-- `push:pg` will fail/prompt on a `NOT NULL` column added to a populated table. Every new
-  column stays nullable-or-defaulted, gets backfilled, and only then tightens.
+- Migrations are **manual** on the VPS. **Apply them before pushing the code that needs them.**
+
+**Migration checklist for this branch** (`feat/office-phase-1-foundation`, unpushed):
+
+| Migration | Apply with | Note |
+|---|---|---|
+| `0008`–`0010` | `push:pg` or psql | The pre-existing July work (commit `5a7394a`). |
+| `0011_short_valkyrie` | **direct psql only** | Text→enum conversion; `push:pg` generates a bare `ALTER … SET DATA TYPE` that Postgres rejects. Hand-edited to drop-default → `USING` → restore. |
+| `0012_clean_wilson_fisk` | `push:pg` or psql | `roles.description` (additive). |
+| `0013_awesome_nomad` | `push:pg` or psql | `notifications` (additive). |
+| `0014_hr_attendance` | `push:pg` or psql | HR attendance tables (additive). Hand-written — drizzle-kit couldn't run here (missing esbuild). |
+
+Then, **after** the code is deployed, run once per environment:
+```
+docker compose -f docker-compose.prod.yml exec api \
+  sh -c "cd backend/api && pnpm db:sync-permissions"
+```
+This creates the six standard office roles (Phase 2.5) and the `files` permission resource
+(Phase 1) for any org that predates them.
+
+- `push:pg` fails/prompts on a `NOT NULL` column added to a populated table. Every new column
+  stays nullable-or-defaulted, backfills, then tightens. Two columns (`tasks.tags`,
+  `tasks.assigned_to`) and the whole `attendance` table are deprecated-in-place for exactly
+  this reason and await a follow-up drop.
 
 ---
 
