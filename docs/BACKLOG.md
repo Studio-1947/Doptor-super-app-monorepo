@@ -49,11 +49,18 @@ actually navigating anywhere, and `BottomNav` being a fully static tab list.
 - [ ] **Not yet done**: migrating existing ad-hoc emerald/indigo Tailwind classes
       scattered across a few campus/office pages onto the shared token system (left
       as-is this pass, flagged for new/touched pages going forward).
-- [ ] **Not yet done**: `middleware.ts` still does no real server-side route
-      protection (reads a `user_role` cookie nothing sets) — deferred by explicit
-      decision, since backend already enforces real permission checks per-endpoint.
-      Fixing it properly requires a token-storage strategy change (localStorage →
-      cookie) — separate, bigger decision.
+- [x] ~~`middleware.ts` does no real server-side route protection~~ — done 2026-07-27.
+      The token-storage change this was waiting on is made: the API issues httpOnly
+      access/refresh cookies (`common/config/auth-cookies.ts`) and `JwtStrategy` accepts
+      the cookie *or* the Bearer header, so non-browser callers are unaffected.
+      `middleware.ts` is restored and gates unauthenticated requests server-side — but
+      only when `COOKIE_AUTH_ENABLED` is set, since the cookie is invisible to it unless
+      the API also sets `COOKIE_DOMAIN` to the parent domain. Set both together.
+      It decodes rather than verifies (verifying would duplicate `JWT_SECRET` into the web
+      container) and gates auth only, not roles (the payload carries none, and baking them
+      in would delay role changes until token refresh). The API remains the boundary.
+      **Still open:** the token stays in `localStorage` for the Bearer fallback, so the XSS
+      exposure isn't closed yet — that removal is a separate follow-up needing a browser pass.
 - **Verification caveat**: no browser-automation tool (Playwright/chromium-cli) was
   available in this environment, so this was verified via `tsc --noEmit` (clean),
   a live backend check of the one new runtime call (`GET /organisations/:id`, confirmed

@@ -18,7 +18,8 @@ assert on real responses. They were used to verify each phase as it was built.
 | `04-attendance.smoke.js` | Punch lifecycle, leave request → approve/reject/cancel, balance movement, admin/staff split | 32 |
 | `05-documents.smoke.js` | Document library, draft → pending_review → approved/rejected, resubmit, permission splits, cross-org isolation | 16 |
 | `06-tenancy.smoke.js` | Live exploit attempts against the C-11 privilege-escalation chain; reports findings by severity rather than pass/fail | — |
-| `07-dashboard-access.smoke.js` | Every endpoint a role dashboard calls is reachable *by that role*, and the gates its hidden panels rely on hold | 23 |
+| `07-dashboard-access.smoke.js` | Every endpoint a role dashboard calls is reachable *by that role*, and the gates its hidden panels rely on hold | 28 |
+| `08-cookie-auth.smoke.js` | httpOnly cookie auth — cookie alone authenticates, Bearer still works, refresh rotates, replay and logged-out tokens rejected | 24 |
 
 `helpers.js` holds the shared transport (`req`, `sql`, `sqlRows`). Each suite keeps
 its own `check`/reporting block, because `06-tenancy` reports by severity and

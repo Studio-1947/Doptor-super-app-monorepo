@@ -366,11 +366,31 @@ defaults as the enum type.
       `SuperAdminDashboard` shows its own org's real figures and states plainly that
       platform-wide totals need an endpoint that doesn't exist — no estimate stands in.
       Guarded by new smoke suite `07-dashboard-access` (23 checks).
-- [ ] Server-side route protection — **now a decision, not a task.** `middleware.ts` was
-      deleted 2026-07-27 (its RBAC read a `user_role` cookie nothing set); client-side
-      `RoleGuard` + `lib/route-access.ts` replaced it. Real server-side enforcement needs
-      tokens moved localStorage → cookie. The backend gates every endpoint regardless, so
-      this is defence-in-depth.
+- [x] **Server-side route protection** — done 2026-07-27. The API now issues the access and
+      refresh tokens as **httpOnly cookies** alongside the existing JSON body, and
+      `JwtStrategy` accepts either the cookie or the `Authorization` header. Keeping the
+      header matters: dropping it would break the smoke suites, curl and the mobile app for
+      no security gain, since a caller that can set headers was never the threat.
+      `middleware.ts` is restored and gates unauthenticated requests server-side.
+      Three deliberate limits, all documented in the file:
+      - It **decodes** the token, it does not verify the signature. Verifying would mean
+        shipping `JWT_SECRET` into the web container, duplicating the one secret that
+        matters to re-check what the API re-checks anyway.
+      - It gates **authentication only, never roles.** The access token payload is
+        `{sub, email, iat, exp}` — no roles. Adding them would delay a role change until
+        the user's token refreshed, which is a bad property for an access control. Roles
+        stay with `RoleGuard` client-side and the API server-side.
+      - It is **inert unless `COOKIE_AUTH_ENABLED` is set**, because the cookie is only
+        visible to it when the API sets `COOKIE_DOMAIN` to the parent domain (API and web
+        are on different subdomains). The previous middleware was deleted for gating on a
+        cookie nothing set; this one refuses to repeat that. **Set both together or
+        neither** — see `docker-compose.prod.yml`.
+      > **Not yet closed:** the access token is still kept in `localStorage` for the Bearer
+      > fallback, so this does **not** yet remove the XSS exposure. That removal means
+      > rewriting the boot check, login flow and refresh-race handling in `api-client.ts`,
+      > which can't be verified without a real browser pass — kept as a separate follow-up
+      > rather than bundled in blind.
+      Verified against a real API: `08-cookie-auth.smoke.js`, 24 checks.
 - [x] Onboarding: O-4, O-5, O-7 — done 2026-07-27, though only one needed building.
       **O-4 was already built** (the signup vertical picker has always posted
       `enabled_verticals`; verified live). **O-5** shipped as a state-derived setup

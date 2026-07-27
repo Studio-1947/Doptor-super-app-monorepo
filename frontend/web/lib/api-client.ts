@@ -66,9 +66,25 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // Sends the httpOnly auth cookies the API sets on login/refresh. The API
+  // accepts either those or the Bearer header below, so this is additive —
+  // nothing breaks if the cookie isn't present. CORS already replies with
+  // `credentials: true` (see backend `main.ts`).
+  withCredentials: true,
 });
 
 // Request interceptor - Add auth token to requests
+//
+// The httpOnly cookie (see `withCredentials` above) is the primary credential.
+// This header is kept as the fallback for the transition: it still authenticates
+// a browser whose cookie was issued before `COOKIE_DOMAIN` was configured, and
+// it is what non-browser clients use.
+//
+// NOTE: while the token remains in localStorage this does **not** yet close the
+// XSS exposure — an injected script can still read it. Removing that storage is
+// a deliberate follow-up rather than part of this change, because it means
+// rewriting the boot check, the login flow and the refresh race handling below,
+// none of which can be verified without a real browser pass.
 apiClient.interceptors.request.use(
   (config) => {
     const token = getStorageItem("access_token");

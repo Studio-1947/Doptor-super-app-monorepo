@@ -10,12 +10,24 @@ import { permissions } from "../../../database/drizzle/schema/permission.schema"
 import { DRIZZLE } from "../../../database/drizzle/database.module";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { requireJwtSecret } from "../../../common/config/jwt-secret";
+import {
+  ACCESS_TOKEN_COOKIE,
+  readCookie,
+} from "../../../common/config/auth-cookies";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(@Inject(DRIZZLE) private db: PostgresJsDatabase) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      // Cookie first, Bearer second. Browsers use the httpOnly cookie so an XSS
+      // can't read the token; everything else (smoke suites, curl, the mobile
+      // app) keeps working over the header. Order matters only when both are
+      // present, where the cookie is the more trustworthy of the two — a header
+      // is the easier of the pair for injected script to attach.
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req) => readCookie(req as any, ACCESS_TOKEN_COOKIE),
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: requireJwtSecret(),
     });
