@@ -24,6 +24,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../database/drizzle/schema";
 import { USER_SUMMARY_COLUMNS } from "../../common/constants/safe-user-columns";
 import { containsPattern } from "../../common/utils/escape-like";
+import { NotificationsService } from "../notifications/notifications.service";
 
 export type TaskStatus = (typeof taskStatusEnum.enumValues)[number];
 export type TaskPriority = (typeof taskPriorityEnum.enumValues)[number];
@@ -73,7 +74,31 @@ function derivePrefix(department: {
 
 @Injectable()
 export class TasksService {
-  constructor(@Inject(DRIZZLE) private db: Db) {}
+  constructor(
+    @Inject(DRIZZLE) private db: Db,
+    private readonly notifications: NotificationsService,
+  ) {}
+
+  /** Computes `<prefix>-<number>` for a raw task row by resolving its department. */
+  private async referenceFor(task: {
+    department_id: string | null;
+    number: number | null;
+  }): Promise<string | null> {
+    if (!task.department_id || task.number == null) return null;
+    const dept = await this.db.query.departments.findFirst({
+      where: eq(departments.id, task.department_id),
+    });
+    return dept ? `${derivePrefix(dept)}-${task.number}` : null;
+  }
+
+  /** Assignee ids for a task, excluding a given user (usually the actor). */
+  private async assigneeIds(taskId: string, except?: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ id: taskAssignees.user_id })
+      .from(taskAssignees)
+      .where(eq(taskAssignees.task_id, taskId));
+    return rows.map((r) => r.id).filter((id) => id !== except);
+  }
 
   // ---------------------------------------------------------------- helpers
 
@@ -171,7 +196,7 @@ export class TasksService {
   // ----------------------------------------------------------------- create
 
   async create(dto: CreateTaskDto, userId: string, organisationId: string) {
-    return await this.db.transaction(async (tx) => {
+    const created = await this.db.transaction(async (tx) => {
       // Claim the next reference number by incrementing the department counter
       // in a single atomic UPDATE ... RETURNING. Two concurrent creates against
       // the same department therefore get distinct numbers — the row is locked
@@ -264,6 +289,23 @@ export class TasksService {
 
       return this.findOne(task.id, organisationId, tx);
     });
+
+    // Notify initial assignees after commit — the task must exist first, and a
+    // notification failure must not roll back the create.
+    await this.notifications.safeNotifyMany(
+      created.assignees.map((a: any) => a.id),
+      {
+        organisationId,
+        actorId: userId,
+        type: "task_assigned",
+        title: `You were assigned ${created.reference ?? "a task"}`,
+        body: created.title,
+        link: `/tasks/${created.id}`,
+        data: { task_id: created.id, reference: created.reference },
+      },
+    );
+
+    return created;
   }
 
   // ------------------------------------------------------------------- read
@@ -316,16 +358,31 @@ export class TasksService {
       );
     }
 
-    // Assignee and label live in join tables, so filter via a subquery rather
-    // than joining — keeps the row shape (and the relational `with` below) intact.
+    // Assignee and label live in join tables. These use `inArray` against a
+    // built subquery rather than a raw `sql` EXISTS: inside the relational query
+    // builder (db.query.tasks.findMany) the primary table is aliased, and a raw
+    // template mis-qualifies columns belonging to other tables — a correlated
+    // `task_assignees.task_id` came out as `tasks.task_id`, which does not exist.
     if (filters.assigned_to) {
       conditions.push(
-        sql`exists (select 1 from ${taskAssignees} where ${taskAssignees.task_id} = ${tasks.id} and ${taskAssignees.user_id} = ${filters.assigned_to})`,
+        inArray(
+          tasks.id,
+          this.db
+            .select({ id: taskAssignees.task_id })
+            .from(taskAssignees)
+            .where(eq(taskAssignees.user_id, filters.assigned_to)),
+        ),
       );
     }
     if (filters.label_id) {
       conditions.push(
-        sql`exists (select 1 from ${taskLabels} where ${taskLabels.task_id} = ${tasks.id} and ${taskLabels.label_id} = ${filters.label_id})`,
+        inArray(
+          tasks.id,
+          this.db
+            .select({ id: taskLabels.task_id })
+            .from(taskLabels)
+            .where(eq(taskLabels.label_id, filters.label_id)),
+        ),
       );
     }
 
@@ -518,7 +575,7 @@ export class TasksService {
     userId: string,
     actorId: string,
   ) {
-    return await this.db.transaction(async (tx) => {
+    const { task, added } = await this.db.transaction(async (tx) => {
       await this.findTaskInOrg(id, organisationId, tx);
       await this.assertUsersInOrg(tx, [userId], organisationId);
 
@@ -528,7 +585,9 @@ export class TasksService {
           eq(taskAssignees.user_id, userId),
         ),
       });
-      if (existing) return this.findOne(id, organisationId, tx);
+      if (existing) {
+        return { task: await this.findOne(id, organisationId, tx), added: false };
+      }
 
       await tx.insert(taskAssignees).values({
         task_id: id,
@@ -547,8 +606,22 @@ export class TasksService {
         },
       ]);
 
-      return this.findOne(id, organisationId, tx);
+      return { task: await this.findOne(id, organisationId, tx), added: true };
     });
+
+    if (added) {
+      await this.notifications.safeNotifyMany([userId], {
+        organisationId,
+        actorId,
+        type: "task_assigned",
+        title: `You were assigned ${task.reference ?? "a task"}`,
+        body: task.title,
+        link: `/tasks/${id}`,
+        data: { task_id: id, reference: task.reference },
+      });
+    }
+
+    return task;
   }
 
   async removeAssignee(
@@ -692,10 +765,10 @@ export class TasksService {
     authorId: string,
     body: string,
   ) {
-    return await this.db.transaction(async (tx) => {
-      await this.findTaskInOrg(id, organisationId, tx);
+    const { comment, task } = await this.db.transaction(async (tx) => {
+      const t = await this.findTaskInOrg(id, organisationId, tx);
 
-      const [comment] = await tx
+      const [c] = await tx
         .insert(taskComments)
         .values({
           task_id: id,
@@ -712,12 +785,31 @@ export class TasksService {
           actor_id: authorId,
           action: "commented",
           field: "comments",
-          after_value: { comment_id: comment.id },
+          after_value: { comment_id: c.id },
         },
       ]);
 
-      return comment;
+      return { comment: c, task: t };
     });
+
+    // Notify the task's other assignees, plus its creator if they aren't the
+    // commenter or already an assignee. safeNotifyMany dedupes and drops the actor.
+    const recipients = await this.assigneeIds(id, authorId);
+    if (task.created_by && task.created_by !== authorId) {
+      recipients.push(task.created_by);
+    }
+    const reference = await this.referenceFor(task);
+    await this.notifications.safeNotifyMany(recipients, {
+      organisationId,
+      actorId: authorId,
+      type: "task_commented",
+      title: `New comment on ${reference ?? "a task"}`,
+      body,
+      link: `/tasks/${id}`,
+      data: { task_id: id, comment_id: comment.id, reference },
+    });
+
+    return comment;
   }
 
   async updateComment(

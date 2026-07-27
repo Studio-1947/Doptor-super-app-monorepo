@@ -1,46 +1,89 @@
-import { IsNotEmpty, IsString, IsUUID } from "class-validator";
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsUrl,
+  MaxLength,
+} from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateDocumentDto {
-  @ApiProperty({
-    example: "Offer Letter",
-    description: "The name of the document",
-  })
+  @ApiProperty({ example: "Offer Letter" })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(200)
   name: string;
 
-  @ApiProperty({
-    example: "https://example.com/docs/offer-letter.pdf",
-    description: "The URL of the document",
-  })
-  @IsString()
+  @ApiProperty({ example: "https://example.com/docs/offer-letter.pdf" })
+  @IsUrl()
   @IsNotEmpty()
   url: string;
 
-  @ApiProperty({
-    example: "123e4567-e89b-12d3-a456-426614174000",
-    description: "The UUID of the organisation",
-  })
-  @IsUUID()
-  @IsNotEmpty()
-  organisation_id: string;
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000)
+  description?: string;
+
+  @ApiProperty({ example: "HR", required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(60)
+  category?: string;
+
+  // organisation_id deliberately removed — taken from the authenticated user.
+}
+
+/** Metadata for an uploaded document; the file itself is multipart. */
+export class UploadDocumentMetaDto {
+  @ApiProperty({ required: false, description: "Defaults to the filename" })
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  name?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000)
+  description?: string;
+
+  @ApiProperty({ example: "HR", required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(60)
+  category?: string;
 }
 
 export class UpdateDocumentDto {
-  @ApiProperty({
-    example: "Updated Offer Letter",
-    description: "The new name of the document",
-    required: false,
-  })
+  @ApiProperty({ required: false })
   @IsString()
+  @IsOptional()
+  @MaxLength(200)
   name?: string;
 
-  @ApiProperty({
-    example: "https://example.com/docs/new-offer-letter.pdf",
-    description: "The new URL of the document",
-    required: false,
-  })
-  @IsString()
+  @ApiProperty({ required: false })
+  @IsUrl()
+  @IsOptional()
   url?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000)
+  description?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(60)
+  category?: string;
+}
+
+export class ReviewDocumentDto {
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  @MaxLength(1000)
+  note?: string;
 }

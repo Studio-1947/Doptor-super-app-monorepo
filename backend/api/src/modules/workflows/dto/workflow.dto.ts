@@ -1,46 +1,28 @@
-import { IsNotEmpty, IsString, IsUUID, IsObject } from "class-validator";
+import { IsNotEmpty, IsString, IsObject, IsOptional } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateWorkflowDto {
-  @ApiProperty({
-    example: "Leave Approval",
-    description: "The name of the workflow",
-  })
+  @ApiProperty({ example: "Leave Approval" })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiProperty({
-    example: { steps: [] },
-    description: "The workflow logic definition in JSON",
-  })
+  @ApiProperty({ example: { steps: [] }, required: false })
   @IsObject()
-  @IsNotEmpty()
-  definition: any; // Workflow definition JSON
+  @IsOptional()
+  definition?: Record<string, unknown>;
 
-  @ApiProperty({
-    example: "123e4567-e89b-12d3-a456-426614174000",
-    description: "The UUID of the organisation",
-  })
-  @IsUUID()
-  @IsNotEmpty()
-  organisation_id: string;
+  // organisation_id deliberately removed — taken from the authenticated user.
 }
 
 export class UpdateWorkflowDto {
-  @ApiProperty({
-    example: "Updated Workflow Name",
-    description: "The new name of the workflow",
-    required: false,
-  })
+  @ApiProperty({ required: false })
   @IsString()
+  @IsOptional()
   name?: string;
 
-  @ApiProperty({
-    example: { steps: [{ id: 1 }] },
-    description: "The new workflow logic definition",
-    required: false,
-  })
+  @ApiProperty({ example: { steps: [{ id: 1 }] }, required: false })
   @IsObject()
-  definition?: any;
+  @IsOptional()
+  definition?: Record<string, unknown>;
 }

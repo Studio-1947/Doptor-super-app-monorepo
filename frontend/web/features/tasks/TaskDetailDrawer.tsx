@@ -10,6 +10,7 @@ import {
     tasksService, Task, TaskStatus, TaskPriority, TaskLabel, TaskAuditEntry,
 } from '@/services/tasks.service';
 import { usersService, UserListItem } from '@/services/users.service';
+import { initials, displayName as fullName } from '@/lib/display';
 
 const STATUSES: { id: TaskStatus; label: string }[] = [
     { id: 'todo', label: 'To Do' },
@@ -20,11 +21,6 @@ const STATUSES: { id: TaskStatus; label: string }[] = [
 
 const PRIORITIES: TaskPriority[] = ['low', 'medium', 'high', 'urgent'];
 
-const initials = (u: { first_name?: string; last_name?: string }) =>
-    `${u.first_name?.[0] ?? ''}${u.last_name?.[0] ?? ''}`.toUpperCase() || '?';
-
-const fullName = (u: { first_name?: string; last_name?: string; email?: string }) =>
-    `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim() || u.email || 'Unknown';
 
 /** Renders an audit row as a readable sentence. */
 function describeEntry(entry: TaskAuditEntry): string {

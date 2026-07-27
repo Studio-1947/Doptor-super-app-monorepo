@@ -34,7 +34,7 @@ export class UsersService {
     private emailService: EmailService,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, organisationId: string) {
     const saltRounds = 10;
     const password_hash = await bcrypt.hash(createUserDto.password, saltRounds);
 
@@ -43,7 +43,7 @@ export class UsersService {
       .values({
         email: createUserDto.email,
         password_hash,
-        organisation_id: createUserDto.organisation_id,
+        organisation_id: organisationId,
       })
       .returning({
         id: users.id,
@@ -56,12 +56,11 @@ export class UsersService {
     return user;
   }
 
-  async findAll(organisationId?: string, search?: string, status?: string) {
+  async findAll(organisationId: string, search?: string, status?: string) {
     const conditions = [];
 
-    if (organisationId) {
-      conditions.push(eq(users.organisation_id, organisationId));
-    }
+    // Always scoped — an unscoped user list leaks every tenant's PII.
+    conditions.push(eq(users.organisation_id, organisationId));
 
     if (search) {
       conditions.push(like(users.email, `%${search}%`));
@@ -122,7 +121,7 @@ export class UsersService {
     }));
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, organisationId: string) {
     const [user] = await this.db
       .select({
         id: users.id,
@@ -132,7 +131,9 @@ export class UsersService {
         updated_at: users.updated_at,
       })
       .from(users)
-      .where(eq(users.id, id))
+      .where(
+        and(eq(users.id, id), eq(users.organisation_id, organisationId)),
+      )
       .limit(1);
 
     if (!user) {
@@ -142,7 +143,11 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(
+    id: string,
+    organisationId: string,
+    updateUserDto: UpdateUserDto,
+  ) {
     const updateData: any = {};
 
     if (updateUserDto.email) {
@@ -158,7 +163,7 @@ export class UsersService {
     }
 
     if (Object.keys(updateData).length === 0) {
-      return this.findOne(id);
+      return this.findOne(id, organisationId);
     }
 
     updateData.updated_at = new Date();
@@ -166,7 +171,9 @@ export class UsersService {
     const [updatedUser] = await this.db
       .update(users)
       .set(updateData)
-      .where(eq(users.id, id))
+      .where(
+        and(eq(users.id, id), eq(users.organisation_id, organisationId)),
+      )
       .returning({
         id: users.id,
         email: users.email,
@@ -182,10 +189,12 @@ export class UsersService {
     return updatedUser;
   }
 
-  async remove(id: string) {
+  async remove(id: string, organisationId: string) {
     const [deletedUser] = await this.db
       .delete(users)
-      .where(eq(users.id, id))
+      .where(
+        and(eq(users.id, id), eq(users.organisation_id, organisationId)),
+      )
       .returning({
         id: users.id,
         email: users.email,

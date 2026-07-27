@@ -255,42 +255,91 @@ generated statement fails with `column "status" cannot be cast automatically`, w
 edited version converts both columns, **preserves existing row values**, and restores the
 defaults as the enum type.
 
-### Phase 3 — Notifications
-*Deliberately before attendance: it is the connective tissue the other pillars need.*
+### Phase 3 — Notifications ✅ done 2026-07-25
 
-Nothing exists today. Tasks, files, and leave approvals all need to tell someone something.
-Building this after Phase 2 means task events are the first producer and prove the design.
+- [x] `notifications` table (migration `0013`, additive) — org-scoped, one row per recipient
+      so read state is per-user; `type` free text, `data` jsonb payload for render+deep-link,
+      indexed on `(user_id, created_at)`.
+- [x] Producers: `task_assigned` (create + add-assignee), `task_commented` (to the task's
+      other assignees and its creator), `file_forwarded` (recipient), `file_approved`
+      (initiator + next holder), `file_rejected` (initiator).
+- [x] `GET /notifications` (paginated, `?unread_only`), `GET /notifications/unread-count`,
+      `PATCH /notifications/:id/read`, `PATCH /notifications/read-all`. Personal to the caller,
+      so JwtAuthGuard only (no `@Permissions`).
+- [x] Frontend: `NotificationBell` in the app header (mounted via AppShell, so on every
+      authenticated page) — unread badge, dropdown, mark-read-on-open with deep-link, 60s poll.
+- **Delivery:** in-app only, as planned. Email can piggyback the `email` module later.
+- **Verified live (15 checks):** assignment and comment notify the right people, the actor is
+  never self-notified, re-adding an existing assignee doesn't re-notify, read/read-all adjust
+  the count, one user can't mark another's notification read (404), file rejection notifies
+  the initiator.
 
-- [ ] `notifications` table (org-scoped, `user_id`, `type`, `payload` jsonb, `read_at`).
-- [ ] Emit from real events: task assigned/commented, file forwarded/approved/rejected.
-- [ ] `GET /notifications`, mark-read, unread count.
-- [ ] Frontend: bell + dropdown in the Office shell, unread badge.
-- [ ] Decide delivery: in-app only first. Email piggybacks the existing `email` module later.
-- **Exit:** assigning a task or forwarding a file notifies the recipient in-app.
+**Design choices worth carrying forward:**
+- Emission is **fire-and-forget** and happens **after** the producing transaction commits —
+  a notification failure can never roll back or 500 the action, nor reference a rolled-back
+  row.
+- `notifyMany` dedupes recipients and always drops the actor, so a producer can pass a whole
+  assignee list without special-casing self-notification.
+- The bell **polls** (60s) rather than using a socket — the office suite has no authenticated
+  socket yet (backlog M-6). If/when one lands, the bell can switch to push.
 
-### Phase 4 — HR attendance & leave *(= porting plan Phases 3–4)*
-Follow `PORTING-PLAN-tracker-to-doptor.md` §3 Phase 3–4. `attendance:approve` already seeded.
+### Phase 4 — HR attendance & leave ✅ done 2026-07-27 *(= porting plan Phases 3–4)*
 
-- [ ] Port `attendance_records` (GPS punch, unique `user_id+work_date`), `leave_types`,
-      `leave_balances`, `leave_requests` — all org-scoped.
-- [ ] Reconcile with / replace the thin `attendance` table (see the Phase 1 schema bug).
-- [ ] Punch in/out, leave request → approve/reject, balance computation.
-- [ ] Frontend: punch widget (geolocation), my-attendance calendar, leave form, admin
-      approval queue. Wire approvals into Phase 3 notifications.
-- **Exit:** punch in/out works; leave request → approval → balance decrements; org-isolated.
+- [x] `attendance_records` (GPS punch, unique `user_id+work_date`), `leave_types`,
+      `leave_balances`, `leave_requests` — all org-scoped (migration `0014`, additive).
+- [x] The thin `attendance` table is deprecated in place (not dropped — deploy safety) and
+      no longer written to; the new module replaces it entirely.
+- [x] Punch in/out (late after 09:30, one row per day, double-punch guarded); leave submit
+      (working-day count, Mon–Fri, holidays not modelled) → approve/reject with balance
+      movement inside a transaction that refuses to go negative; requester cancel restores
+      an approved balance. Approve/reject notify the requester (Phase 3 notifications).
+- [x] Frontend: punch card (browser geolocation), leave-balance tiles, my-leave with a
+      request form + cancel, and an admin approval queue shown only to
+      `approve:attendance` holders.
+- **Access:** self-service (punch, own leave) is JWT-only like `my-tasks`; admin actions
+      gated on `approve:attendance` (approve/reject, org views) and `update:attendance`
+      (leave types, balance allocation). Both permissions were already seeded — no re-seed.
+- **Verified live (32 checks):** full punch lifecycle + one-row-per-day, balance
+      allocate → approve (used++) → cancel (restored), insufficient-balance and re-approve
+      guards, admin/staff permission split, leave notifications, and cross-org isolation.
 
-### Phase 5 — Documents & Workflows (revive the dead UIs)
-Both have backends and no frontend (H-9). Workflows is the riskier of the two.
+> **Deferred within Phase 4:** a my-attendance *calendar* view (the data is served by
+> `GET /attendance/me`; only the calendar visualisation is unbuilt), leave-type management
+> UI (the API exists; admins currently allocate via API), and a holiday calendar so
+> working-day counts exclude public holidays.
 
-- [ ] **Documents:** wire the existing 169-LOC backend to a real UI. Reuse the Phase-1
-      attachment/upload machinery from `files` rather than inventing a second upload path.
-- [ ] **Workflows:** `definition` is currently an unvalidated jsonb blob — decide whether this
-      becomes a real approval-chain engine or gets **cut**. Recommend: define a narrow, typed
-      step schema (sequential approver chain) rather than a general workflow engine. A generic
-      engine is a product in itself and is not what an office tool needs.
-- [ ] Wire `workflows:approve` into the existing file approve/reject path so there's one
-      approval concept, not two.
-- **Exit:** no dead routes left in Office; one approval mechanism, not two.
+> **Migration 0014 is hand-written** — drizzle-kit could not run here (missing `esbuild`).
+> It is plain additive DDL; `push:pg` or a direct psql apply both work.
+
+### Phase 5 — Documents & Workflows ✅ done 2026-07-27
+
+- [x] **Documents** — the metadata-only module (name + url, with the same body-supplied
+      tenancy holes as departments) is now a real org-scoped library: link documents **and**
+      file uploads (multer, 25 MB, own subfolder on the shared uploads volume) + download,
+      search + status filter, all endpoints permission-gated. Migration `0015`, additive.
+      The 136-line hardcoded `DocumentExplorer` mock is replaced with a real UI.
+- [x] **Approval lifecycle** — draft → pending_review → approved/rejected, with resubmit;
+      approve/reject notify the uploader (new `document_approved`/`document_rejected`
+      notifications).
+- [x] **Workflows decision — no generic engine.** Document approval *is* the concrete
+      approval workflow, gated by the existing `workflows:approve` permission — so that
+      permission set now has real meaning without a jsonb-driven engine nobody consumes. The
+      `workflows` module is kept but hardened (org-scoped, gated, `organisation_id` removed
+      from its DTO); it's a thin definition store, not wired to a UI.
+- **Exit:** ✅ no dead document route (real explorer); one approval concept
+      (`workflows:approve` gates documents; the e-file system keeps its own forward/approve).
+- **Verified live (16 checks):** create/list, invalid-url + draft-approve guards, full
+      submit → approve/reject → resubmit, create/approve permission splits, uploader
+      notifications, status filtering, and cross-org isolation for documents and workflows.
+
+> **Deferred / not built:** wiring `workflows:approve` into the *e-file* approve path too (it
+> keeps its own approval for now — two code paths, one permission concept), a document
+> detail/preview view, and folder organisation. The generic `workflows` jsonb engine is
+> intentionally **not** built — revisit only if a need appears that document/file approval
+> can't cover.
+
+> **Migration 0015 is hand-written** (drizzle-kit can't run here — missing `esbuild`).
+> Additive; `push:pg` or direct psql both work.
 
 ### Phase 6 — Analytics, onboarding & polish
 - [ ] De-mock `analytics.service.ts` — remove `activeSessions: 42` and friends (M-3).
@@ -302,15 +351,34 @@ Both have backends and no frontend (H-9). Workflows is the riskier of the two.
 
 ---
 
-## Deploy discipline (unchanged, still the main operational risk)
+## Deploy discipline (the main operational risk)
 
 - `.github/workflows/deploy.yml` triggers on **every push to `main`** and auto-deploys.
-- Migrations are **manual** on the VPS (`drizzle-kit push:pg`).
-- **Therefore: apply migrations to the VPS *before* pushing the code that needs them.**
-  Right now `5a7394a` is committed locally but unpushed, and 0008–0010 are unapplied. Pushing
-  before migrating will deploy code querying tables that don't exist.
-- `push:pg` will fail/prompt on a `NOT NULL` column added to a populated table. Every new
-  column stays nullable-or-defaulted, gets backfilled, and only then tightens.
+- Migrations are **manual** on the VPS. **Apply them before pushing the code that needs them.**
+
+**Migration checklist for this branch** (`feat/office-phase-1-foundation`, unpushed):
+
+| Migration | Apply with | Note |
+|---|---|---|
+| `0008`–`0010` | `push:pg` or psql | The pre-existing July work (commit `5a7394a`). |
+| `0011_short_valkyrie` | **direct psql only** | Text→enum conversion; `push:pg` generates a bare `ALTER … SET DATA TYPE` that Postgres rejects. Hand-edited to drop-default → `USING` → restore. |
+| `0012_clean_wilson_fisk` | `push:pg` or psql | `roles.description` (additive). |
+| `0013_awesome_nomad` | `push:pg` or psql | `notifications` (additive). |
+| `0014_hr_attendance` | `push:pg` or psql | HR attendance tables (additive). Hand-written — drizzle-kit couldn't run here (missing esbuild). |
+| `0015_documents_workflow` | `push:pg` or psql | Documents approval columns + `document_status` enum; relaxes `documents.url` to nullable (additive). Hand-written. |
+
+Then, **after** the code is deployed, run once per environment:
+```
+docker compose -f docker-compose.prod.yml exec api \
+  sh -c "cd backend/api && pnpm db:sync-permissions"
+```
+This creates the six standard office roles (Phase 2.5) and the `files` permission resource
+(Phase 1) for any org that predates them.
+
+- `push:pg` fails/prompts on a `NOT NULL` column added to a populated table. Every new column
+  stays nullable-or-defaulted, backfills, then tightens. Two columns (`tasks.tags`,
+  `tasks.assigned_to`) and the whole `attendance` table are deprecated-in-place for exactly
+  this reason and await a follow-up drop.
 
 ---
 

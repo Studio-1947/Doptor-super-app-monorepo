@@ -16,7 +16,7 @@ export default function TeamPage() {
     const loadMembers = () => {
         if (!user?.organisation_id) return;
         usersService
-            .list({ organisationId: user.organisation_id })
+            .list()
             .then(setMembers)
             .catch(() => setMembers([]));
     };

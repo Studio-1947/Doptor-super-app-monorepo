@@ -34,7 +34,7 @@ export function ApproveRejectModal({
     useEffect(() => {
         if (isOpen && isApprove) {
             usersService
-                .list({ organisationId: user?.organisation_id })
+                .list()
                 .then((users) => setNextAuthorities(users.filter((u) => u.id !== user?.id)))
                 .catch(() => setNextAuthorities([]));
         }

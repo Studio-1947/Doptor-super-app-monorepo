@@ -26,20 +26,7 @@ export default function Loading() {
                     <div className="w-full h-full bg-primary-500 origin-left animate-[loading-progress_1.5s_infinite_ease-in-out]"></div>
                 </div>
             </div>
-
-            <style jsx>{`
-                @keyframes loading-bar {
-                    0% { transform: translateY(-100%); }
-                    50% { transform: translateY(1200%); }
-                    100% { transform: translateY(-100%); }
-                }
-                @keyframes loading-progress {
-                    0% { transform: scaleX(0); transform-origin: left; }
-                    40% { transform: scaleX(1); transform-origin: left; }
-                    60% { transform: scaleX(1); transform-origin: right; }
-                    100% { transform: scaleX(0); transform-origin: right; }
-                }
-            `}</style>
+            {/* Keyframes live in globals.css — see the note there. */}
         </div>
     );
 }

@@ -16,6 +16,7 @@ import { FilesModule } from "./modules/files/files.module";
 import { CampusModule } from "./modules/campus/campus.module";
 import { CommunicationModule } from "./modules/communication/communication.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 
 import { AppController } from "./app.controller";
 
@@ -45,6 +46,7 @@ import { AppController } from "./app.controller";
     CampusModule,
     CommunicationModule,
     AnalyticsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [],

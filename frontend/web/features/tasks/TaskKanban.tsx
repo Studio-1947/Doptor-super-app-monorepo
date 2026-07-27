@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { tasksService, Task, TaskStatus, CreateTaskPayload } from '@/services/tasks.service';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { TaskDetailDrawer } from './TaskDetailDrawer';
+import { initials, displayName } from '@/lib/display';
 
 const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
     { id: 'todo', title: 'To Do', color: 'bg-slate-500' },
@@ -26,8 +27,6 @@ const priorityStyles: Record<Task['priority'], string> = {
     low: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
-const initials = (u: { first_name?: string; last_name?: string }) =>
-    `${u.first_name?.[0] ?? ''}${u.last_name?.[0] ?? ''}`.toUpperCase() || '?';
 
 export function TaskKanban() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -215,7 +214,7 @@ export function TaskKanban() {
                                                         <div
                                                             key={a.id}
                                                             className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold border border-white ring-1 ring-indigo-200"
-                                                            title={`${a.first_name} ${a.last_name}`}
+                                                            title={displayName(a)}
                                                         >
                                                             {initials(a)}
                                                         </div>

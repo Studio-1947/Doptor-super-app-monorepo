@@ -18,6 +18,7 @@ import {
 } from "./dto";
 import { USER_SUMMARY_COLUMNS } from "../../common/constants/safe-user-columns";
 import { containsPattern } from "../../common/utils/escape-like";
+import { NotificationsService } from "../notifications/notifications.service";
 
 export const UPLOAD_DIR = path.join(process.cwd(), "uploads", "files");
 
@@ -30,6 +31,7 @@ const sqlCount = () => sql<number>`cast(count(*) as int)`;
 export class FilesService {
   constructor(
     @Inject(DRIZZLE) private readonly db: PostgresJsDatabase<typeof schema>,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(userId: string, organisationId: string, data: CreateFileDto) {
@@ -118,13 +120,27 @@ export class FilesService {
     return { ...file, notes, movements };
   }
 
+  /** File subject/number/org/initiator, for building notifications. */
+  private async fileSummary(fileId: string) {
+    return await this.db.query.files.findFirst({
+      where: eq(files.id, fileId),
+      columns: {
+        id: true,
+        subject: true,
+        file_number: true,
+        organisation_id: true,
+        initiator_id: true,
+      },
+    });
+  }
+
   async forwardFile(
     fileId: string,
     fromUserId: string,
     toUserId: string,
     remarks?: string,
   ) {
-    return await this.db.transaction(async (tx) => {
+    const movement = await this.db.transaction(async (tx) => {
       // Update file's current holder
       await tx
         .update(files)
@@ -135,7 +151,7 @@ export class FilesService {
         .where(eq(files.id, fileId));
 
       // Create movement record
-      const [movement] = await tx
+      const [m] = await tx
         .insert(fileMovements)
         .values({
           file_id: fileId,
@@ -146,8 +162,23 @@ export class FilesService {
         })
         .returning();
 
-      return movement;
+      return m;
     });
+
+    const file = await this.fileSummary(fileId);
+    if (file) {
+      await this.notifications.safeNotifyMany([toUserId], {
+        organisationId: file.organisation_id,
+        actorId: fromUserId,
+        type: "file_forwarded",
+        title: `File ${file.file_number} forwarded to you`,
+        body: file.subject,
+        link: `/office/files/${fileId}`,
+        data: { file_id: fileId, file_number: file.file_number },
+      });
+    }
+
+    return movement;
   }
 
   async returnFile(
@@ -183,35 +214,55 @@ export class FilesService {
   }
 
   async approveFile(fileId: string, userId: string, data: ApproveFileDto) {
-    return await this.db.transaction(async (tx) => {
-      const nextHolder = data.forwardTo || userId;
+    const { movement, nextHolder } = await this.db.transaction(async (tx) => {
+      const holder = data.forwardTo || userId;
 
       await tx
         .update(files)
         .set({
           status: data.forwardTo ? "active" : "approved",
-          current_user_id: nextHolder,
+          current_user_id: holder,
           updated_at: new Date(),
         })
         .where(eq(files.id, fileId));
 
-      const [movement] = await tx
+      const [m] = await tx
         .insert(fileMovements)
         .values({
           file_id: fileId,
           from_user_id: userId,
-          to_user_id: nextHolder,
+          to_user_id: holder,
           action: "approve",
           remarks: data.remarks || "File approved",
         })
         .returning();
 
-      return movement;
+      return { movement: m, nextHolder: holder };
     });
+
+    const file = await this.fileSummary(fileId);
+    if (file) {
+      // Tell the file's initiator it was approved, and the new holder if it
+      // was forwarded onward to someone else.
+      const recipients = new Set<string>();
+      if (file.initiator_id) recipients.add(file.initiator_id);
+      if (data.forwardTo) recipients.add(nextHolder);
+      await this.notifications.safeNotifyMany([...recipients], {
+        organisationId: file.organisation_id,
+        actorId: userId,
+        type: "file_approved",
+        title: `File ${file.file_number} approved`,
+        body: file.subject,
+        link: `/office/files/${fileId}`,
+        data: { file_id: fileId, file_number: file.file_number },
+      });
+    }
+
+    return movement;
   }
 
   async rejectFile(fileId: string, userId: string, data: RejectFileDto) {
-    return await this.db.transaction(async (tx) => {
+    const movement = await this.db.transaction(async (tx) => {
       await tx
         .update(files)
         .set({
@@ -220,7 +271,7 @@ export class FilesService {
         })
         .where(eq(files.id, fileId));
 
-      const [movement] = await tx
+      const [m] = await tx
         .insert(fileMovements)
         .values({
           file_id: fileId,
@@ -231,8 +282,23 @@ export class FilesService {
         })
         .returning();
 
-      return movement;
+      return m;
     });
+
+    const file = await this.fileSummary(fileId);
+    if (file?.initiator_id) {
+      await this.notifications.safeNotifyMany([file.initiator_id], {
+        organisationId: file.organisation_id,
+        actorId: userId,
+        type: "file_rejected",
+        title: `File ${file.file_number} rejected`,
+        body: data.remarks || file.subject,
+        link: `/office/files/${fileId}`,
+        data: { file_id: fileId, file_number: file.file_number },
+      });
+    }
+
+    return movement;
   }
 
   async closeFile(fileId: string, userId: string, remarks?: string) {
