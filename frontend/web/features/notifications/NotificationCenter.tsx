@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     Bell, Check, CheckCheck, CheckSquare, MessageCircle,
     Send, ThumbsUp, XCircle, Loader2,
+    CalendarCheck, CalendarX, FileCheck, FileX,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -13,6 +14,7 @@ import {
 
 const PAGE_SIZE = 20;
 
+/** Keep in step with NotificationType; unknown kinds fall back to the bell. */
 function iconFor(type: string) {
     switch (type) {
         case 'task_assigned': return <CheckSquare size={16} className="text-blue-500" />;
@@ -20,6 +22,10 @@ function iconFor(type: string) {
         case 'file_forwarded': return <Send size={16} className="text-indigo-500" />;
         case 'file_approved': return <ThumbsUp size={16} className="text-emerald-500" />;
         case 'file_rejected': return <XCircle size={16} className="text-red-500" />;
+        case 'leave_approved': return <CalendarCheck size={16} className="text-emerald-500" />;
+        case 'leave_rejected': return <CalendarX size={16} className="text-red-500" />;
+        case 'document_approved': return <FileCheck size={16} className="text-emerald-500" />;
+        case 'document_rejected': return <FileX size={16} className="text-red-500" />;
         default: return <Bell size={16} className="text-slate-500" />;
     }
 }

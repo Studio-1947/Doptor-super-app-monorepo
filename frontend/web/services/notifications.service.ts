@@ -1,11 +1,21 @@
 import apiClient from "../lib/api-client";
 
+/**
+ * Must stay in sync with NOTIFICATION_TYPES in the backend's
+ * notifications.service.ts. `AppNotification.type` is widened with `| string`
+ * so an unknown kind from a newer backend still renders (with a fallback icon)
+ * rather than breaking the bell.
+ */
 export type NotificationType =
   | "task_assigned"
   | "task_commented"
   | "file_forwarded"
   | "file_approved"
-  | "file_rejected";
+  | "file_rejected"
+  | "leave_approved"
+  | "leave_rejected"
+  | "document_approved"
+  | "document_rejected";
 
 export interface NotificationActor {
   id: string;

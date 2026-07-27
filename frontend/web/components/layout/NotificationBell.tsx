@@ -161,6 +161,15 @@ export function NotificationBell() {
                             ))
                         )}
                     </div>
+
+                    {/* The dropdown shows only the most recent few; the full
+                        history lives at /notifications. */}
+                    <button
+                        onClick={() => { setOpen(false); router.push('/notifications'); }}
+                        className="shrink-0 border-t border-slate-100 dark:border-slate-800 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-primary-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                        View all notifications
+                    </button>
                 </div>
             )}
         </div>

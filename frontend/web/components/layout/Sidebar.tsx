@@ -1,6 +1,6 @@
 'use client';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, FileText, Settings, Bell, ChevronLeft, Menu, ClipboardList, CheckSquare, MessageSquare, Calendar, BarChart3, Building2, Shield, GraduationCap, Globe2, Award } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, Bell, ChevronLeft, Menu, ClipboardList, CheckSquare, MessageSquare, Calendar, BarChart3, Building2, Shield, GraduationCap, Globe2, Award, FolderOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,6 +16,7 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
         super_admin: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
+            { icon: FolderOpen, label: 'Documents', href: '/documents' },
             { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
             { icon: MessageSquare, label: 'Communication', href: '/communication' },
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
@@ -24,6 +25,7 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
         org_admin: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
+            { icon: FolderOpen, label: 'Documents', href: '/documents' },
             { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
             { icon: MessageSquare, label: 'Communication', href: '/communication' },
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
@@ -32,6 +34,7 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
         manager: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
+            { icon: FolderOpen, label: 'Documents', href: '/documents' },
             { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
             { icon: MessageSquare, label: 'Communication', href: '/communication' },
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
@@ -40,6 +43,7 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
         staff: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
+            { icon: FolderOpen, label: 'Documents', href: '/documents' },
             { icon: MessageSquare, label: 'Communication', href: '/communication' },
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
             { icon: Settings, label: 'Settings', href: '/settings' },
