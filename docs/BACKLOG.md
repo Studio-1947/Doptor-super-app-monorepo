@@ -140,18 +140,36 @@ Key design decisions this implies:
       `invited_by`. **Applied and verified end-to-end** 2026-07-03 (register-org →
       invite → accept-invite → login round trip, plus cross-org IDOR/hijack edge cases,
       all confirmed against a live local Postgres).
-- [ ] **O-4** Build "choose verticals" step into the signup/first-login flow, writing to
-      `organisations.enabled_verticals` (currently only settable via raw org update, not
-      surfaced in onboarding UI).
-- [ ] **O-5** Build a post-signup setup wizard (departments → academic years/office
-      structure → invite members) — currently admins land straight on a dashboard with
-      no guided setup.
+- [x] **O-4** ~~Build "choose verticals" step into the signup/first-login flow~~ — **was
+      already built**; this entry was stale. `app/register/page.tsx` has had a working
+      office/campus/network picker that posts `enabled_verticals`, and
+      `register-organisation.dto.ts` accepts it. Verified live 2026-07-27: registering with
+      `['office','campus']` stores exactly that on the organisation, and `VerticalContext`
+      reads it back. No code change needed.
+- [x] **O-5** ~~Build a post-signup setup wizard~~ — done 2026-07-27 as a **state-derived
+      setup checklist** (`features/dashboard/SetupChecklist.tsx`) on the Org Admin
+      dashboard, rather than a blocking multi-step wizard.
+      Each step is derived from a real count in `/analytics/overview`
+      (`totalDepartments`, `totalUsers`, `totalTasks`) instead of a stored
+      `setup_completed` flag. That means no migration and no new persistence, it cannot
+      claim a step is done when it isn't, a step correctly reopens if the org deletes its
+      only department, and there is nothing to "skip" — a skippable wizard is a stored flag
+      again. The card unmounts once every step passes, so established orgs never see it.
+      Departments come first because task creation requires a `department_id`, so it is a
+      real dependency rather than a preference. The contract it relies on is asserted in
+      `07-dashboard-access.smoke.js`.
 - [x] **O-6** ~~Replace `campus.service.ts` faculty/student creation with the shared
       invite flow~~ — done 2026-07-03: `createFaculty`/`bulkCreateFaculty`/
       `createStudent`/`bulkCreateStudents` now call `UsersService.inviteUser`/
       `bulkInviteUsers` instead of hand-inserting users with placeholder password hashes.
-- [ ] **O-7** Role-aware first-login redirect: land Campus roles on `/campus`, Office
-      roles on `/office`, Network roles on `/network`, instead of one generic dashboard.
+- [x] **O-7** ~~Role-aware first-login redirect~~ — **goal met by a different design;
+      the redirect was deliberately not built.** The stated purpose was to stop users
+      landing on "one generic dashboard". As of 2026-07-27 `/` is no longer generic: it
+      dispatches on both role *and* the org's enabled verticals, so an Office admin, an
+      Office staff member and a Campus student each get a different real dashboard there.
+      Redirecting Office roles to `/office` would now be a **downgrade** — `/office` is
+      `FileDashboard`, the e-file pillar view, which is narrower than the role dashboard.
+      Revisit only if per-vertical landing pages gain their own org-level overviews.
 
 ---
 

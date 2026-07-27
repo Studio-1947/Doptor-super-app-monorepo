@@ -1,5 +1,5 @@
 /* End-to-end verification of Office roadmap Phases 1, 2 and 2.5. */
-const BASE = process.env.SMOKE_BASE_URL || 'http://127.0.0.1:3001';
+const { req } = require('./helpers');
 
 let pass = 0, fail = 0;
 const results = [];
@@ -7,21 +7,6 @@ function check(name, ok, detail = '') {
   if (ok) { pass++; results.push(`  PASS  ${name}`); }
   else { fail++; results.push(`  FAIL  ${name}${detail ? ' — ' + detail : ''}`); }
   return ok;
-}
-
-async function req(method, path, { token, body } = {}) {
-  const res = await fetch(BASE + path, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  let data = null;
-  const text = await res.text();
-  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-  return { status: res.status, data };
 }
 
 const uniq = Date.now();

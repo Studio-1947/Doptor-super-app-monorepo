@@ -1,26 +1,11 @@
 /* End-to-end verification of Phase 4 HR attendance & leave. */
-const { execSync } = require('child_process');
 const bcrypt = require('bcrypt');
+const { req, sql } = require('./helpers');
 
-const BASE = process.env.SMOKE_BASE_URL || 'http://127.0.0.1:3001';
 let pass = 0, fail = 0;
 const out = [];
 const check = (n, ok, d = '') =>
   ok ? (pass++, out.push(`  PASS  ${n}`)) : (fail++, out.push(`  FAIL  ${n}${d ? ' — ' + d : ''}`));
-
-async function req(method, path, { token, body } = {}) {
-  const res = await fetch(BASE + path, {
-    method,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  const text = await res.text();
-  let data = null; try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-  return { status: res.status, data };
-}
-const sql = (q) => execSync(
-  `docker exec doptor-postgres psql -U doptor -d doptor -t -A -c "${q.replace(/\s+/g,' ').trim().replace(/"/g,'\\"')}"`,
-  { encoding: 'utf8' }).trim().split('\n')[0].trim();
 
 const uniq = Date.now();
 const year = new Date().getUTCFullYear();

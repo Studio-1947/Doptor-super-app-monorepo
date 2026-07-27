@@ -16,6 +16,13 @@ assert on real responses. They were used to verify each phase as it was built.
 | `02-rbac.smoke.js` | Permission enforcement over HTTP — Auditor read-only, Staff can't delete/assign | 16 |
 | `03-notifications.smoke.js` | Task/file notification producers, read/unread, cross-user isolation | 15 |
 | `04-attendance.smoke.js` | Punch lifecycle, leave request → approve/reject/cancel, balance movement, admin/staff split | 32 |
+| `05-documents.smoke.js` | Document library, draft → pending_review → approved/rejected, resubmit, permission splits, cross-org isolation | 16 |
+| `06-tenancy.smoke.js` | Live exploit attempts against the C-11 privilege-escalation chain; reports findings by severity rather than pass/fail | — |
+| `07-dashboard-access.smoke.js` | Every endpoint a role dashboard calls is reachable *by that role*, and the gates its hidden panels rely on hold | 23 |
+
+`helpers.js` holds the shared transport (`req`, `sql`, `sqlRows`). Each suite keeps
+its own `check`/reporting block, because `06-tenancy` reports by severity and
+forcing one shape on it would obscure more than it saves.
 
 ## Prerequisites
 
@@ -24,10 +31,12 @@ assert on real responses. They were used to verify each phase as it was built.
    `docs/OFFICE-ROADMAP.md` → Deploy discipline).
 2. **API running** and reachable. Default target is `http://127.0.0.1:3001`;
    override with `SMOKE_BASE_URL`.
-3. Suites 02–04 create secondary users directly in the database via
-   `docker exec doptor-postgres psql` and hash passwords with `bcrypt`, so run
-   them **from `backend/api`** (where `bcrypt` resolves) with the
-   `doptor-postgres` container up. Suite 01 is pure HTTP and needs neither.
+3. Suites 02–06 create secondary users directly in the database and hash
+   passwords with `bcrypt`, so run them **from `backend/api`** (where `bcrypt`
+   resolves). By default they seed via `docker exec -i doptor-postgres psql`,
+   so that container must be up locally. Suite 01 is pure HTTP and needs neither.
+   Override the seeding command with `SMOKE_PSQL_CMD` to target another
+   environment — see below.
 
 ## Running
 
@@ -37,13 +46,24 @@ node dist/main.js &            # or: pnpm start (whichever builds cleanly)
 node test/smoke/run-all.js     # or a single suite: node test/smoke/04-attendance.smoke.js
 ```
 
-Against a remote environment:
+Against a remote environment — point `SMOKE_BASE_URL` at the API and
+`SMOKE_PSQL_CMD` at a command that opens a `psql` session on that environment's
+database. Tunnelling `docker exec` over ssh works:
 
 ```bash
-SMOKE_BASE_URL=https://api.dev.doptor.in node test/smoke/01-office-core.smoke.js
+cd backend/api
+export SMOKE_BASE_URL=https://api.dev.doptor.in
+export SMOKE_PSQL_CMD="ssh deploy@187.127.185.82 docker exec -i doptor-postgres psql -U doptor -d doptor"
+node test/smoke/run-all.js
 ```
 
-> Note: suites 02–04 assume the `doptor-postgres` container name for direct SQL
-> seeding. Against a remote DB, only `01-office-core` runs unchanged; the others
-> would need their `docker exec` seeding swapped for API-driven user creation
-> (the invite flow) — a worthwhile follow-up to make the whole set remote-safe.
+The suites append their own `-t -A -f -` and feed SQL over **stdin**, so
+`SMOKE_PSQL_CMD` needs no quoting gymnastics and any transport that forwards
+stdin will do. `docker exec` needs `-i` for that reason.
+
+> **These suites write real rows.** Each run registers throwaway organisations
+> (`Date.now()`-suffixed, `@verify.test` emails) and leaves them behind. That's
+> fine on a scratch database; don't point them at anything with real tenants.
+
+**Status:** all 7 suites ran green against `https://api.dev.doptor.in` on
+2026-07-27 — **158 checks, 0 failures**, plus `06-tenancy` reporting no findings.
