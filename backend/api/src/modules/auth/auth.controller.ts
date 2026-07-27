@@ -11,7 +11,9 @@ import {
   Param,
   Ip,
   Headers,
+  Res,
 } from "@nestjs/common";
+import type { Response } from "express";
 import { Throttle } from "@nestjs/throttler";
 import {
   ApiTags,
@@ -32,6 +34,26 @@ import {
   AcceptInviteDto,
 } from "./dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import {
+  setAuthCookies,
+  clearAuthCookies,
+  readCookie,
+  REFRESH_TOKEN_COOKIE,
+} from "../../common/config/auth-cookies";
+
+/**
+ * Mirrors an auth result into httpOnly cookies when it carries tokens.
+ *
+ * The tokens stay in the JSON body as well. Removing them would break every
+ * non-browser consumer in one step, and the browser client simply stops reading
+ * them — see `frontend/web/lib/api-client.ts`.
+ */
+function issueCookies(res: Response, result: any) {
+  if (result?.access_token && result?.refresh_token) {
+    setAuthCookies(res, result);
+  }
+  return result;
+}
 
 @ApiTags("Authentication")
 @Controller("auth")
@@ -54,8 +76,11 @@ export class AuthController {
     description: "Organisation and admin successfully registered",
   })
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  async registerOrganisation(@Body() dto: RegisterOrganisationDto) {
-    return this.authService.registerOrganisation(dto);
+  async registerOrganisation(
+    @Body() dto: RegisterOrganisationDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return issueCookies(res, await this.authService.registerOrganisation(dto));
   }
 
   @Post("login")
@@ -73,8 +98,12 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Ip() ipAddress: string,
     @Headers("user-agent") userAgent: string,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.login(loginDto, ipAddress, userAgent);
+    return issueCookies(
+      res,
+      await this.authService.login(loginDto, ipAddress, userAgent),
+    );
   }
 
   @Post("forgot-password")
@@ -146,8 +175,20 @@ export class AuthController {
       },
     },
   })
-  async refresh(@Request() req, @Body("refresh_token") refreshToken: string) {
-    return this.authService.refreshToken(req.user.id, refreshToken);
+  async refresh(
+    @Request() req,
+    @Body("refresh_token") refreshToken: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Body first so existing non-browser callers are unaffected; the cookie is
+    // the fallback for the browser client, which can no longer read the token.
+    const token = refreshToken || readCookie(req, REFRESH_TOKEN_COOKIE);
+    // Rotation issues a new refresh token, so the cookies must be replaced too
+    // — otherwise the browser keeps presenting the one just revoked.
+    return issueCookies(
+      res,
+      await this.authService.refreshToken(req.user.id, token),
+    );
   }
 
   @Post("logout")
@@ -163,8 +204,19 @@ export class AuthController {
       },
     },
   })
-  async logout(@Request() req, @Body("refresh_token") refreshToken: string) {
-    return this.authService.logout(req.user.id, refreshToken);
+  async logout(
+    @Request() req,
+    @Body("refresh_token") refreshToken: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = refreshToken || readCookie(req, REFRESH_TOKEN_COOKIE);
+    // Cleared even if revocation throws — leaving a live cookie on a failed
+    // logout is the worse outcome of the two.
+    try {
+      return await this.authService.logout(req.user.id, token);
+    } finally {
+      clearAuthCookies(res);
+    }
   }
 
   @Get("sessions")

@@ -37,6 +37,12 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
+      # Parent domain for the httpOnly auth cookies, e.g. `.dev.doptor.in`.
+      # Required because the API and web app sit on different subdomains: without
+      # it the cookie is host-only to the API and the web app's middleware never
+      # sees it. Auth still works unset (the browser sends it to the API either
+      # way) — only the middleware's route gating goes quiet.
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
       EMAIL_HOST: ${EMAIL_HOST}
       EMAIL_PORT: ${EMAIL_PORT}
       EMAIL_USER: ${EMAIL_USER}
@@ -55,6 +61,13 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: doptor-web
     restart: unless-stopped
+    environment:
+      # Turns on server-side route gating in `frontend/web/middleware.ts`.
+      # Set this ONLY together with the api's COOKIE_DOMAIN above — the
+      # middleware gates on a cookie that is invisible to it without that, and
+      # enabling one without the other would bounce signed-in users to /login.
+      # Unset, the middleware is inert and the client-side guards apply as before.
+      COOKIE_AUTH_ENABLED: ${COOKIE_AUTH_ENABLED}
     # Bound to localhost only; the host nginx reverse-proxies to it.
     ports:
       - "127.0.0.1:3000:3000"
