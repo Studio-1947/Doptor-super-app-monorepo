@@ -4,8 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-
-const PUBLIC_ROUTES = ['/login', '/register', '/onboarding', '/forgot-password', '/reset-password', '/verify-email'];
+import { isPublicRoute } from '@/lib/routes';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isLoading } = useAuth();
@@ -13,13 +12,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     useEffect(() => {
-        if (!isLoading && !isAuthenticated && !PUBLIC_ROUTES.includes(pathname)) {
+        if (!isLoading && !isAuthenticated && !isPublicRoute(pathname)) {
             router.push('/login');
         }
     }, [isAuthenticated, isLoading, pathname, router]);
 
     // If loading or not authenticated (and on a private route), show loader
-    if (isLoading || (!isAuthenticated && !PUBLIC_ROUTES.includes(pathname))) {
+    if (isLoading || (!isAuthenticated && !isPublicRoute(pathname))) {
         return (
             <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950">
                 <div className="relative">
