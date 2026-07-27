@@ -350,7 +350,11 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       returns `{ message: "Seeding not implemented yet" }`.
 - [ ] **M-2** 🟡 `campus.service.ts:62` TODO — organisation_id plumbing for faculty
       creation acknowledged as incomplete.
-- [ ] **M-3** 🟡 `analytics.service.ts:24-26` — `activeSessions: 42` and
+- [x] **M-3** ~~`analytics.service.ts` returns invented figures~~ — fixed 2026-07-27
+      alongside C-11: `activeSessions: 42` and `revenue: 45231` are gone, replaced with
+      real org-scoped counts (users, files, tasks/open, documents/pending, departments,
+      currently-checked-in, pending leave). Revenue has no backing model, so it is not
+      reported rather than fabricated. Original note: `analytics.service.ts:24-26` — `activeSessions: 42` and
       `revenue: 45231` are hardcoded mock values, comment admits it. Needs real
       session-count and (if applicable) revenue source, or the fields should be removed
       until backed by real data.
@@ -417,6 +421,38 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       and `/admin/settings`. Next prefetches the bare root and gets a 404 (19 console
       404s in one session). Nothing links to it, so no user-visible break today —
       decide whether `/admin` gets a landing page or is dropped from middleware.
+
+- [x] **C-11** 🔴 ~~Cross-tenant privilege escalation in roles/users/organisations~~ —
+      found and fixed 2026-07-27 during a full security review, **verified by live
+      exploit**. The platform's own access-control modules were the least protected in
+      the codebase: `roles`, `permissions`, `users`, `organisations` and `analytics` all
+      carried only `JwtAuthGuard`, looked rows up by bare id, and accepted
+      `organisation_id` from the request body. As a Staff user this chain worked:
+      create a role (ungated) → **inside another organisation** (body org id) → grant it
+      all 46 permissions (`POST /roles/:id/permissions` was ungated) → self-assign →
+      **12 → 46 permissions**; and separately, **strip permissions from another tenant's
+      Organisation Admin** (tenant denial-of-service). Also: `GET /users` had an
+      *optional* org filter so omitting it returned every tenant's PII;
+      `PATCH`/`DELETE /users/:id` and `/organisations/:id` were unscoped (any user could
+      edit or **delete any organisation**); analytics counted rows across all tenants.
+      All now org-scoped from `req.user.organisation_id` and permission-gated, with
+      `organisation_id` removed from the create DTOs. Kept as a permanent regression
+      suite: `backend/api/test/smoke/06-tenancy.smoke.js`.
+- [x] **C-12** 🔴 ~~JWT_SECRET fell back to a public placeholder~~ — fixed 2026-07-27.
+      Signer and verifier both defaulted to `"your-secret-key-change-in-production"`, so
+      a deploy missing `JWT_SECRET` would boot and look healthy while **anyone knowing
+      that public string could forge a token for any user in any org**. The app now
+      refuses to start if the secret is missing, empty, or still the placeholder
+      (`common/config/jwt-secret.ts`). Verified: boots with the real value, refuses both
+      bad cases.
+- [x] **M-6** ~~`communication.gateway.ts` has no WebSocket authentication~~ — fixed
+      2026-07-27. Was worse than recorded: `handleConnection` had only an
+      "Authentication logic here" comment and `cors: "*"`, so anyone could connect from
+      any site; `joinRoom` took any conversation id with no membership check (read any
+      org's messages by enumeration); `sendMessage` trusted `payload.userId`
+      (**impersonate any user**). Now the handshake JWT is verified and the socket
+      dropped if invalid, the sender comes from the verified token, both join and send
+      require conversation membership, and CORS is restricted to `FRONTEND_URL`.
 
 ### Low / cleanup
 
