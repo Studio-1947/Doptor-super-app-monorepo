@@ -347,12 +347,36 @@ defaults as the enum type.
 > Additive; `push:pg` or direct psql both work.
 
 ### Phase 6 — Analytics, onboarding & polish
-- [ ] De-mock `analytics.service.ts` — remove `activeSessions: 42` and friends (M-3).
-- [ ] Build an Office dashboard that aggregates real data across all pillars.
-- [ ] Server-side route protection in `middleware.ts` (currently none).
+- [x] De-mock `analytics.service.ts` — removed `activeSessions: 42` and friends (M-3),
+      replaced with nine real org-scoped counts. Done 2026-07-27.
+- [x] **Build an Office dashboard that aggregates real data across all pillars** — done
+      2026-07-27. The dashboards were the last fabricated data in the product and the
+      *first screen after login*: `OrgAdminDashboard` hardcoded `Pending Approvals 24` /
+      `Active Tasks 156` / `Total Staff 48` / `Dept Performance 92%` and four fake
+      "Equipment Purchase Request — John Doe" rows; `SuperAdminDashboard` claimed 142
+      organisations and 8,234 users. Worse, `StaffDashboard`, `ManagerDashboard` and
+      `StudentDashboard` were each five lines returning `<CampusDashboard/>`, so **office
+      staff landed on a campus dashboard** while campus was frozen.
+      Now: new `services/analytics.service.ts` over the already-real `/analytics/overview`;
+      a real Staff view (my tasks, punch state, leave balance), Manager view (team work +
+      an approvals queue gated on `approve:workflows`/`approve:attendance`, since Manager
+      deliberately can't approve but Department Head can), and shared
+      `DashboardPrimitives`/`useAsync` so the tiles can't drift back into literals.
+      Campus dashboards now render only for campus-only orgs.
+      `SuperAdminDashboard` shows its own org's real figures and states plainly that
+      platform-wide totals need an endpoint that doesn't exist — no estimate stands in.
+      Guarded by new smoke suite `07-dashboard-access` (23 checks).
+- [ ] Server-side route protection — **now a decision, not a task.** `middleware.ts` was
+      deleted 2026-07-27 (its RBAC read a `user_role` cookie nothing set); client-side
+      `RoleGuard` + `lib/route-access.ts` replaced it. Real server-side enforcement needs
+      tokens moved localStorage → cookie. The backend gates every endpoint regardless, so
+      this is defence-in-depth.
 - [ ] Onboarding: O-4 (choose verticals), O-5 (setup wizard), O-7 (role-aware first-login
-      redirect → Office roles land on `/office`).
-- [ ] Cleanup: L-4 duplicate `features/office/*` vs `features/verticals/office/*`.
+      redirect → Office roles land on `/office`). **The remaining customer-visible gap** —
+      a new org still signs up and lands on a dashboard with no departments and no leave
+      types, all reading a legitimate zero.
+- [x] Cleanup: L-4 duplicate `features/office/*` vs `features/verticals/office/*` —
+      already resolved; `features/verticals/office` no longer exists.
 
 ---
 

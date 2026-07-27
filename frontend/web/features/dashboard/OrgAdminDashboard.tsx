@@ -1,79 +1,121 @@
 "use client";
 
-import { Card } from '@doptor/shared';
-import { ClipboardList, CheckSquare, Users, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
+import { ClipboardList, CheckSquare, Users, Building2 } from 'lucide-react';
+import { analyticsService } from '@/services/analytics.service';
+import { documentsService } from '@/services/documents.service';
+import { useAsync } from './useAsync';
+import {
+    PageHeading, StatTile, Panel, EmptyState, LoadingRows, ErrorNote, QuickAction,
+} from './DashboardPrimitives';
 
 export function OrgAdminDashboard() {
+    const stats = useAsync(() => analyticsService.getOverview());
+    const pending = useAsync(() => documentsService.list({ status: 'pending_review' }));
+
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-2">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Organisation Overview</h2>
-                <p className="text-slate-500 dark:text-slate-400">Manage your organisation's tasks, approvals, and departments.</p>
-            </div>
+            <PageHeading
+                title="Organisation Overview"
+                subtitle="Manage your organisation's tasks, approvals, and departments."
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Widget title="Pending Approvals" value="24" icon={CheckSquare} color="text-amber-600 dark:text-amber-400" bg="bg-amber-50 dark:bg-amber-900/20" />
-                <Widget title="Active Tasks" value="156" icon={ClipboardList} color="text-blue-600 dark:text-blue-400" bg="bg-blue-50 dark:bg-blue-900/20" />
-                <Widget title="Total Staff" value="48" icon={Users} color="text-indigo-600 dark:text-indigo-400" bg="bg-indigo-50 dark:bg-indigo-900/20" />
-                <Widget title="Dept Performance" value="92%" icon={TrendingUp} color="text-emerald-600 dark:text-emerald-400" bg="bg-emerald-50 dark:bg-emerald-900/20" />
+                <StatTile
+                    title="Pending Approvals"
+                    value={stats.data?.documentsPendingReview ?? null}
+                    icon={CheckSquare}
+                    tone="amber"
+                    href="/documents"
+                />
+                <StatTile
+                    title="Open Tasks"
+                    value={stats.data?.openTasks ?? null}
+                    icon={ClipboardList}
+                    tone="blue"
+                    href="/tasks"
+                />
+                <StatTile
+                    title="Total Staff"
+                    value={stats.data?.totalUsers ?? null}
+                    icon={Users}
+                    tone="indigo"
+                    href="/office/team"
+                />
+                <StatTile
+                    title="Departments"
+                    value={stats.data?.totalDepartments ?? null}
+                    icon={Building2}
+                    tone="emerald"
+                    href="/admin/departments"
+                />
             </div>
 
-            {/* Approvals & Tasks Split */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2 p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                    <h3 className="font-semibold text-lg mb-4 text-slate-900 dark:text-white">Pending Approvals</h3>
-                    <div className="space-y-3">
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-800 rounded-none hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-none bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-slate-400 border border-transparent dark:border-slate-700">
-                                        JD
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-sm text-slate-900 dark:text-white">Equipment Purchase Request</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">John Doe • Marketing Dept</p>
-                                    </div>
-                                </div>
-                                <button className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-none border border-primary-100 dark:border-primary-800 hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-all">
-                                    Review
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
+            {stats.error && <ErrorNote message={stats.error} />}
 
-                <Card className="p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                    <h3 className="font-semibold text-lg mb-4 text-slate-900 dark:text-white">Quick Actions</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Panel
+                    title="Pending Approvals"
+                    action={{ label: 'View all', href: '/documents' }}
+                    className="lg:col-span-2"
+                >
+                    {pending.loading && <LoadingRows />}
+                    {pending.error && <ErrorNote message={pending.error} />}
+                    {!pending.loading && !pending.error && (
+                        pending.data?.length
+                            ? (
+                                <div className="space-y-3">
+                                    {pending.data.slice(0, 5).map((doc) => (
+                                        <Link
+                                            key={doc.id}
+                                            href="/documents"
+                                            className="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-800 rounded-none hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-10 h-10 shrink-0 rounded-none bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-600 dark:text-slate-400 border border-transparent dark:border-slate-700">
+                                                    {initials(doc.uploadedBy)}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                                                        {doc.name}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                                        {fullName(doc.uploadedBy)}
+                                                        {doc.category ? ` • ${doc.category}` : ''}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-none border border-primary-100 dark:border-primary-800">
+                                                Review
+                                            </span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )
+                            : <EmptyState message="Nothing is waiting for approval." />
+                    )}
+                </Panel>
+
+                <Panel title="Quick Actions">
                     <div className="grid grid-cols-2 gap-3">
-                        <ActionButton label="Create User" />
-                        <ActionButton label="New Dept" />
-                        <ActionButton label="Assign Role" />
-                        <ActionButton label="Settings" />
+                        <QuickAction label="Invite User" href="/office/team" />
+                        <QuickAction label="New Dept" href="/admin/departments" />
+                        <QuickAction label="Roles" href="/admin/roles" />
+                        <QuickAction label="Settings" href="/admin/settings" />
                     </div>
-                </Card>
+                </Panel>
             </div>
         </div>
     );
 }
 
-function Widget({ title, value, icon: Icon, color, bg }: any) {
-    return (
-        <Card className="p-4 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <div className="flex items-center justify-between mb-2">
-                <span className="text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">{title}</span>
-                <div className={`p-2 rounded-none ${bg} ${color} border border-current border-opacity-10`}>
-                    <Icon size={14} />
-                </div>
-            </div>
-            <div className="text-3xl font-black text-slate-900 dark:text-white">{value}</div>
-        </Card>
-    );
+function fullName(user?: { first_name: string; last_name: string } | null): string {
+    if (!user) return 'Unknown user';
+    return `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || 'Unknown user';
 }
 
-function ActionButton({ label }: { label: string }) {
-    return (
-        <button className="flex items-center justify-center p-3 text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-none hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all">
-            {label}
-        </button>
-    );
+function initials(user?: { first_name: string; last_name: string } | null): string {
+    if (!user) return '—';
+    const value = `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase();
+    return value || '—';
 }
