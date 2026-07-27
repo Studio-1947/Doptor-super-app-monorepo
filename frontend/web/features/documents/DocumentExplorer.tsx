@@ -13,6 +13,7 @@ import {
     DocumentStatus,
     isUpload,
 } from "@/services/documents.service";
+import { displayName } from "@/lib/display";
 
 const STATUS_TABS: { id: "all" | DocumentStatus; label: string }[] = [
     { id: "all", label: "All" },
@@ -187,7 +188,7 @@ export function DocumentExplorer() {
                                 <p className="text-[11px] text-slate-400 truncate">
                                     {doc.category ? `${doc.category} · ` : ""}
                                     {isUpload(doc) ? fmtSize(doc.size_bytes) : "external link"}
-                                    {doc.uploadedBy ? ` · ${doc.uploadedBy.first_name} ${doc.uploadedBy.last_name}` : ""}
+                                    {doc.uploadedBy ? ` · ${displayName(doc.uploadedBy)}` : ""}
                                 </p>
                             </div>
                             <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 border shrink-0 ${statusChip[doc.status]}`}>

@@ -13,6 +13,7 @@ import {
     LeaveRequest,
     LeaveType,
 } from "@/services/attendance.service";
+import { displayName, formatDate } from "@/lib/display";
 
 const statusChip: Record<string, string> = {
     pending: "text-amber-600 border-amber-100 bg-amber-50",
@@ -273,7 +274,7 @@ export default function AttendancePage() {
                                             {r.leaveType?.name ?? "Leave"} · {r.days} day(s)
                                         </p>
                                         <p className="text-xs text-slate-400">
-                                            {r.start_date} → {r.end_date}{r.reason ? ` · ${r.reason}` : ""}
+                                            {formatDate(r.start_date)} → {formatDate(r.end_date)}{r.reason ? ` · ${r.reason}` : ""}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
@@ -302,10 +303,10 @@ export default function AttendancePage() {
                                 <div key={r.id} className="p-3 flex items-center justify-between gap-3">
                                     <div className="min-w-0">
                                         <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                                            {r.user ? `${r.user.first_name} ${r.user.last_name}` : "Employee"} · {r.leaveType?.name} · {r.days} day(s)
+                                            {displayName(r.user)} · {r.leaveType?.name} · {r.days} day(s)
                                         </p>
                                         <p className="text-xs text-slate-400">
-                                            {r.start_date} → {r.end_date}{r.reason ? ` · ${r.reason}` : ""}
+                                            {formatDate(r.start_date)} → {formatDate(r.end_date)}{r.reason ? ` · ${r.reason}` : ""}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
