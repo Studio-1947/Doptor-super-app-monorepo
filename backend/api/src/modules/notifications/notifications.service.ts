@@ -13,6 +13,8 @@ export const NOTIFICATION_TYPES = [
   "file_forwarded",
   "file_approved",
   "file_rejected",
+  "leave_approved",
+  "leave_rejected",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
