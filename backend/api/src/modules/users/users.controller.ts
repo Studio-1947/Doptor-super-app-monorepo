@@ -36,22 +36,16 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @ApiOperation({ summary: "Create a new user" })
-  @ApiResponse({
-    status: 201,
-    description: "The user has been successfully created",
-  })
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions("create:users")
+  @ApiOperation({ summary: "Create a user in the caller's organisation" })
+  @ApiResponse({ status: 201, description: "The user was created" })
+  create(@Body() createUserDto: CreateUserDto, @Request() req) {
+    return this.usersService.create(createUserDto, req.user.organisation_id);
   }
 
   @Get()
   @ApiOperation({ summary: "Get all users" })
-  @ApiQuery({
-    name: "organisation_id",
-    required: false,
-    description: "Filter users by organisation UUID",
-  })
   @ApiQuery({
     name: "search",
     required: false,
@@ -62,12 +56,17 @@ export class UsersController {
     required: false,
     description: "Filter by account status ('invited' | 'active')",
   })
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions("read:users")
   findAll(
-    @Query("organisation_id") organisationId?: string,
+    @Request() req,
     @Query("search") search?: string,
     @Query("status") status?: string,
   ) {
-    return this.usersService.findAll(organisationId, search, status);
+    // The organisation_id query param was removed: it was optional, so omitting
+    // it returned every tenant's users (PII across organisations). Always scoped
+    // from the authenticated user now.
+    return this.usersService.findAll(req.user.organisation_id, search, status);
   }
 
   @Post("invite")
@@ -103,20 +102,34 @@ export class UsersController {
   }
 
   @Get(":id")
-  @ApiOperation({ summary: "Get a user by ID" })
-  findOne(@Param("id") id: string) {
-    return this.usersService.findOne(id);
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions("read:users")
+  @ApiOperation({ summary: "Get a user by ID (same organisation only)" })
+  findOne(@Param("id") id: string, @Request() req) {
+    return this.usersService.findOne(id, req.user.organisation_id);
   }
 
   @Patch(":id")
-  @ApiOperation({ summary: "Update a user" })
-  update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions("update:users")
+  @ApiOperation({ summary: "Update a user (same organisation only)" })
+  update(
+    @Param("id") id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
+  ) {
+    return this.usersService.update(
+      id,
+      req.user.organisation_id,
+      updateUserDto,
+    );
   }
 
   @Delete(":id")
-  @ApiOperation({ summary: "Delete a user" })
-  remove(@Param("id") id: string) {
-    return this.usersService.remove(id);
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions("delete:users")
+  @ApiOperation({ summary: "Delete a user (same organisation only)" })
+  remove(@Param("id") id: string, @Request() req) {
+    return this.usersService.remove(id, req.user.organisation_id);
   }
 }

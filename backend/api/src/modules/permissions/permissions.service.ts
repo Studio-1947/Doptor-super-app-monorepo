@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, Inject } from "@nestjs/common";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { permissions } from "../../database/drizzle/schema/permission.schema";
 import { CreatePermissionDto, UpdatePermissionDto } from "./dto";
 import { DRIZZLE } from "../../database/drizzle/database.module";
@@ -9,32 +9,37 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 export class PermissionsService {
   constructor(@Inject(DRIZZLE) private db: PostgresJsDatabase) {}
 
-  async create(createPermissionDto: CreatePermissionDto) {
+  async create(data: CreatePermissionDto, organisationId: string) {
     const [permission] = await this.db
       .insert(permissions)
-      .values(createPermissionDto)
+      .values({
+        resource: data.resource,
+        action: data.action,
+        // From the authenticated user, never the request body.
+        organisation_id: organisationId,
+      })
       .returning();
 
     return permission;
   }
 
-  async findAll(organisationId?: string) {
-    let query = this.db.select().from(permissions);
-
-    if (organisationId) {
-      query = query.where(
-        eq(permissions.organisation_id, organisationId),
-      ) as any;
-    }
-
-    return await query;
+  async findAll(organisationId: string) {
+    return await this.db
+      .select()
+      .from(permissions)
+      .where(eq(permissions.organisation_id, organisationId));
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, organisationId: string) {
     const [permission] = await this.db
       .select()
       .from(permissions)
-      .where(eq(permissions.id, id))
+      .where(
+        and(
+          eq(permissions.id, id),
+          eq(permissions.organisation_id, organisationId),
+        ),
+      )
       .limit(1);
 
     if (!permission) {
@@ -44,11 +49,20 @@ export class PermissionsService {
     return permission;
   }
 
-  async update(id: string, updatePermissionDto: UpdatePermissionDto) {
+  async update(
+    id: string,
+    organisationId: string,
+    updatePermissionDto: UpdatePermissionDto,
+  ) {
     const [updatedPermission] = await this.db
       .update(permissions)
       .set({ ...updatePermissionDto, updated_at: new Date() })
-      .where(eq(permissions.id, id))
+      .where(
+        and(
+          eq(permissions.id, id),
+          eq(permissions.organisation_id, organisationId),
+        ),
+      )
       .returning();
 
     if (!updatedPermission) {
@@ -58,10 +72,15 @@ export class PermissionsService {
     return updatedPermission;
   }
 
-  async remove(id: string) {
+  async remove(id: string, organisationId: string) {
     const [deletedPermission] = await this.db
       .delete(permissions)
-      .where(eq(permissions.id, id))
+      .where(
+        and(
+          eq(permissions.id, id),
+          eq(permissions.organisation_id, organisationId),
+        ),
+      )
       .returning();
 
     if (!deletedPermission) {
