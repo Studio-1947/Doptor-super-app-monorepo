@@ -371,10 +371,15 @@ defaults as the enum type.
       `RoleGuard` + `lib/route-access.ts` replaced it. Real server-side enforcement needs
       tokens moved localStorage → cookie. The backend gates every endpoint regardless, so
       this is defence-in-depth.
-- [ ] Onboarding: O-4 (choose verticals), O-5 (setup wizard), O-7 (role-aware first-login
-      redirect → Office roles land on `/office`). **The remaining customer-visible gap** —
-      a new org still signs up and lands on a dashboard with no departments and no leave
-      types, all reading a legitimate zero.
+- [x] Onboarding: O-4, O-5, O-7 — done 2026-07-27, though only one needed building.
+      **O-4 was already built** (the signup vertical picker has always posted
+      `enabled_verticals`; verified live). **O-5** shipped as a state-derived setup
+      checklist on the Org Admin dashboard — steps come from real counts in
+      `/analytics/overview`, not a `setup_completed` flag, so there's no migration, nothing
+      to skip, and it can't claim a step is done when it isn't. **O-7 was deliberately not
+      built**: its goal was to stop users landing on one generic dashboard, and `/` now
+      dispatches on role *and* enabled verticals, so redirecting Office roles to `/office`
+      (the e-file `FileDashboard`) would be a downgrade. See `docs/BACKLOG.md` for detail.
 - [x] Cleanup: L-4 duplicate `features/office/*` vs `features/verticals/office/*` —
       already resolved; `features/verticals/office` no longer exists.
 

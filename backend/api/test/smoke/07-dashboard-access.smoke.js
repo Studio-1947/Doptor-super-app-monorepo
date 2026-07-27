@@ -81,6 +81,28 @@ async function reachable(label, path, token) {
   await reachable('org admin: GET /documents?status=pending_review',
     '/documents?status=pending_review', owner);
 
+  // ------------------------------------------------- setup checklist (O-5)
+  // SetupChecklist derives its steps from these three counts rather than a
+  // stored flag, so the contract it depends on is asserted here: a brand-new
+  // org must report "nothing set up yet", and a step must close when the
+  // underlying thing is actually created.
+  check('new org has no departments (step 1 open)', overview.data?.totalDepartments === 0,
+    `got ${overview.data?.totalDepartments}`);
+  check('new org has exactly the founding user (step 2 open)', overview.data?.totalUsers === 1,
+    `got ${overview.data?.totalUsers}`);
+  check('new org has no tasks (step 3 open)', overview.data?.totalTasks === 0,
+    `got ${overview.data?.totalTasks}`);
+
+  const setupDept = await req('POST', '/departments', {
+    token: owner, body: { name: `Setup Dept ${uniq}`, task_prefix: 'SET' },
+  });
+  check('org admin can create a department', setupDept.status === 201 || setupDept.status === 200,
+    `status ${setupDept.status}`);
+
+  const afterDept = await req('GET', '/analytics/overview', { token: owner });
+  check('creating a department closes step 1', afterDept.data?.totalDepartments === 1,
+    `got ${afterDept.data?.totalDepartments}`);
+
   // ------------------------------------------------------------------- Staff
   // StaffDashboard: my-tasks + today's punch + my leave balances.
   const staff = await userWithRole(orgId, 'Staff', 'dashstaff');

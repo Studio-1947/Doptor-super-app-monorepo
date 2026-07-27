@@ -5,6 +5,7 @@ import { ClipboardList, CheckSquare, Users, Building2 } from 'lucide-react';
 import { analyticsService } from '@/services/analytics.service';
 import { documentsService } from '@/services/documents.service';
 import { useAsync } from './useAsync';
+import { SetupChecklist } from './SetupChecklist';
 import {
     PageHeading, StatTile, Panel, EmptyState, LoadingRows, ErrorNote, QuickAction,
 } from './DashboardPrimitives';
@@ -52,6 +53,9 @@ export function OrgAdminDashboard() {
             </div>
 
             {stats.error && <ErrorNote message={stats.error} />}
+
+            {/* Renders only while a step is outstanding, so it disappears by itself. */}
+            {stats.data && <SetupChecklist stats={stats.data} />}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Panel
