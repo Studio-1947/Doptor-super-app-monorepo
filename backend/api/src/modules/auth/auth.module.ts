@@ -7,6 +7,7 @@ import { AuthController } from "./auth.controller";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { DatabaseModule } from "../../database/drizzle/database.module";
 import { EmailModule } from "../email/email.module";
+import { requireJwtSecret } from "../../common/config/jwt-secret";
 
 @Module({
   imports: [
@@ -23,9 +24,7 @@ import { EmailModule } from "../email/email.module";
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret:
-          configService.get<string>("JWT_SECRET") ||
-          "your-secret-key-change-in-production",
+        secret: requireJwtSecret(configService.get<string>("JWT_SECRET")),
         signOptions: { expiresIn: "15m" },
       }),
     }),
