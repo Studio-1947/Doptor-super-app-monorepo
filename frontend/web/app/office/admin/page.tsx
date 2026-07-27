@@ -31,7 +31,7 @@ export default function OfficeAdminPage() {
 
         // Scoped server-side from the authenticated user; no org filter needed.
         departmentService.getAll().then((d) => setDeptCount(d.length)).catch(() => setDeptCount(null));
-        usersService.list({ organisationId: orgId }).then((members) => {
+        usersService.list().then((members) => {
             setUserCount(members.length);
             setPendingInviteCount(members.filter((m) => m.status === 'invited').length);
         }).catch(() => {

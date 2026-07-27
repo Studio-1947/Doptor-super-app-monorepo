@@ -16,12 +16,8 @@ export class CreateUserDto {
   @IsString()
   password: string;
 
-  @ApiProperty({
-    example: "123e4567-e89b-12d3-a456-426614174000",
-    description: "The UUID of the organisation",
-  })
-  @IsUUID()
-  organisation_id: string;
+  // SECURITY: organisation_id is deliberately absent — taken from the
+  // authenticated user so a caller cannot create a user in another organisation.
 }
 
 export class UpdateUserDto {

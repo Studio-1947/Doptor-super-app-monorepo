@@ -36,13 +36,11 @@ export interface BulkInviteRowResult {
 
 class UsersService {
   async list(params?: {
-    organisationId?: string;
     search?: string;
     status?: string;
   }): Promise<UserListItem[]> {
     const response = await apiClient.get("/users", {
       params: {
-        organisation_id: params?.organisationId,
         search: params?.search,
         status: params?.status,
       },
