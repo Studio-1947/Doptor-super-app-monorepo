@@ -15,6 +15,8 @@ export const NOTIFICATION_TYPES = [
   "file_rejected",
   "leave_approved",
   "leave_rejected",
+  "document_approved",
+  "document_rejected",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

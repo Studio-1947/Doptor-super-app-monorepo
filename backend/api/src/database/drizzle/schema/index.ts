@@ -12,6 +12,7 @@ export * from "./notification.schema";
 export * from "./notification.relations";
 export * from "./workflow.schema";
 export * from "./document.schema";
+export * from "./document.relations";
 export * from "./attendance.schema";
 export * from "./attendance.relations";
 export * from "./files.schema";
