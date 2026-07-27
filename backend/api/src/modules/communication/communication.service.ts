@@ -78,4 +78,23 @@ export class CommunicationService {
     await this.db.insert(conversationParticipants).values(participants);
     return conv[0];
   }
+
+  /**
+   * True when the user is a participant of the conversation. Used by the
+   * WebSocket gateway before joining a room or accepting a message — without
+   * it, any connected client could join any conversation by guessing its id.
+   */
+  async isParticipant(userId: string, conversationId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: conversationParticipants.id })
+      .from(conversationParticipants)
+      .where(
+        and(
+          eq(conversationParticipants.userId, userId),
+          eq(conversationParticipants.conversationId, conversationId),
+        ),
+      )
+      .limit(1);
+    return Boolean(row);
+  }
 }
