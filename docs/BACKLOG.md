@@ -56,6 +56,10 @@ actually navigating anywhere, and `BottomNav` being a fully static tab list.
       `middleware.ts` is restored and gates unauthenticated requests server-side — but
       only when `COOKIE_AUTH_ENABLED` is set, since the cookie is invisible to it unless
       the API also sets `COOKIE_DOMAIN` to the parent domain. Set both together.
+      **Both are now set on dev** (2026-07-28, `.dev.doptor.in` / `1`) and the gating is
+      verified live — protected routes 307 to `/login?next=…` without a valid cookie.
+      See `docs/DEPLOYMENT.md` §6; they are **not** in git, so any rebuilt environment
+      needs them added by hand.
       It decodes rather than verifies (verifying would duplicate `JWT_SECRET` into the web
       container) and gates auth only, not roles (the payload carries none, and baking them
       in would delay role changes until token refresh). The API remains the boundary.

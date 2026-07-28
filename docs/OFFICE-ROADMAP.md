@@ -385,6 +385,17 @@ defaults as the enum type.
         are on different subdomains). The previous middleware was deleted for gating on a
         cookie nothing set; this one refuses to repeat that. **Set both together or
         neither** — see `docker-compose.prod.yml`.
+      > **Enabled on dev 2026-07-28.** `COOKIE_DOMAIN=.dev.doptor.in` and
+      > `COOKIE_AUTH_ENABLED=1` added to the VPS `.env` (backed up first as
+      > `.env.bak-20260728-043646`) and `api`+`web` recreated. Verified live:
+      > the API's `Set-Cookie` now carries `Domain=.dev.doptor.in; HttpOnly;
+      > Secure; SameSite=Lax`; `/tasks` and `/office/registry` 307 to
+      > `/login?next=…` with no cookie **and** with an unparseable one; both
+      > return 200 with a valid cookie; `/login` 307s to `/` when signed in;
+      > `/login` stays 200 when signed out. The full smoke suite was re-run
+      > after the change — **8/8 suites, 187 checks, 0 failures** — so the
+      > Bearer path is unregressed. `COOKIE_AUTH_ENABLED` proved to be a
+      > **runtime** read, not build-time inlined: no web rebuild was needed.
       > **Not yet closed:** the access token is still kept in `localStorage` for the Bearer
       > fallback, so this does **not** yet remove the XSS exposure. That removal means
       > rewriting the boot check, login flow and refresh-race handling in `api-client.ts`,
