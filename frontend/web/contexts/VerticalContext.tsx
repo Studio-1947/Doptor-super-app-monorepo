@@ -62,6 +62,25 @@ interface VerticalContextType {
     isLoading: boolean;
 }
 
+/**
+ * The verticals that actually have a product behind them.
+ *
+ * `network` is deliberately absent. Its seven pages under `app/network/` are
+ * entirely hardcoded and there is **no `network` module in the backend at all**
+ * — not thin, absent. It was nonetheless offered on the signup form as
+ * "Volunteer management, Campaigns", so an organisation could choose it and
+ * receive a facade.
+ *
+ * Filtering here rather than only removing the signup option is what covers the
+ * organisations that already selected it: `enabled_verticals` still says
+ * `network` in their row, this drops it, the icon rail stops offering it, and
+ * the redirect below bounces anyone who reaches `/network` by bookmark.
+ *
+ * The pages and theme tokens are intentionally left in the repo. Add `network`
+ * back to this list the day it has a backend — that is the only change needed.
+ */
+const SHIPPABLE_VERTICALS: VerticalType[] = ['office', 'campus'];
+
 const VerticalContext = createContext<VerticalContextType | undefined>(undefined);
 
 function verticalFromPathname(pathname: string): VerticalType {
@@ -96,7 +115,7 @@ export function VerticalProvider({ children }: { children: React.ReactNode }) {
                 if (cancelled) return;
                 setOrganisation(org);
                 const real = (org.enabled_verticals || []).filter(
-                    (v): v is VerticalType => v === 'office' || v === 'campus' || v === 'network',
+                    (v): v is VerticalType => SHIPPABLE_VERTICALS.includes(v as VerticalType),
                 );
                 setEnabledVerticals(['core', ...real]);
             })

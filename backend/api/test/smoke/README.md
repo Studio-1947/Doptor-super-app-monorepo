@@ -15,8 +15,8 @@ assert on real responses. They were used to verify each phase as it was built.
 | `01-office-core.smoke.js` | Onboarding roles, files registry pagination, task depth (refs, assignees, labels, comments, subtasks, audit), cross-org isolation | 56 |
 | `02-rbac.smoke.js` | Permission enforcement over HTTP — Auditor read-only, Staff can't delete/assign | 16 |
 | `03-notifications.smoke.js` | Task/file notification producers, read/unread, cross-user isolation | 15 |
-| `04-attendance.smoke.js` | Punch lifecycle, leave request → approve/reject/cancel, balance movement, admin/staff split | 32 |
-| `05-documents.smoke.js` | Document library, draft → pending_review → approved/rejected, resubmit, permission splits, cross-org isolation | 16 |
+| `04-attendance.smoke.js` | Punch lifecycle, leave request → approve/reject/cancel, balance movement, admin/staff split, the relations the `/approvals` rows render | 35 |
+| `05-documents.smoke.js` | Document library, draft → pending_review → approved/rejected, resubmit, permission splits, cross-org isolation, the relations the `/approvals` rows render | 19 |
 | `06-tenancy.smoke.js` | Live exploit attempts against the C-11 privilege-escalation chain; reports findings by severity rather than pass/fail | — |
 | `07-dashboard-access.smoke.js` | Every endpoint a role dashboard calls is reachable *by that role*, and the gates its hidden panels rely on hold | 28 |
 | `08-cookie-auth.smoke.js` | httpOnly cookie auth — cookie alone authenticates, Bearer still works, refresh rotates, replay and logged-out tokens rejected | 24 |
@@ -68,4 +68,4 @@ stdin will do. `docker exec` needs `-i` for that reason.
 > fine on a scratch database; don't point them at anything with real tenants.
 
 **Status:** all 9 suites ran green against `https://api.dev.doptor.in` on
-2026-07-28 — **212 checks, 0 failures**, plus `06-tenancy` reporting no findings.
+2026-07-28 — **218 checks, 0 failures**, plus `06-tenancy` reporting no findings.

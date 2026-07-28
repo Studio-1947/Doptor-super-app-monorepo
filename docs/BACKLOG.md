@@ -494,6 +494,46 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       Left alone this pass because changing it touches every one of those pages, but it
       is the same class of fabrication as M-16 and should not survive indefinitely.
 
+- [ ] **M-18** 🔴 **The Network vertical has no backend at all.** Found 2026-07-28 by
+      sweeping every page for backend integration. There is no `network` module in
+      `backend/api/src/modules/` — not thin, *absent* — yet seven pages exist under
+      `app/network/`, all wired into the sidebar, and **the signup form offered it as a
+      product choice**: "Network — Volunteer management, Campaigns". An organisation
+      could select it at registration and receive an entirely fabricated product. This
+      was the most serious fabrication found: everything else was an internal page, this
+      was a sellable option.
+      **Mitigated 2026-07-28, not resolved.** `network` is removed from the signup picker
+      and from `SHIPPABLE_VERTICALS` in `contexts/VerticalContext.tsx`. Filtering there
+      rather than only at signup is what covers organisations that *already* selected it:
+      their `enabled_verticals` still says `network`, the context drops it, the icon rail
+      stops offering it, and the existing redirect bounces anyone reaching `/network` by
+      bookmark. The pages and theme tokens stay in the repo.
+      **Still open:** decide whether Network gets built (a milestone in its own right,
+      comparable to Office Phases 2–5) or is deleted. Adding `'network'` back to
+      `SHIPPABLE_VERTICALS` is the only change needed the day it has a backend.
+
+- [x] **M-19** ~~`/approvals` was fabricated and linked in the Office sidebar~~ — fixed
+      2026-07-28. It hardcoded "Pending Approvals 42", "Approved Today 128", "Avg.
+      Decision Time 4.2h" and five invented requests with invented people, while being
+      linked in the sidebar for **three roles** — the most-reachable fabricated page in
+      the product. The real data already existed and `ManagerDashboard` already surfaced
+      it in miniature; this page had simply never been wired.
+      Now a real approvals centre over two queues — documents in `pending_review` and
+      leave requests in `pending` — with inline approve/reject. Each queue is gated on
+      the permission that backs it (`approve:workflows`, `approve:attendance`) rather
+      than on role, for the same reason as `ManagerDashboard`: Manager and Department
+      Head collapse to one legacy role but only one of them can approve.
+      "Approved Today" and "Avg. Decision Time" are **not** reproduced — they need a
+      decision-history aggregate no endpoint offers, so they are absent rather than
+      estimated. Row shapes are pinned in suites `04` and `05` (+6 checks), because a
+      dropped `with:` relation would blank the rows silently instead of erroring.
+
+- [ ] **M-20** 🟡 `/campus/faculty` and `/campus/students` are fabricated ("Dr. Sarah
+      Connor", "Publications 1,240", "Research Grants 12") **despite `GET /campus/faculty`
+      and `GET /campus/students` existing and being org-scoped since H-2.** Campus is
+      frozen, so this is recorded rather than fixed — but note the backend is ready, so
+      this is wiring, not a build, whenever campus thaws.
+
 - [x] **C-11** 🔴 ~~Cross-tenant privilege escalation in roles/users/organisations~~ —
       found and fixed 2026-07-27 during a full security review, **verified by live
       exploit**. The platform's own access-control modules were the least protected in
