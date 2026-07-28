@@ -23,6 +23,11 @@ WORKDIR /app
 COPY .npmrc .npmrc
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+# `@playwright/test` is a root devDependency (the e2e suite) and today installs
+# without fetching browsers. This pins that: a future version deciding to pull
+# ~500MB of Chromium during the image build would be a slow, confusing deploy
+# failure rather than an obvious one.
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 RUN pnpm install --frozen-lockfile
 
 COPY --from=pruner /app/out/full/ .
