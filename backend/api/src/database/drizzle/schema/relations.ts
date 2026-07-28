@@ -131,11 +131,6 @@ export const examGradesRelations = relations(examGrades, ({ one }) => ({
 
 // Tasks Relations
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
-  // Legacy single assignee — superseded by `assignees`, kept until backfilled.
-  assignee: one(users, {
-    fields: [tasks.assigned_to],
-    references: [users.id],
-  }),
   creator: one(users, {
     fields: [tasks.created_by],
     references: [users.id],
