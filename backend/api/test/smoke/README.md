@@ -20,6 +20,7 @@ assert on real responses. They were used to verify each phase as it was built.
 | `06-tenancy.smoke.js` | Live exploit attempts against the C-11 privilege-escalation chain; reports findings by severity rather than pass/fail | — |
 | `07-dashboard-access.smoke.js` | Every endpoint a role dashboard calls is reachable *by that role*, and the gates its hidden panels rely on hold | 28 |
 | `08-cookie-auth.smoke.js` | httpOnly cookie auth — cookie alone authenticates, Bearer still works, refresh rotates, replay and logged-out tokens rejected | 24 |
+| `09-admin-access.smoke.js` | The `/admin` area — every endpoint its pages call, the field shapes they render, org rename, and the Staff denials the client-side guard mirrors | 25 |
 
 `helpers.js` holds the shared transport (`req`, `sql`, `sqlRows`). Each suite keeps
 its own `check`/reporting block, because `06-tenancy` reports by severity and
@@ -66,5 +67,5 @@ stdin will do. `docker exec` needs `-i` for that reason.
 > (`Date.now()`-suffixed, `@verify.test` emails) and leaves them behind. That's
 > fine on a scratch database; don't point them at anything with real tenants.
 
-**Status:** all 7 suites ran green against `https://api.dev.doptor.in` on
-2026-07-27 — **158 checks, 0 failures**, plus `06-tenancy` reporting no findings.
+**Status:** all 9 suites ran green against `https://api.dev.doptor.in` on
+2026-07-28 — **212 checks, 0 failures**, plus `06-tenancy` reporting no findings.

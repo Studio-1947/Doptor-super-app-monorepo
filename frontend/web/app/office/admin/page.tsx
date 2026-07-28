@@ -27,7 +27,6 @@ export default function OfficeAdminPage() {
 
     useEffect(() => {
         if (!user?.organisation_id) return;
-        const orgId = user.organisation_id;
 
         // Scoped server-side from the authenticated user; no org filter needed.
         departmentService.getAll().then((d) => setDeptCount(d.length)).catch(() => setDeptCount(null));
@@ -39,7 +38,7 @@ export default function OfficeAdminPage() {
             setPendingInviteCount(null);
         });
 
-        roleService.getAll(orgId).then(async (roleList) => {
+        roleService.getAll().then(async (roleList) => {
             const withCounts = await Promise.all(
                 roleList.map(async (role) => {
                     try {

@@ -331,9 +331,11 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       reachable indirectly via `initiator_id → users.organisation_id`), a new
       `GET /files/registry` endpoint, and a real frontend page with search/status
       filtering. Verified end-to-end (create file → appears in registry, org-scoped).
-- [ ] **H-7** 🟠 Add real file/attachment upload (multer + storage backend) to
-      `documents` and `files` modules — both are metadata-only today, so the e-Dak
-      file-movement system can't actually carry an attached document.
+- [x] **H-7** ~~Add real file/attachment upload to `documents` and `files`~~ — **this
+      entry was stale**; verified done 2026-07-28. Both modules use multer:
+      `files.controller.ts` has `POST /files/:id/attachments`, `GET /files/:id/attachments`
+      and `GET /files/attachments/:attachmentId/download`, and `documents.controller.ts`
+      gained upload + download in Phase 5. The e-Dak system does carry real attachments.
 - [x] **H-8** ~~Wire tasks frontend to the real tasks backend~~ — done in two steps.
       2026-07-06: `services/tasks.service.ts` created, `tasks-mock.db.ts` deleted, Kanban
       wired to real CRUD. 2026-07-24 (Office roadmap Phase 2d): rebuilt against the deeper
@@ -444,12 +446,53 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       name (only stale `dist/` build output), so nothing else needed changing. Cleared
       ahead of Office roadmap Phase 4, which builds HR attendance on this table.
 
-- [ ] **M-15** 🟡 Found 2026-07-27 during the first browser pass: `/admin` is listed in
-      `middleware.ts` as a public vertical root and a protected prefix, but
-      `app/admin/` has **no `page.tsx`** — only `/admin/departments`, `/admin/roles`
-      and `/admin/settings`. Next prefetches the bare root and gets a 404 (19 console
-      404s in one session). Nothing links to it, so no user-visible break today —
-      decide whether `/admin` gets a landing page or is dropped from middleware.
+- [x] **M-15** ~~`/admin` has no `page.tsx`~~ — done 2026-07-28, and the diagnosis in the
+      original entry was wrong twice over. `middleware.ts` never mentioned `/admin` (it
+      uses a blanket matcher); the prefetch 404s came from the sidebar's `Link`s. More
+      importantly this was **not** cosmetic: `RoleGuard` redirects a denied user to
+      `findVerticalRoot(pathname)`, which for any `/admin/*` route is `/admin` — so the
+      denial path for the entire admin area landed on the 404. Fixed by building a real
+      `/admin` landing page (org-scoped counts from `/analytics/overview`).
+      Two adjacent bugs had to be fixed with it, or the obvious repair would have made
+      things worse:
+      - `isRouteAllowed` returned `true` for any `pathname === root`, so `/admin` itself
+        was **ungated** — a landing page alone would have shown the admin hub to every
+        signed-in staff member. The shortcut is removed; `/campus`, `/office` and
+        `/network` stay open because no rule names them exactly, which is asserted.
+      - Dropping `/admin` from `VERTICAL_ROOTS` (the tidier-looking fix) would have
+        **opened every `/admin/*` route to everyone** client-side, since `isRouteAllowed`
+        returns `true` outside those prefixes. It stays in the list, now documented.
+      - Gating `/admin` then made `RoleGuard`'s fallback an infinite loop (deny at
+        `/admin/roles` → redirect to `/admin` → deny → redirect…), so the fallback now
+        checks the target is allowed before using it. It also gained the missing `role`
+        dependency, without which a role change never re-evaluated.
+      Covered by 35 assertions against the compiled `route-access.ts`.
+
+- [x] **M-16** ~~All three `/admin/*` pages were fabricated~~ — found and fixed 2026-07-28.
+      `/admin/roles` reported `Total Roles 12`, `Active Users 156`, `Permissions 48` and
+      five invented roles including a "Project Lead" with 109 users — while a real
+      organisation gets exactly six roles at registration. `/admin/departments` invented
+      departments, heads ("Amit Sharma") and **budgets**; `/admin/settings` reported
+      "System Status: Healthy", "Active Modules: 14", "Integrations: 5". None of these
+      pages made a single API call.
+      All three now read the real services, which already existed — no backend work was
+      needed. Columns with no backing model are **dropped rather than wired**, following
+      H-3/H-4: department budget and sub-units, and the roles `type`/`status` columns,
+      have no schema behind them and cannot be anything but invented.
+      Creating a department is wired because the onboarding `SetupChecklist` links a new
+      org straight to that page, so a read-only page would dead-end onboarding.
+      Renaming the organisation is wired (`PATCH /organisations/:id`, org-scoped since
+      C-11). Slug and vertical toggles are deliberately read-only — the slug is a lookup
+      key, and flipping a vertical changes navigation for every member.
+      Guarded by new smoke suite `09-admin-access.smoke.js` (25 checks), which asserts
+      the field *shapes* the pages render, not just reachability.
+
+- [ ] **M-17** 🟡 Found 2026-07-28: `components/ReadyUI.tsx` — the shell used by **15
+      pages**, including ones wired to real data — has chrome that lies. Its search box
+      does nothing but toast "Search engine is initializing...", its Export button
+      exports nothing, and its footer claims "Real-time Link Active" unconditionally.
+      Left alone this pass because changing it touches every one of those pages, but it
+      is the same class of fabrication as M-16 and should not survive indefinitely.
 
 - [x] **C-11** 🔴 ~~Cross-tenant privilege escalation in roles/users/organisations~~ —
       found and fixed 2026-07-27 during a full security review, **verified by live
@@ -488,11 +531,10 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 - [ ] **L-1** 🔵 `frontend/mobile/` has no application code beyond `package.json` — needs
       to be scoped as its own project (not a quick add-on) if mobile is in-scope for
       this milestone.
-- [ ] **L-2** 🔵 Reconcile duplicate guard implementations (`src/common/guards/*` vs
-      `src/modules/auth/guards/*`) noted in the 2026-06-30 audit — confirm still true and
-      consolidate to one.
-- [ ] **L-3** 🔵 Reconcile duplicate schema files `audit.schema.ts` /
-      `audit-log.schema.ts` if both still exist.
+- [x] **L-2** ~~Reconcile duplicate guard implementations~~ — **stale entry**; checked
+      2026-07-28, only `src/common/guards/` exists. `src/modules/auth/guards/` is gone.
+- [x] **L-3** ~~Reconcile duplicate `audit.schema.ts` / `audit-log.schema.ts`~~ — **stale
+      entry**; checked 2026-07-28, only `audit-log.schema.ts` exists.
 - [ ] **L-4** 🔵 Confirm `features/office/*` vs `features/verticals/office/*` duplicate
       component trees noted in the prior audit are resolved or dead-code one of them.
 
