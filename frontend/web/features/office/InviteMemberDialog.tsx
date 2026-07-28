@@ -24,7 +24,7 @@ export function InviteMemberDialog({ onClose, onInvited }: InviteMemberDialogPro
     useEffect(() => {
         if (!user?.organisation_id) return;
         roleService
-            .getAll(user.organisation_id)
+            .getAll()
             .then(setRoles)
             .catch(() => toast.error('Failed to load roles'));
     }, [user?.organisation_id]);

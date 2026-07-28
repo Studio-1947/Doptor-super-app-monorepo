@@ -3,6 +3,8 @@ import apiClient from "../lib/api-client";
 export interface Role {
   id: string;
   name: string;
+  /** Added in migration 0012 so the standard office roles can explain themselves. */
+  description?: string | null;
   organisation_id: string;
   created_at: string;
   updated_at: string;
@@ -17,21 +19,26 @@ export interface Permission {
   updated_at: string;
 }
 
+// SECURITY: `organisation_id` is deliberately absent from both of these, and
+// from the query params below. The API takes the organisation from the
+// authenticated user and its DTOs now *reject* a body-supplied one — accepting
+// it was the verified privilege-escalation chain in backlog C-11 (create a role
+// inside someone else's org, grant it everything, self-assign). Sending it
+// again would simply 400.
 export interface CreateRoleDto {
   name: string;
-  organisation_id: string;
+  description?: string;
 }
 
 export interface CreatePermissionDto {
   resource: string;
   action: string;
-  organisation_id: string;
 }
 
 class RoleService {
-  async getAll(organisationId?: string): Promise<Role[]> {
-    const params = organisationId ? { organisation_id: organisationId } : {};
-    const response = await apiClient.get("/roles", { params });
+  /** Always the caller's own organisation — scoped server-side from the token. */
+  async getAll(): Promise<Role[]> {
+    const response = await apiClient.get("/roles");
     return response.data;
   }
 
@@ -70,9 +77,9 @@ class RoleService {
 }
 
 class PermissionService {
-  async getAll(organisationId?: string): Promise<Permission[]> {
-    const params = organisationId ? { organisation_id: organisationId } : {};
-    const response = await apiClient.get("/permissions", { params });
+  /** Always the caller's own organisation — scoped server-side from the token. */
+  async getAll(): Promise<Permission[]> {
+    const response = await apiClient.get("/permissions");
     return response.data;
   }
 
