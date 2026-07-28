@@ -350,8 +350,8 @@ defaults as the enum type.
 - [x] De-mock `analytics.service.ts` — removed `activeSessions: 42` and friends (M-3),
       replaced with nine real org-scoped counts. Done 2026-07-27.
 - [x] **Build an Office dashboard that aggregates real data across all pillars** — done
-      2026-07-27. The dashboards were the last fabricated data in the product and the
-      *first screen after login*: `OrgAdminDashboard` hardcoded `Pending Approvals 24` /
+      2026-07-27. The dashboards were the *first screen after login*:
+      `OrgAdminDashboard` hardcoded `Pending Approvals 24` /
       `Active Tasks 156` / `Total Staff 48` / `Dept Performance 92%` and four fake
       "Equipment Purchase Request — John Doe" rows; `SuperAdminDashboard` claimed 142
       organisations and 8,234 users. Worse, `StaffDashboard`, `ManagerDashboard` and
@@ -365,7 +365,15 @@ defaults as the enum type.
       Campus dashboards now render only for campus-only orgs.
       `SuperAdminDashboard` shows its own org's real figures and states plainly that
       platform-wide totals need an endpoint that doesn't exist — no estimate stands in.
-      Guarded by new smoke suite `07-dashboard-access` (23 checks).
+      Guarded by new smoke suite `07-dashboard-access` (28 checks).
+      > **They were not the last fabricated data, though this entry originally claimed
+      > so.** On 2026-07-28 all three `/admin/*` pages were found to be pure invention
+      > with zero API calls — "Total Roles 12", departments with fictional heads and
+      > **budgets**, "Active Modules: 14". Fixed the same day; see backlog **M-16**.
+      > `components/ReadyUI.tsx`, the shell shared by 15 pages, still has a search box
+      > and Export button that do nothing and a hardcoded "Real-time Link Active"
+      > footer — tracked as **M-17**. Treat "the last fabricated data" as a claim to
+      > re-check, not a fact.
 - [x] **Server-side route protection** — done 2026-07-27. The API now issues the access and
       refresh tokens as **httpOnly cookies** alongside the existing JSON body, and
       `JwtStrategy` accepts either the cookie or the `Authorization` header. Keeping the
