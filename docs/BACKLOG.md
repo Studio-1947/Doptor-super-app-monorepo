@@ -514,12 +514,35 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       Guarded by new smoke suite `09-admin-access.smoke.js` (25 checks), which asserts
       the field *shapes* the pages render, not just reachability.
 
-- [ ] **M-17** 🟡 Found 2026-07-28: `components/ReadyUI.tsx` — the shell used by **15
-      pages**, including ones wired to real data — has chrome that lies. Its search box
-      does nothing but toast "Search engine is initializing...", its Export button
-      exports nothing, and its footer claims "Real-time Link Active" unconditionally.
-      Left alone this pass because changing it touches every one of those pages, but it
-      is the same class of fabrication as M-16 and should not survive indefinitely.
+- [x] **M-17** ~~`ReadyUI` renders chrome that lies~~ — fixed 2026-07-28. The shell for
+      **15 pages** drew a search box that only toasted "Search engine is initializing...",
+      an Export button **no page has ever passed a handler for**, a "More options" button
+      that toasted "restricted in preview", clickable stat tiles toasting "synchronization
+      in progress", and a footer claiming "Real-time Link Active" with no socket anywhere.
+      Seven pages also shipped a primary action with no handler ("Add Faculty", "Create
+      Campaign", "Launch Initiative") that toasted "feature is coming soon!".
+      The rule now: **a control is driven by a handler prop and is not drawn without one.**
+      `primaryAction.onClick` is required, which turned those seven into type errors rather
+      than something to find by reading; they are on frozen or unreachable pages, so the
+      buttons were removed rather than wired.
+      One control survived by being made real: `/office/registry` calls itself a
+      "searchable ledger" and `GET /files/registry` has taken a `search` param since M-8
+      (made case-insensitive and escaped in M-9) — none of it reachable. Now wired, with a
+      reset to page 1 so a search with matches can't land on an empty page 4.
+      Covered by `e2e/page-shell.spec.ts`.
+
+- [x] **M-21** 🔴 ~~Cold-loading `/office` or `/campus` redirected to the dashboard~~ —
+      found and fixed 2026-07-28 while browser-testing M-17. **A fresh load of any URL in
+      the Office vertical — the primary product — bounced to `/`.** Bookmarks, refreshes,
+      deep links, new tabs.
+      `VerticalProvider` treated "AuthContext hasn't resolved yet" as "this organisation
+      has no verticals": on mount `user` is null, so it set `enabledVerticals = ['core']`
+      *and cleared its loading flag*, which unblocked its own redirect effect before the
+      real answer arrived. Clicking through from `/` always worked, because by then the
+      provider had resolved — which is exactly why it survived unnoticed.
+      Invisible to the smoke suites, invisible to `tsc`, and missed by the existing e2e
+      specs because they all happened to target ungated routes. Regression coverage in
+      `e2e/vertical-routing.spec.ts`, every case using a **cold** `page.goto`.
 
 - [ ] **M-18** 🔴 **The Network vertical has no backend at all.** Found 2026-07-28 by
       sweeping every page for backend integration. There is no `network` module in
