@@ -404,11 +404,12 @@ defaults as the enum type.
       > after the change — **8/8 suites, 187 checks, 0 failures** — so the
       > Bearer path is unregressed. `COOKIE_AUTH_ENABLED` proved to be a
       > **runtime** read, not build-time inlined: no web rebuild was needed.
-      > **Not yet closed:** the access token is still kept in `localStorage` for the Bearer
-      > fallback, so this does **not** yet remove the XSS exposure. That removal means
-      > rewriting the boot check, login flow and refresh-race handling in `api-client.ts`,
-      > which can't be verified without a real browser pass — kept as a separate follow-up
-      > rather than bundled in blind.
+      > **XSS exposure closed 2026-07-28.** The follow-up this note deferred is done: the
+      > web app no longer stores either token, so nothing readable by script remains. It
+      > needed the boot check, the login flow and the refresh race in `api-client.ts`
+      > rewritten, exactly as predicted — and the browser pass it was waiting on now
+      > exists (`e2e/token-storage.spec.ts`, which runs script in the page and asserts
+      > nothing JWT-shaped is reachable). See backlog **S-1** for the consequences.
       Verified against a real API: `08-cookie-auth.smoke.js`, 24 checks.
 - [x] Onboarding: O-4, O-5, O-7 — done 2026-07-27, though only one needed building.
       **O-4 was already built** (the signup vertical picker has always posted
