@@ -69,16 +69,15 @@ class AuthService {
     return response.data;
   }
 
-  async refreshToken(refreshToken: string): Promise<{ access_token: string }> {
-    const response = await apiClient.post("/auth/refresh", {
-      refresh_token: refreshToken,
-    });
+  /** The refresh token rides in an httpOnly cookie; no body is needed. */
+  async refreshToken(): Promise<{ access_token: string }> {
+    const response = await apiClient.post("/auth/refresh", {});
     return response.data;
   }
 
+  /** Revokes the session server-side and clears both cookies. */
   async logout(): Promise<void> {
-    const refreshToken = this.getRefreshToken();
-    await apiClient.post("/auth/logout", { refresh_token: refreshToken });
+    await apiClient.post("/auth/logout", {});
   }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
@@ -134,38 +133,34 @@ class AuthService {
     return response.data;
   }
 
-  // Token management
-  setTokens(accessToken: string, refreshToken: string): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.setItem("access_token", accessToken);
-      localStorage.setItem("refresh_token", refreshToken);
-    }
-  }
-
-  getAccessToken(): string | null {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return localStorage.getItem("access_token");
-    }
-    return null;
-  }
-
-  getRefreshToken(): string | null {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      return localStorage.getItem("refresh_token");
-    }
-    return null;
-  }
-
-  clearTokens(): void {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-    }
-  }
-
-  isAuthenticated(): boolean {
-    return !!this.getAccessToken();
-  }
+  // Token storage is deliberately absent.
+  //
+  // The API issues both tokens as httpOnly cookies (backend
+  // `common/config/auth-cookies.ts`), which script cannot read. That is the
+  // entire point: this app renders user-supplied names, document titles and
+  // task text, so an injected script used to find a 7-day refresh token sitting
+  // in `localStorage` and could exfiltrate it. Now a successful XSS can act as
+  // the user only for as long as it holds the page.
+  //
+  // Three consequences worth knowing before adding anything back here:
+  //
+  //  - **There is no synchronous `isAuthenticated()`.** The client genuinely
+  //    cannot know — that is what httpOnly means. `AuthContext` asks
+  //    `GET /auth/me` on boot and treats a 401 as "signed out".
+  //  - **`logout()` and refresh send no token.** The API reads the cookie and
+  //    clears it (`@Body("refresh_token") ?? readCookie(...)` in
+  //    `auth.controller.ts`), so the body is redundant.
+  //  - **Non-browser callers are unaffected.** `JwtStrategy` still accepts the
+  //    `Authorization` header, which is what the smoke suites, curl and the
+  //    unbuilt mobile app use — they set it themselves rather than reading it
+  //    from here. Dropping the header would have broken them for no security
+  //    gain, since a caller that can set headers was never the threat.
+  //
+  // This relies on the API being **same-site** with the web app (`api.dev.` and
+  // `dev.` under one registrable domain), because the cookies are `SameSite=Lax`.
+  // Moving the API to an unrelated domain would stop the browser sending them
+  // and break authentication outright — it would need `SameSite=None` and a
+  // fresh look at CSRF, not a Bearer fallback bolted back on.
 }
 
 export const authService = new AuthService();

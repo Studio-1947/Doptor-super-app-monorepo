@@ -63,8 +63,35 @@ actually navigating anywhere, and `BottomNav` being a fully static tab list.
       It decodes rather than verifies (verifying would duplicate `JWT_SECRET` into the web
       container) and gates auth only, not roles (the payload carries none, and baking them
       in would delay role changes until token refresh). The API remains the boundary.
-      **Still open:** the token stays in `localStorage` for the Bearer fallback, so the XSS
-      exposure isn't closed yet — that removal is a separate follow-up needing a browser pass.
+      **Closed 2026-07-28** — see **S-1** below.
+
+- [x] **S-1** 🔴 ~~Auth tokens readable from JavaScript~~ — fixed 2026-07-28. From
+      2026-07-27 the API issued both tokens as httpOnly cookies, but the web app kept
+      storing copies in `localStorage` for the Bearer fallback, so the XSS exposure the
+      cookies were introduced to close **stayed wide open for a day**. This app renders
+      user-supplied names, document titles and task text; an injected script could read a
+      **7-day refresh token** straight out of storage — demonstrated, not theorised: the
+      new `e2e/token-storage.spec.ts` was run against the deployment before the fix and
+      dumped both tokens out of `localStorage` in its failure output.
+      The web app is now cookie-only. What that forced:
+      - **`isAuthenticated()` is gone.** It read `localStorage` synchronously, which is
+        exactly the readable credential being removed. `AuthContext` asks
+        `GET /auth/me` on boot; a 401 is the ordinary signed-out case, not an error.
+      - **The "no stored token, don't bother refreshing" guard is gone**, because the
+        client can no longer tell a signed-out visitor from an expired access token.
+        Both take one refresh attempt. It cannot loop: `/auth/refresh` is in
+        `AUTH_ENDPOINTS`, so its own 401 returns before triggering another refresh.
+      - **The refresh call now needs explicit `withCredentials`.** It uses bare `axios`
+        (so a 401 can't recurse through the interceptor), and the bare instance does
+        *not* inherit the setting — previously it passed the token in the body, so this
+        was invisible.
+      **The Bearer header is deliberately still accepted server-side.** Dropping it would
+      break the smoke suites, curl and the mobile app for no gain, since a caller that can
+      set headers was never the threat. Only the *browser* stopped using it.
+      **Constraint to remember:** the cookies are `SameSite=Lax`, so this depends on the
+      API being same-site with the web app. Moving the API to an unrelated registrable
+      domain would break authentication outright and needs `SameSite=None` plus a CSRF
+      review — not a Bearer fallback bolted back on.
 - **Verification caveat**: no browser-automation tool (Playwright/chromium-cli) was
   available in this environment, so this was verified via `tsc --noEmit` (clean),
   a live backend check of the one new runtime call (`GET /organisations/:id`, confirmed

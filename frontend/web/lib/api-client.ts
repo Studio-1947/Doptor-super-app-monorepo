@@ -18,26 +18,6 @@ const AUTH_ENDPOINTS = [
   "/auth/refresh",
 ];
 
-// Safe localStorage access
-const getStorageItem = (key: string) => {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return localStorage.getItem(key);
-  }
-  return null;
-};
-
-const setStorageItem = (key: string, value: string) => {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    localStorage.setItem(key, value);
-  }
-};
-
-const removeStorageItem = (key: string) => {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    localStorage.removeItem(key);
-  }
-};
-
 const isAuthEndpoint = (url?: string) =>
   !!url && AUTH_ENDPOINTS.some((endpoint) => url.startsWith(endpoint));
 
@@ -70,51 +50,35 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  // Sends the httpOnly auth cookies the API sets on login/refresh. The API
-  // accepts either those or the Bearer header below, so this is additive —
-  // nothing breaks if the cookie isn't present. CORS already replies with
-  // `credentials: true` (see backend `main.ts`).
+  // The credential. Both tokens are httpOnly cookies set by the API, so this is
+  // what authenticates every request — there is no Authorization header to add,
+  // and deliberately no readable token to add it from (see `auth.service.ts`).
+  // CORS already replies with `credentials: true` (backend `main.ts`).
   withCredentials: true,
 });
 
-// Request interceptor - Add auth token to requests
-//
-// The httpOnly cookie (see `withCredentials` above) is the primary credential.
-// This header is kept as the fallback for the transition: it still authenticates
-// a browser whose cookie was issued before `COOKIE_DOMAIN` was configured, and
-// it is what non-browser clients use.
-//
-// NOTE: while the token remains in localStorage this does **not** yet close the
-// XSS exposure — an injected script can still read it. Removing that storage is
-// a deliberate follow-up rather than part of this change, because it means
-// rewriting the boot check, the login flow and the refresh race handling below,
-// none of which can be verified without a real browser pass.
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = getStorageItem("access_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
-
 // A single in-flight refresh shared by everything that 401s at once, so N
 // concurrent failures produce one /auth/refresh call rather than N.
-let refreshPromise: Promise<string> | null = null;
+let refreshPromise: Promise<void> | null = null;
 
-const refreshAccessToken = (refreshToken: string): Promise<string> => {
+/**
+ * Mints a fresh access cookie from the refresh cookie.
+ *
+ * Sends no body — the refresh token is httpOnly, so the browser attaches it and
+ * this code could not read it to send even if it wanted to. Nothing is returned
+ * either: the new access token arrives as a `Set-Cookie`, and the retried
+ * request picks it up automatically.
+ *
+ * Uses bare `axios` rather than `apiClient` so a 401 here cannot recurse back
+ * through the response interceptor below. `withCredentials` therefore has to be
+ * set explicitly — the bare instance does not inherit it, which is a quiet way
+ * to send the request without any credential at all.
+ */
+const refreshSession = (): Promise<void> => {
   if (!refreshPromise) {
     refreshPromise = axios
-      .post(`${API_BASE_URL}/auth/refresh`, { refresh_token: refreshToken })
-      .then((response) => {
-        const { access_token } = response.data;
-        setStorageItem("access_token", access_token);
-        return access_token as string;
-      })
+      .post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true })
+      .then(() => undefined)
       .finally(() => {
         refreshPromise = null;
       });
@@ -136,34 +100,27 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // The request went out with no token at all, so nothing expired and
-      // there is nothing to refresh. This is a logged-out page making a call it
-      // shouldn't; AuthGuard already handles getting the user to /login via a
-      // soft navigation. Forcing a hard redirect here is what caused the
-      // reload loop on /login.
-      if (!getStorageItem("access_token")) {
-        return Promise.reject(error);
-      }
-
+      // There used to be a "no stored token, so don't bother refreshing" guard
+      // here. It cannot exist any more: the tokens are httpOnly, so this code
+      // cannot tell a signed-out visitor from an expired access token. Both now
+      // take the same path — attempt one refresh and find out.
+      //
+      // The cost is one extra request per signed-out page load, which is the
+      // right trade for not being able to read the credential. It cannot loop:
+      // /auth/refresh is an auth endpoint, so its own 401 returns above rather
+      // than triggering another refresh, and `redirectToLogin` no-ops on public
+      // routes — which is what made the old reload loop on /login possible.
       originalRequest._retry = true;
 
       try {
-        const refreshToken = getStorageItem("refresh_token");
-        if (!refreshToken) {
-          throw new Error("No refresh token available");
-        }
-
-        const accessToken = await refreshAccessToken(refreshToken);
-
-        // Retry the original request with new token
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        await refreshSession();
+        // No header to set: the refreshed access token is a cookie the browser
+        // now attaches to the retry by itself.
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // Refresh failed: the session is genuinely over. Clear tokens and send
-        // the user to login — unless they're already on a public page.
-        removeStorageItem("access_token");
-        removeStorageItem("refresh_token");
-
+        // Refresh failed, so the session is genuinely over. Nothing to clear —
+        // the API expires the cookies on a failed refresh, and there is no
+        // client-side copy left to go stale.
         redirectToLogin();
 
         return Promise.reject(refreshError);
