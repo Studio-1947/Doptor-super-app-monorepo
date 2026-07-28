@@ -12,7 +12,13 @@ import type { UserRole } from "@/services/auth.service";
 // This is navigation, not a security boundary: the backend's RBAC is what
 // actually enforces access to data.
 
-// Visiting a vertical's own dashboard root never requires a specific role.
+// The prefixes this module gates at all. A path under none of them is not our
+// business and is allowed through.
+//
+// `/admin` is not a vertical — it is the org-settings area — but it belongs in
+// this list, because the list doubles as "what is gated". Dropping it looks
+// tidier and silently opens every `/admin/*` route to every signed-in user,
+// since `isRouteAllowed` returns true for anything outside these prefixes.
 export const VERTICAL_ROOTS = [
   "/campus",
   "/office",
@@ -61,11 +67,18 @@ export function findVerticalRoot(pathname: string): string | undefined {
 
 export function isRouteAllowed(pathname: string, role: UserRole): boolean {
   const root = findVerticalRoot(pathname);
-  // Not a gated vertical, or the vertical's own dashboard.
-  if (!root || pathname === root) return true;
+  // Not a gated area at all.
+  if (!root) return true;
 
   const rule = ROUTE_ACCESS.find(({ prefix }) => matchesPrefix(pathname, prefix));
-  // A sub-route with no rule declared is open to anyone signed in.
+  // No rule declared for this path — open to anyone signed in.
+  //
+  // This is also what keeps the vertical dashboards open: no rule names
+  // `/campus`, `/office` or `/network` exactly, only their sub-routes, so they
+  // fall through here. `/admin` is the deliberate exception — its rule names
+  // the prefix itself, so the admin landing page is gated like everything
+  // beneath it. It previously escaped through a `pathname === root` shortcut
+  // here, which would have shown the admin hub to any signed-in staff member.
   if (!rule) return true;
 
   return rule.allowedRoles.includes(role);
