@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { isPublicRoute } from './lib/routes';
+import { isPublicRoute, NEXT_PARAM } from './lib/routes';
 
 /**
  * Server-side gating for unauthenticated requests.
@@ -76,8 +76,10 @@ export function middleware(request: NextRequest) {
 
     if (!authed && !isPublicRoute(pathname)) {
         const login = new URL('/login', request.url);
-        // Preserved so the user lands back where they were aiming.
-        login.searchParams.set('next', pathname + search);
+        // Preserved so the user lands back where they were aiming. The login
+        // page reads it back through `safeNextPath`, which is what stops this
+        // becoming an open redirect.
+        login.searchParams.set(NEXT_PARAM, pathname + search);
         return NextResponse.redirect(login);
     }
 

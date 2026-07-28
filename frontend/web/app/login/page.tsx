@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { safeNextPath } from '@/lib/routes';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
@@ -21,7 +22,10 @@ export default function LoginPage() {
 
         try {
             await login({ email, password });
-            router.push('/');
+            // Read at submit time off `window` rather than with `useSearchParams`,
+            // which would force this page into a Suspense boundary to keep the
+            // build statically renderable. The handler only ever runs client-side.
+            router.push(safeNextPath(window.location.search));
         } catch (err) {
             setError('Invalid email or password');
         }
