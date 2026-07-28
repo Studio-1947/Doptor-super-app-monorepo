@@ -18,7 +18,6 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
             { icon: FolderOpen, label: 'Documents', href: '/documents' },
             { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
-            { icon: MessageSquare, label: 'Communication', href: '/communication' },
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
             { icon: Settings, label: 'Settings', href: '/settings' },
         ],
@@ -27,7 +26,6 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
             { icon: FolderOpen, label: 'Documents', href: '/documents' },
             { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
-            { icon: MessageSquare, label: 'Communication', href: '/communication' },
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
             { icon: Settings, label: 'Settings', href: '/settings' },
         ],
@@ -36,7 +34,6 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
             { icon: FolderOpen, label: 'Documents', href: '/documents' },
             { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
-            { icon: MessageSquare, label: 'Communication', href: '/communication' },
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
             { icon: Settings, label: 'Settings', href: '/settings' },
         ],
@@ -44,14 +41,12 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
             { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
             { icon: FolderOpen, label: 'Documents', href: '/documents' },
-            { icon: MessageSquare, label: 'Communication', href: '/communication' },
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
             { icon: Settings, label: 'Settings', href: '/settings' },
         ],
         student: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
-            { icon: MessageSquare, label: 'Communication', href: '/communication' },
             { icon: Settings, label: 'Settings', href: '/settings' },
         ]
     },
@@ -100,25 +95,6 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
         ],
         student: []
     },
-    network: {
-        all: [],
-        super_admin: [
-            { icon: Globe2, label: 'Network Admin', href: '/network/admin' },
-        ],
-        org_admin: [
-            { icon: Globe2, label: 'Network Dashboard', href: '/network' },
-            { icon: Users, label: 'Volunteers', href: '/network/volunteers' },
-            { icon: MessageSquare, label: 'Campaigns', href: '/network/campaigns' },
-        ],
-        manager: [
-            { icon: Users, label: 'Local Group', href: '/network/group' },
-        ],
-        staff: [],
-        student: [
-            { icon: Globe2, label: 'Volunteer Feed', href: '/network/feed' },
-            { icon: CheckSquare, label: 'Opportunities', href: '/network/opportunities' },
-        ]
-    }
 };
 
 const adminMenus = [

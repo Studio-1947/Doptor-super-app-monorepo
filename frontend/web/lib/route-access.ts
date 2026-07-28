@@ -23,7 +23,6 @@ export const VERTICAL_ROOTS = [
   "/campus",
   "/office",
   "/admin",
-  "/network",
 ] as const;
 
 const ROUTE_ACCESS: Array<{ prefix: string; allowedRoles: UserRole[] }> = [
@@ -50,8 +49,6 @@ const ROUTE_ACCESS: Array<{ prefix: string; allowedRoles: UserRole[] }> = [
   // Admin (org-level settings/roles/departments — admins only)
   { prefix: "/admin", allowedRoles: ["super_admin", "org_admin"] },
 
-  // Network
-  { prefix: "/network/admin", allowedRoles: ["super_admin", "org_admin"] },
 ];
 
 // Longest prefix wins, so the rules above need not be declared in any
@@ -74,7 +71,7 @@ export function isRouteAllowed(pathname: string, role: UserRole): boolean {
   // No rule declared for this path — open to anyone signed in.
   //
   // This is also what keeps the vertical dashboards open: no rule names
-  // `/campus`, `/office` or `/network` exactly, only their sub-routes, so they
+  // `/campus` or `/office` exactly, only their sub-routes, so they
   // fall through here. `/admin` is the deliberate exception — its rule names
   // the prefix itself, so the admin landing page is gated like everything
   // beneath it. It previously escaped through a `pathname === root` shortcut

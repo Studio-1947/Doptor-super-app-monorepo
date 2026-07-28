@@ -34,14 +34,13 @@ function RegisterForm() {
     const [orgSlug, setOrgSlug] = useState('');
     const [enabledVerticals, setEnabledVerticals] = useState<string[]>(['core']);
 
-    // Only verticals that have a backend behind them. `network` was offered here
+    // Only verticals we currently sell. `network` was offered here
     // as "Volunteer management, Campaigns" while having no backend module at all,
     // so anyone selecting it bought a facade. See SHIPPABLE_VERTICALS in
     // contexts/VerticalContext.tsx, which is what also covers the organisations
     // that already selected it. Restore this entry when Network is real.
     const verticals = [
         { id: 'office', label: 'Office', description: 'File management, e-Dak, Registry', icon: Building2, color: 'text-blue-500', bg: 'bg-blue-50', border: 'border-blue-200' },
-        { id: 'campus', label: 'Campus', description: 'Student & Faculty management, Academics', icon: GraduationCap, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-200' },
     ];
 
     const toggleVertical = (id: string) => {
@@ -122,7 +121,7 @@ function RegisterForm() {
                         </h2>
                         <p className="text-blue-100/90 leading-relaxed">
                             {mode === 'create'
-                                ? 'Set up a workspace tailored to your needs. Enable the Office and Campus verticals to streamline your operations.'
+                                ? 'Set up a workspace tailored to your needs. Enable the Office vertical to streamline your operations.'
                                 : 'Collaborate with your team, manage workflows, and stay connected in one unified platform.'
                             }
                         </p>

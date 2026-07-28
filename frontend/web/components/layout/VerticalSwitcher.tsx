@@ -13,13 +13,12 @@ const VERTICAL_ICONS: Record<VerticalType, any> = {
     core: LayoutGrid,
     office: Building2,
     campus: GraduationCap,
-    network: Globe2,
 };
 
 export function VerticalSwitcher() {
     const { activeVertical, setActiveVertical, enabledVerticals } = useVertical();
 
-    const verticals = (['core', 'office', 'campus', 'network'] as VerticalType[]).map((id) => ({
+    const verticals = (['core', 'office', 'campus'] as VerticalType[]).map((id) => ({
         id,
         label: verticalTheme[id].label,
         icon: VERTICAL_ICONS[id],

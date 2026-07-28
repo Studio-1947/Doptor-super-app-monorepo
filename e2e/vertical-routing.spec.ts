@@ -56,20 +56,14 @@ test.describe('an org with office enabled', () => {
   });
 });
 
-test('an org with campus enabled can cold-load campus', async ({ page, request }) => {
-  const org = await registerOrg(request, 'vertcampus', ['campus']);
-  await login(page, org.email, org.password);
-
-  await page.goto('/campus');
-  await page.waitForLoadState('networkidle');
-
-  await expect(page).toHaveURL(/\/campus$/);
-});
-
-test('a vertical the org did NOT enable is still refused', async ({ page, request }) => {
-  // The redirect must keep working — the fix is "wait before deciding", not
-  // "stop deciding". An office-only org has no business on /campus.
-  const org = await registerOrg(request, 'vertrefuse', ['office']);
+test('a vertical the org cannot use is still refused', async ({ page, request }) => {
+  // The redirect must keep working — the M-21 fix was "wait before deciding",
+  // not "stop deciding", and this is the assertion that holds that line.
+  //
+  // `/campus` is the case to hand: Campus is disabled at SHIPPABLE_VERTICALS
+  // while Office is the only product being sold, so even an org that enabled it
+  // must be bounced. See unshipped-surfaces.spec.ts for the rest of that story.
+  const org = await registerOrg(request, 'vertrefuse', ['office', 'campus']);
   await login(page, org.email, org.password);
 
   await page.goto('/campus');

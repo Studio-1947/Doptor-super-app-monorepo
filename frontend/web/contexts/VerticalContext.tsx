@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from './AuthContext';
 import { organisationService, Organisation } from '../services/organisation.service';
 
-export type VerticalType = 'core' | 'office' | 'campus' | 'network';
+export type VerticalType = 'core' | 'office' | 'campus';
 
 export interface VerticalThemeTokens {
     label: string;
@@ -44,14 +44,6 @@ export const verticalTheme: Record<VerticalType, VerticalThemeTokens> = {
         activeBgClass: 'bg-emerald-50 dark:bg-emerald-900/20',
         borderClass: 'border-emerald-200 dark:border-emerald-800',
     },
-    network: {
-        label: 'Network',
-        accent: 'rose',
-        textClass: 'text-rose-600 dark:text-rose-400',
-        bgClass: 'bg-rose-50 dark:bg-rose-900/20',
-        activeBgClass: 'bg-rose-50 dark:bg-rose-900/20',
-        borderClass: 'border-rose-200 dark:border-rose-800',
-    },
 };
 
 interface VerticalContextType {
@@ -65,28 +57,30 @@ interface VerticalContextType {
 /**
  * The verticals that actually have a product behind them.
  *
- * `network` is deliberately absent. Its seven pages under `app/network/` are
- * entirely hardcoded and there is **no `network` module in the backend at all**
- * — not thin, absent. It was nonetheless offered on the signup form as
- * "Volunteer management, Campaigns", so an organisation could choose it and
- * receive a facade.
+ * This stays a whitelist rather than becoming `Object.keys(verticalTheme)`
+ * because `enabled_verticals` is stored per organisation and can name things
+ * this build no longer knows about. `network` is the live example: it was
+ * offered on the signup form as "Volunteer management, Campaigns" while having
+ * **no backend module at all**, and was deleted on 2026-07-28 (backlog M-18) —
+ * but every organisation that selected it still has `"network"` sitting in its
+ * row. This filter is what keeps that stale value from reaching the UI.
  *
- * Filtering here rather than only removing the signup option is what covers the
- * organisations that already selected it: `enabled_verticals` still says
- * `network` in their row, this drops it, the icon rail stops offering it, and
- * the redirect below bounces anyone who reaches `/network` by bookmark.
+ * Anything not listed here is dropped silently, which is the correct failure
+ * mode for a value that names a product we do not ship.
  *
- * The pages and theme tokens are intentionally left in the repo. Add `network`
- * back to this list the day it has a backend — that is the only change needed.
+ * `campus` is **disabled rather than deleted** (2026-07-28): Office is the only
+ * product being sold right now. Unlike `network`, Campus is real — a working
+ * org-scoped backend, exams/results, timetable, its own migrations — so its
+ * code, routes and tests all stay. Re-enabling it is adding one string back to
+ * this array; nothing else was removed.
  */
-const SHIPPABLE_VERTICALS: VerticalType[] = ['office', 'campus'];
+const SHIPPABLE_VERTICALS: VerticalType[] = ['office'];
 
 const VerticalContext = createContext<VerticalContextType | undefined>(undefined);
 
 function verticalFromPathname(pathname: string): VerticalType {
     if (pathname.startsWith('/office')) return 'office';
     if (pathname.startsWith('/campus')) return 'campus';
-    if (pathname.startsWith('/network')) return 'network';
     return 'core';
 }
 
