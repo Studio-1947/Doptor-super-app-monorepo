@@ -34,10 +34,6 @@ export default function FacultyPage() {
             description="Manage academic staff records, designations, and departmental assignments."
             moduleName="Campus"
             stats={stats}
-            primaryAction={{
-                label: "Add Faculty",
-                icon: Plus
-            }}
         >
             <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">

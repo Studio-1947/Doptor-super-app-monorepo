@@ -35,10 +35,6 @@ export default function NetworkAdminPage() {
             description="Manage volunteer roles, administrative permissions, and global community standards."
             moduleName="Network"
             stats={stats}
-            primaryAction={{
-                label: "Assign Admin Role",
-                icon: Plus
-            }}
         >
             <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">
