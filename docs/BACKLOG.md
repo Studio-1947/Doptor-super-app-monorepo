@@ -423,9 +423,20 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       `NotificationBell` in the app header. Verified end-to-end against a live DB (15
       checks). If a `notifications-mock.db.ts` still exists in the frontend, it is now
       dead — the bell uses the real `notifications.service.ts`.
-- [ ] **M-5** 🟡 `features/communication/CommunicationHub.tsx` also has mock-data
-      fallbacks layered on top of C-3 — now that C-3 is fixed, verify the frontend
-      actually calls the real endpoint end-to-end (mock removal + live test).
+- [x] **M-5** ~~`CommunicationHub` has mock-data fallbacks~~ — **closed 2026-07-28 by
+      removal. Chat is not a feature being given.** It was worse than this entry recorded:
+      `CURRENT_USER_ID = "user-uuid-placeholder"` was hardcoded and message history was
+      never fetched (the effect body was a comment), so the UI was non-functional rather
+      than merely mock-flavoured — while being linked in the sidebar for every role.
+      `app/communication/` and `features/communication/` are deleted, all five sidebar
+      entries removed, and `CommunicationModule` is **unregistered from `app.module.ts`**
+      so the WebSocket gateway no longer listens. The module, service and gateway files
+      remain in the tree unwired; re-registering brings chat back.
+      The `conversations`/`messages` tables are **left in place** — dropping them needs a
+      migration and is destructive, and they are empty. Note the gateway was security-
+      hardened in M-6 (handshake JWT verified, membership checks, CORS locked down), so
+      what is being retired is sound code for a product decision, not a liability.
+
 - [ ] **M-6** 🟡 `communication.gateway.ts` has no WebSocket authentication —
       `handleConnection` never verifies the socket's identity, and `sendMessage` trusts a
       client-supplied `payload.userId` instead of one derived from an authenticated
@@ -544,23 +555,22 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       specs because they all happened to target ungated routes. Regression coverage in
       `e2e/vertical-routing.spec.ts`, every case using a **cold** `page.goto`.
 
-- [ ] **M-18** 🔴 **The Network vertical has no backend at all.** Found 2026-07-28 by
-      sweeping every page for backend integration. There is no `network` module in
-      `backend/api/src/modules/` — not thin, *absent* — yet seven pages exist under
-      `app/network/`, all wired into the sidebar, and **the signup form offered it as a
-      product choice**: "Network — Volunteer management, Campaigns". An organisation
-      could select it at registration and receive an entirely fabricated product. This
-      was the most serious fabrication found: everything else was an internal page, this
-      was a sellable option.
-      **Mitigated 2026-07-28, not resolved.** `network` is removed from the signup picker
-      and from `SHIPPABLE_VERTICALS` in `contexts/VerticalContext.tsx`. Filtering there
-      rather than only at signup is what covers organisations that *already* selected it:
-      their `enabled_verticals` still says `network`, the context drops it, the icon rail
-      stops offering it, and the existing redirect bounces anyone reaching `/network` by
-      bookmark. The pages and theme tokens stay in the repo.
-      **Still open:** decide whether Network gets built (a milestone in its own right,
-      comparable to Office Phases 2–5) or is deleted. Adding `'network'` back to
-      `SHIPPABLE_VERTICALS` is the only change needed the day it has a backend.
+- [x] **M-18** ~~The Network vertical has no backend at all~~ — **closed 2026-07-28 by
+      deletion.** It was 363 lines of hardcoded UI with no `network` backend module, no
+      schema tables, and headline metrics like "Lives Impacted" and "Badges Issued" —
+      while being offered on the signup form as a product ("Volunteer management,
+      Campaigns"). Three of its seven pages were honest `ComingSoon` placeholders; the
+      other four invented everything.
+      Deleted rather than kept inert because **nothing was half-built, so nothing was
+      lost**: there was no foundation to continue from, git history preserves it exactly,
+      and if Network is ever built it should be designed against real requirements rather
+      than resurrected from a mockup. Removed: `app/network/`, the sidebar block, the
+      `network` theme tokens, the `VerticalType` member, the `/network` route-access
+      entries, and the signup option.
+      `SHIPPABLE_VERTICALS` in `VerticalContext.tsx` still filters the value, because
+      organisations that selected it keep `"network"` in their `enabled_verticals` row.
+      Covered by `e2e/unshipped-surfaces.spec.ts`, which asserts a **404** — deletion, not
+      the redirect it used to get.
 
 - [x] **M-19** ~~`/approvals` was fabricated and linked in the Office sidebar~~ — fixed
       2026-07-28. It hardcoded "Pending Approvals 42", "Approved Today 128", "Avg.
@@ -579,10 +589,27 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       dropped `with:` relation would blank the rows silently instead of erroring.
 
 - [ ] **M-20** 🟡 `/campus/faculty` and `/campus/students` are fabricated ("Dr. Sarah
-      Connor", "Publications 1,240", "Research Grants 12") **despite `GET /campus/faculty`
-      and `GET /campus/students` existing and being org-scoped since H-2.** Campus is
-      frozen, so this is recorded rather than fixed — but note the backend is ready, so
-      this is wiring, not a build, whenever campus thaws.
+      Connor", "Publications 1,240", "2,840 students", "Aarav Sharma") **despite
+      `GET /campus/faculty` and `GET /campus/students` existing, being org-scoped since
+      H-2, and `campusService.getFacultyList()`/`getStudentList()` already being written.**
+      This is roughly two hours of wiring, not a build.
+      **Parked as of 2026-07-28: Campus is disabled entirely** (see M-22), so these pages
+      are unreachable and the fabricated data is not user-visible. Do this at the same
+      time as re-enabling Campus, not before.
+
+- [x] **M-22** ~~Campus is still offered while only Office is being sold~~ — done
+      2026-07-28. Campus is **disabled, deliberately not deleted**: removed from
+      `SHIPPABLE_VERTICALS` and from the signup picker, so its routes redirect and no new
+      organisation can choose it.
+      The distinction from M-18 is the whole point. Network was a mockup — deleting it
+      cost nothing. **Campus is real**: an org-scoped backend, exams and results, the
+      timetable, its own migrations, and a cross-tenant leak already fixed in H-2.
+      Deleting it would have thrown away shipped, security-hardened work. Every page,
+      endpoint, service method and test stays exactly where it is.
+      **Re-enabling is adding `'campus'` back to one array** and restoring the signup
+      option. `e2e/unshipped-surfaces.spec.ts` asserts campus routes **redirect rather
+      than 404**, which is what would catch someone "cleaning up" by deleting it.
+
 
 - [x] **C-11** 🔴 ~~Cross-tenant privilege escalation in roles/users/organisations~~ —
       found and fixed 2026-07-27 during a full security review, **verified by live

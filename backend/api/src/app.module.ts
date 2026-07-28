@@ -14,12 +14,17 @@ import { DocumentsModule } from "./modules/documents/documents.module";
 import { AttendanceModule } from "./modules/attendance/attendance.module";
 import { FilesModule } from "./modules/files/files.module";
 import { CampusModule } from "./modules/campus/campus.module";
-import { CommunicationModule } from "./modules/communication/communication.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 
 import { AppController } from "./app.controller";
 
+// CommunicationModule (chat) is deliberately not registered — chat is not a
+// product we ship (backlog M-5, closed 2026-07-28 by removal). Its module,
+// service and WebSocket gateway remain in the tree but are unwired, so the
+// gateway no longer listens. The `conversations`/`messages` tables are left
+// in place: dropping them needs a migration and is destructive, and they are
+// empty. Re-register this module to bring chat back.
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -44,7 +49,6 @@ import { AppController } from "./app.controller";
     AttendanceModule,
     FilesModule,
     CampusModule,
-    CommunicationModule,
     AnalyticsModule,
     NotificationsModule,
   ],
