@@ -1,5 +1,5 @@
 import axios from "axios";
-import { isPublicRoute } from "./routes";
+import { isPublicRoute, loginPathFor } from "./routes";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -57,7 +57,11 @@ const redirectToLogin = () => {
 
   redirectingToLogin = true;
   // replace(), not href: the expired page should not sit in the back stack.
-  window.location.replace("/login");
+  // The current location rides along as `?next=` so that a session expiring
+  // mid-visit returns the user to the page they were on, not to `/`.
+  window.location.replace(
+    loginPathFor(window.location.pathname, window.location.search),
+  );
 };
 
 // Create axios instance with default config

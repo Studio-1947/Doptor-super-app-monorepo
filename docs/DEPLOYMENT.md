@@ -250,7 +250,17 @@ it requires a rebuild (`up -d --build`), not just a restart. Also update
 | `JWT_SECRET` / `JWT_REFRESH_SECRET` | *(openssl rand -base64 48)* | Auth |
 | `FRONTEND_URL` | `https://dev.doptor.in` | API CORS origin + email links |
 | `NEXT_PUBLIC_API_URL` | `https://api.dev.doptor.in` | **Baked into web at build time** |
+| `COOKIE_DOMAIN` | `.dev.doptor.in` | API — parent domain of *both* subdomains. **Set with `COOKIE_AUTH_ENABLED`** |
+| `COOKIE_AUTH_ENABLED` | `1` | Web — turns on `middleware.ts` route gating. **Set with `COOKIE_DOMAIN`** |
 | `EMAIL_*` | Gmail SMTP | Optional |
+
+> **The two `COOKIE_*` vars are a pair — set both or neither.** The API issues the
+> auth cookies with `Domain=$COOKIE_DOMAIN`; the Next.js middleware only sees them
+> when that domain is the parent of the web app's host too. `COOKIE_AUTH_ENABLED`
+> without `COOKIE_DOMAIN` would bounce every signed-in user to `/login`;
+> `COOKIE_DOMAIN` alone is harmless (auth works, gating stays quiet).
+> Unlike `NEXT_PUBLIC_API_URL`, `COOKIE_AUTH_ENABLED` is read at **runtime** —
+> `docker compose up -d web` picks it up, no rebuild needed (verified 2026-07-28).
 
 The API listens on port **5000** in production (set via `PORT` in the compose
 `api` service; must match the `proxy_pass` port in the nginx config).
