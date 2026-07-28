@@ -91,7 +91,7 @@ function verticalFromPathname(pathname: string): VerticalType {
 }
 
 export function VerticalProvider({ children }: { children: React.ReactNode }) {
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
 
@@ -100,6 +100,25 @@ export function VerticalProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // Wait for auth before concluding anything.
+        //
+        // `user` is null on mount while AuthContext fetches /auth/me. Without
+        // this branch that looked identical to "signed in, but the org has no
+        // verticals": the effect below fell through to `enabledVerticals =
+        // ['core']` *and cleared isLoading*, which unblocked the redirect at the
+        // bottom of this file and bounced the visitor to '/'.
+        //
+        // The effect was that a **fresh load of any /office or /campus URL
+        // redirected to the dashboard** — bookmarks, refreshes, deep links and
+        // anything opened in a new tab. Clicking through the app from '/' worked,
+        // because by then this provider had already resolved, which is why it
+        // survived so long unnoticed. It is not reachable from an API test and
+        // it is not a type error; it took driving a browser to see it.
+        if (authLoading) {
+            setIsLoading(true);
+            return;
+        }
+
         if (!user?.organisation_id) {
             setOrganisation(null);
             setEnabledVerticals(['core']);
@@ -133,7 +152,7 @@ export function VerticalProvider({ children }: { children: React.ReactNode }) {
         return () => {
             cancelled = true;
         };
-    }, [user?.organisation_id]);
+    }, [authLoading, user?.organisation_id]);
 
     const activeVertical = verticalFromPathname(pathname || '/');
 
