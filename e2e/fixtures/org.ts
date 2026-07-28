@@ -13,6 +13,8 @@ export interface SeededOrg {
   orgId: string;
   slug: string;
   orgName: string;
+  /** Bearer token for the founding Organisation Admin, for API-side setup. */
+  token: string;
 }
 
 /**
@@ -26,6 +28,7 @@ export interface SeededOrg {
 export async function registerOrg(
   request: APIRequestContext,
   tag: string,
+  verticals: string[] = ['office'],
 ): Promise<SeededOrg> {
   const uniq = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const email = `${tag}+${uniq}@verify.test`;
@@ -38,7 +41,7 @@ export async function registerOrg(
       slug,
       email,
       password: PASSWORD,
-      enabled_verticals: ['office'],
+      enabled_verticals: verticals,
     },
   });
 
@@ -46,9 +49,17 @@ export async function registerOrg(
     throw new Error(`register-organisation failed: ${res.status()} ${await res.text()}`);
   }
 
+  const body = await res.json();
   const orgId = sql(`select organisation_id from users where email = '${email}'`);
 
-  return { email, password: PASSWORD, orgId, slug, orgName };
+  return {
+    email,
+    password: PASSWORD,
+    orgId,
+    slug,
+    orgName,
+    token: body?.access_token ?? '',
+  };
 }
 
 /**

@@ -77,6 +77,8 @@ this at an environment holding real tenants.**
 |---|---|
 | `auth-redirect.spec.ts` | Signed-out redirect to `/login?next=`, signing in landing on the *intended* page, signed-in users bounced off `/login`, and open-redirect rejection for `//host`, `https://host` and `/\host` |
 | `admin-area.spec.ts` | `/admin` renders rather than 404s; roles/settings/departments show **this** organisation's real data and not the old fabricated values; creating a department works (onboarding depends on it); a denied user lands somewhere real and stays there |
+| `approvals.spec.ts` | A document submitted over the API appears on `/approvals`, approving it from the UI moves it, and the API agrees afterwards — so the UI is not merely hiding the row. An empty queue says so rather than inventing five requests |
+| `network-vertical.spec.ts` | An organisation that **already** enabled Network is redirected off `/network` and its sub-pages, Network is gone from the switcher, and signup no longer offers it. The redirect is client-side, so a curl sees 200 and the page HTML — this is only observable in a browser |
 
 The fabrication assertions are deliberately written as *"the real value is present **and**
 the invented one is absent"*. Asserting only the real value would pass against a page
