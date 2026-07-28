@@ -30,15 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadUser();
     }, []);
 
+    // The session lives in httpOnly cookies, so there is nothing readable to
+    // check before asking. The server is the only thing that knows, and this is
+    // how we ask it.
+    //
+    // A 401 here is the ordinary signed-out case — every visitor to /login hits
+    // it — so it is not logged as an error. It used to be guarded by a
+    // synchronous `isAuthenticated()` reading localStorage, which is exactly the
+    // readable credential that has been removed.
     const loadUser = async () => {
         try {
-            if (authService.isAuthenticated()) {
-                const currentUser = await authService.getCurrentUser();
-                setUser(currentUser);
-            }
-        } catch (error) {
-            console.error('Failed to load user:', error);
-            authService.clearTokens();
+            const currentUser = await authService.getCurrentUser();
+            setUser(currentUser);
+        } catch {
+            setUser(null);
         } finally {
             setIsLoading(false);
         }
@@ -47,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (credentials: LoginCredentials) => {
         try {
             const response = await authService.login(credentials);
-            authService.setTokens(response.access_token, response.refresh_token);
             setUser(response.user);
         } catch (error) {
             console.error('Login failed:', error);
@@ -58,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const register = async (data: RegisterData) => {
         try {
             const response = await authService.register(data);
-            authService.setTokens(response.access_token, response.refresh_token);
             setUser(response.user);
         } catch (error) {
             console.error('Registration failed:', error);
@@ -69,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const registerOrganisation = async (data: RegisterOrganisationData) => {
         try {
             const response = await authService.registerOrganisation(data);
-            authService.setTokens(response.access_token, response.refresh_token);
             setUser(response.user);
         } catch (error) {
             console.error('Organisation Registration failed:', error);
@@ -80,7 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const acceptInvite = async (token: string, password: string, firstName?: string, lastName?: string) => {
         try {
             const response = await authService.acceptInvite(token, password, firstName, lastName);
-            authService.setTokens(response.access_token, response.refresh_token);
             setUser(response.user);
         } catch (error) {
             console.error('Accept invite failed:', error);
@@ -94,7 +95,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch (error) {
             console.error('Logout failed:', error);
         } finally {
-            authService.clearTokens();
             setUser(null);
         }
     };
