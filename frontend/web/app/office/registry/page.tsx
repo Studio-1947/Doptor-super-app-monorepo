@@ -22,16 +22,22 @@ export default function RegistryPage() {
     // Stats are org-wide, so they come from /files/analytics rather than being
     // counted off the current page — otherwise they'd only describe one page.
     const [analytics, setAnalytics] = useState<FileAnalytics | null>(null);
+    // Server-side search: `GET /files/registry` has taken a `search` param since
+    // backlog M-8, and M-9 made it case-insensitive and escaped `%`/`_`/`\` in
+    // the input. None of that was ever reachable — this page described itself as
+    // a "searchable ledger" while the only search box on screen belonged to the
+    // shell and did nothing at all (M-17).
+    const [search, setSearch] = useState('');
 
     useEffect(() => {
         filesService
-            .getRegistry({ page })
+            .getRegistry({ page, search: search || undefined })
             .then((res) => {
                 setFiles(res.data);
                 setTotalPages(res.totalPages);
             })
             .catch(() => setFiles([]));
-    }, [page]);
+    }, [page, search]);
 
     useEffect(() => {
         filesService.getAnalytics().then(setAnalytics).catch(() => setAnalytics(null));
@@ -54,6 +60,13 @@ export default function RegistryPage() {
             description="Organisation-wide searchable ledger of every file (e-Dak) initiated across departments."
             moduleName="Office"
             stats={stats}
+            searchPlaceholder="Search by subject or file number..."
+            onSearch={(q) => {
+                // Back to page 1: staying on page 4 of the old result set would
+                // show an empty table for a search that has matches.
+                setPage(1);
+                setSearch(q);
+            }}
         >
             <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">

@@ -42,10 +42,6 @@ export default function NetworkDashboard() {
             description="Global visualization of social impact, volunteer engagement, and community outreach initiatives."
             moduleName="Network"
             stats={stats}
-            primaryAction={{
-                label: "Launch Initiative",
-                icon: HandHelping
-            }}
         >
             <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">

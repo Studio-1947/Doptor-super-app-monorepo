@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@doptor/shared';
-import { Download, BarChart3, ShieldCheck, Award, Users } from 'lucide-react';
+import { BarChart3, ShieldCheck, Award, Users } from 'lucide-react';
 import { ReadyUI } from '@/components/ReadyUI';
 import { campusService, ResultRow, ResultsSummaryResponse } from '@/services/campus.service';
 
@@ -32,7 +32,6 @@ export default function CampusResultsPage() {
       title="Exam Results"
       description="Track grade publication status and review performance across your campus."
       moduleName="Campus"
-      primaryAction={{ label: 'Download Summary', icon: Download }}
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

@@ -37,10 +37,6 @@ export default function StudentsPage() {
             description="Manage student records, academic progress, and institutional enrollment."
             moduleName="Campus"
             stats={stats}
-            primaryAction={{
-                label: "Enroll Student",
-                icon: UserPlus
-            }}
         >
             <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">

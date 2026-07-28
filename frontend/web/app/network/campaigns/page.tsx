@@ -35,10 +35,6 @@ export default function CampaignsPage() {
             description="Launch, track, and optimize network outreach campaigns and volunteer activities."
             moduleName="Network"
             stats={stats}
-            primaryAction={{
-                label: "Create Campaign",
-                icon: Plus
-            }}
         >
             <div className="w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">

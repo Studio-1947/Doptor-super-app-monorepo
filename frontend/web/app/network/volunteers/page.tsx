@@ -1,7 +1,7 @@
 "use client";
 
 import { ReadyUI } from '@/components/ReadyUI';
-import { Heart, Activity, Award, Clock, UserPlus, Mail, MapPin } from 'lucide-react';
+import { Heart, Activity, Award, Clock, Mail, MapPin } from 'lucide-react';
 
 export default function VolunteersPage() {
     const stats = [
@@ -26,10 +26,6 @@ export default function VolunteersPage() {
             description="Manage and track volunteer activities across your network."
             moduleName="Network"
             stats={stats}
-            primaryAction={{
-                label: "Add Volunteer",
-                icon: UserPlus
-            }}
         >
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
                 {volunteers.map((vol) => (
