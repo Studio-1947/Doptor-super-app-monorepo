@@ -64,12 +64,14 @@ export const tasks = pgTable(
      * (e.g. FIN-12). `number` is claimed by atomically incrementing
      * `departments.task_seq` inside the create transaction.
      *
-     * Both are nullable to satisfy the deploy constraint (no NOT NULL column
-     * added to a populated table under `drizzle-kit push:pg`). The service
-     * layer requires `department_id` on create, so new rows always have both;
-     * tighten to NOT NULL once existing rows are backfilled.
+     * `department_id` is NOT NULL as of migration 0016 — every task belongs to a
+     * department, because the department is what supplies the reference number.
+     * `number` stays nullable: it is claimed inside the create transaction and
+     * rows predating the reference scheme legitimately have none.
      */
-    department_id: uuid("department_id").references(() => departments.id),
+    department_id: uuid("department_id")
+      .references(() => departments.id)
+      .notNull(),
     number: integer("number"),
 
     parent_task_id: uuid("parent_task_id").references(
@@ -80,21 +82,6 @@ export const tasks = pgTable(
     completed_at: timestamp("completed_at"),
     is_archived: boolean("is_archived").default(false).notNull(),
 
-    /**
-     * @deprecated Superseded by `labels` / `task_labels` (Decision B). Kept so
-     * existing values can be migrated into labels by `migrate-task-tags.ts`
-     * before the column is dropped — removing it here would make
-     * `drizzle-kit push:pg` drop live data in the same step that adds the
-     * replacement.
-     */
-    tags: jsonb("tags").$type<string[]>().default([]),
-
-    /**
-     * Superseded by the `task_assignees` join table (a task can have many
-     * assignees). Kept so the column can be backfilled and dropped in a
-     * follow-up rather than lost in the same migration that adds the table.
-     */
-    assigned_to: uuid("assigned_to").references(() => users.id),
     created_by: uuid("created_by").references(() => users.id),
     organisation_id: uuid("organisation_id")
       .references(() => organisations.id)

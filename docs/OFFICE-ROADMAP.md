@@ -176,8 +176,11 @@ documented deviation (Decision C values — see below).
 - [ ] List/Table view (the board is the only view; the old mock List was deleted).
 - [ ] Task attachments UI — the `task_attachments` table and its file/link invariant exist,
       but nothing writes to it yet. Reuse the Phase 1 upload machinery from `files`.
-- [ ] Backfill + drop the deprecated `tasks.tags` and `tasks.assigned_to` columns, then
-      tighten `department_id` to NOT NULL.
+- [x] ~~Backfill + drop the deprecated `tasks.tags` and `tasks.assigned_to` columns, then
+      tighten `department_id` to NOT NULL.~~ — done 2026-07-28, migration `0016`. Note it
+      **runs after its code deploys**, unlike every other migration here; see the deploy
+      section. The `assigned_to` *filter* had already moved to `task_assignees` long ago —
+      only the column, its drizzle declaration and an unused `assignee` relation remained.
 - [ ] Add the `task_attachments` file-or-link CHECK constraint once drizzle-orm is
       upgraded (0.29 has no `check()` helper; the invariant is enforced in the service).
 
@@ -440,6 +443,42 @@ defaults as the enum type.
 | `0013_awesome_nomad` | `push:pg` or psql | `notifications` (additive). |
 | `0014_hr_attendance` | `push:pg` or psql | HR attendance tables (additive). Hand-written — drizzle-kit couldn't run here (missing esbuild). |
 | `0015_documents_workflow` | `push:pg` or psql | Documents approval columns + `document_status` enum; relaxes `documents.url` to nullable (additive). Hand-written. |
+| `0016_retire_task_tags_and_assigned_to` | **direct psql, AFTER the code deploys** | **Destructive — reverses the usual order. See below.** |
+
+### ⚠️ Migration `0016` runs *after* its code, not before
+
+Every other migration here is additive, so the rule is "migrate first, then deploy".
+`0016` **drops** `tasks.tags` and `tasks.assigned_to`, and Drizzle enumerates every column
+declared in the schema on each select — so dropping them while the running API still
+declares them makes **every task query fail** with `column does not exist`.
+
+1. Deploy the code that removes them from `task.schema.ts` and `relations.ts`.
+2. **Then** apply `0016`.
+
+Between the two steps the columns sit unused, which is harmless.
+
+The file backfills before it drops: `assigned_to` into `task_assignees`, and `tags` into
+`labels` + `task_labels` (deduped per organisation, since `labels` has no unique constraint
+on `(organisation_id, name)`). It then sets `department_id` NOT NULL.
+
+There is deliberately **no backfill for `department_id`** — choosing a department for
+someone else's task would mint a task reference number, and that reference is user-visible
+and permanent. Instead the migration **refuses to run** and names the offending rows:
+
+```
+ERROR: Cannot set tasks.department_id NOT NULL: 1 task(s) have no department.
+       Assign them first — list them with:
+       SELECT id, title, organisation_id FROM tasks WHERE department_id IS NULL;
+```
+
+**Validated on a scratch database before release** (2026-07-28), because the dev database
+has *zero* rows using either column and so exercises none of the backfill. A fixture
+covering a task with an assignee and two tags, a second task sharing one tag, and a task
+already present in `task_assignees` produced: 1 assignee row backfilled, the pre-existing
+one **not** duplicated, 2 labels from 3 tag occurrences, 3 `task_labels` links, both
+columns dropped, `department_id` NOT NULL. A separate run against a database holding a
+task with no department failed with the message above **and rolled back** — both columns
+still present afterwards.
 
 Then, **after** the code is deployed, run once per environment:
 ```
