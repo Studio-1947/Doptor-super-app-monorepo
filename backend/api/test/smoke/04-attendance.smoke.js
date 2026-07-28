@@ -117,6 +117,21 @@ const year = new Date().getUTCFullYear();
   check('admin sees pending request in queue', (queue.data || []).some(r => r.id === requestId),
     `count ${(queue.data||[]).length}`);
 
+  // The /approvals page renders each row as "<member> · <type> · <n days> ·
+  // <range>", all of it from relations on this response. A service change that
+  // dropped a `with:` relation would blank those lines silently rather than
+  // erroring, so the shape is pinned here.
+  const queued = (queue.data || []).find(r => r.id === requestId);
+  check('queue row carries the requesting user (approvals page renders the name)',
+    Boolean(queued && queued.user && (queued.user.first_name || queued.user.email)),
+    JSON.stringify(queued && queued.user));
+  check('queue row carries the leave type',
+    Boolean(queued && queued.leaveType && typeof queued.leaveType.name === 'string'),
+    JSON.stringify(queued && queued.leaveType));
+  check('queue row carries days and the date range',
+    Boolean(queued && typeof queued.days === 'number' && queued.start_date && queued.end_date),
+    JSON.stringify(queued && { days: queued.days, start: queued.start_date, end: queued.end_date }));
+
   // approve -> balance used increments
   const approve = await req('POST', `/attendance/leave/requests/${requestId}/approve`, {
     token: ownerToken, body: { note: 'ok' },

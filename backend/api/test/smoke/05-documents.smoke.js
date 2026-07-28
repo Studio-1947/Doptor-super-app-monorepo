@@ -57,6 +57,21 @@ const uniq = Date.now();
   const submit = await req("POST", `/documents/${docId}/submit`, { token: ownerToken });
   check("submit moves draft to pending_review", submit.data?.status === "pending_review", `got ${submit.data?.status}`);
 
+  // The /approvals page lists this queue and renders each row as
+  // "<name>" over "<uploader> · <category> · <submitted date>". All three of
+  // those come off this response, and a dropped `with:` relation would blank
+  // them silently instead of erroring, so the shape is pinned here.
+  const reviewQueue = await req("GET", "/documents?status=pending_review", { token: ownerToken });
+  const queuedDoc = (reviewQueue.data || []).find((d) => d.id === docId);
+  check("pending-review queue returns the submitted document", Boolean(queuedDoc),
+    `count ${(reviewQueue.data || []).length}`);
+  check("queue row carries the uploader (approvals page renders the name)",
+    Boolean(queuedDoc && queuedDoc.uploadedBy && (queuedDoc.uploadedBy.first_name || queuedDoc.uploadedBy.email)),
+    JSON.stringify(queuedDoc && queuedDoc.uploadedBy));
+  check("queue row carries submitted_at and category",
+    Boolean(queuedDoc && queuedDoc.submitted_at && queuedDoc.category === "HR"),
+    JSON.stringify(queuedDoc && { submitted_at: queuedDoc.submitted_at, category: queuedDoc.category }));
+
   // staff cannot approve (no workflows:approve)
   const staffApprove = await req("POST", `/documents/${docId}/approve`, { token: staffToken });
   check("staff cannot approve (403 — no workflows:approve)", staffApprove.status === 403, `status ${staffApprove.status}`);
