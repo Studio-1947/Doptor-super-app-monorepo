@@ -59,6 +59,24 @@ export interface LeaveRequest {
 }
 
 /** Browser geolocation, resolved to undefined coords if unavailable/denied. */
+export interface Holiday {
+  id: string;
+  organisation_id: string;
+  /** YYYY-MM-DD. */
+  date: string;
+  name: string;
+  created_at: string;
+}
+
+export interface WorkingDaysPreview {
+  start_date: string;
+  end_date: string;
+  /** Weekdays in range, minus any holidays. This is what leave will cost. */
+  days: number;
+  /** The holiday dates that were excluded, so the UI can explain the number. */
+  holidays: string[];
+}
+
 async function getCoords(): Promise<{ lat?: number; lng?: number }> {
   if (typeof navigator === "undefined" || !navigator.geolocation) return {};
   return new Promise((resolve) => {
@@ -187,6 +205,36 @@ class AttendanceService {
     const response = await apiClient.post(
       `/attendance/leave/requests/${id}/cancel`,
     );
+    return response.data;
+  }
+
+  // --- Holidays ---
+
+  async listHolidays(year?: number): Promise<Holiday[]> {
+    const response = await apiClient.get("/attendance/holidays", {
+      params: { year },
+    });
+    return response.data;
+  }
+
+  async createHoliday(data: { date: string; name: string }): Promise<Holiday> {
+    const response = await apiClient.post("/attendance/holidays", data);
+    return response.data;
+  }
+
+  async deleteHoliday(id: string): Promise<void> {
+    await apiClient.delete(`/attendance/holidays/${id}`);
+  }
+
+  /**
+   * Server-side working-day count for a range. Used by the leave form so the
+   * number shown before submitting is the same one the server will charge —
+   * counting Mon–Fri client-side would disagree wherever a holiday falls.
+   */
+  async workingDays(start: string, end: string): Promise<WorkingDaysPreview> {
+    const response = await apiClient.get("/attendance/holidays/working-days", {
+      params: { start, end },
+    });
     return response.data;
   }
 }

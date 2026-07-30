@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
   Request,
+  BadRequestException,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -22,6 +23,7 @@ import {
   AllocateBalanceDto,
   SubmitLeaveRequestDto,
   ReviewLeaveRequestDto,
+  CreateHolidayDto,
 } from "./dto";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { PermissionsGuard } from "../../common/guards/permissions.guard";
@@ -37,7 +39,10 @@ import { Permissions } from "../../common/decorators/permissions.decorator";
  *
  * Administrative actions are gated:
  *   - `approve:attendance` — approve/reject leave, org-wide attendance + queue.
- *   - `update:attendance`  — manage leave types and allocate balances.
+ *   - `update:attendance`  — manage leave types and holidays, allocate balances.
+ *
+ * Reading the holiday calendar is deliberately ungated: a member cannot make
+ * sense of their own leave-day count without knowing which days are holidays.
  */
 @ApiTags("Attendance & Leave")
 @ApiBearerAuth()
@@ -106,6 +111,56 @@ export class AttendanceController {
   @ApiOperation({ summary: "Delete a leave type (admin)" })
   deleteLeaveType(@Param("id") id: string, @Request() req) {
     return this.attendance.deleteLeaveType(id, req.user.organisation_id);
+  }
+
+  // --------------------------------------------------------------- holidays
+  // Reading holidays is JWT-only, like `leave-types`: every member needs to see
+  // which days are non-working to understand their own leave count. Writing is
+  // admin-only, on the same `update:attendance` permission as leave types.
+
+  @Get("holidays")
+  @ApiOperation({ summary: "List the org's public holidays" })
+  @ApiQuery({ name: "year", required: false, type: Number })
+  listHolidays(@Request() req, @Query("year") year?: string) {
+    return this.attendance.listHolidays(
+      req.user.organisation_id,
+      year ? parseInt(year, 10) : undefined,
+    );
+  }
+
+  @Get("holidays/working-days")
+  @ApiOperation({
+    summary: "Working days in a range, excluding weekends and holidays",
+  })
+  @ApiQuery({ name: "start", required: true })
+  @ApiQuery({ name: "end", required: true })
+  previewWorkingDays(
+    @Request() req,
+    @Query("start") start: string,
+    @Query("end") end: string,
+  ) {
+    if (!start || !end) {
+      throw new BadRequestException("start and end are both required");
+    }
+    return this.attendance.previewWorkingDays(
+      req.user.organisation_id,
+      start,
+      end,
+    );
+  }
+
+  @Post("holidays")
+  @Permissions("update:attendance")
+  @ApiOperation({ summary: "Add a public holiday (admin)" })
+  createHoliday(@Body() body: CreateHolidayDto, @Request() req) {
+    return this.attendance.createHoliday(req.user.organisation_id, body);
+  }
+
+  @Delete("holidays/:id")
+  @Permissions("update:attendance")
+  @ApiOperation({ summary: "Remove a public holiday (admin)" })
+  deleteHoliday(@Param("id") id: string, @Request() req) {
+    return this.attendance.deleteHoliday(id, req.user.organisation_id);
   }
 
   // -------------------------------------------------------- leave balances

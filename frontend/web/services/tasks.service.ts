@@ -42,6 +42,32 @@ export interface TaskAuditEntry {
   created_at: string;
 }
 
+/**
+ * An attachment is either an uploaded file or an external link, never both —
+ * `kind` says which, and the other set of fields is null. The API enforces this
+ * with separate endpoints plus a CHECK constraint; treat `kind` as the
+ * discriminator and don't infer it from which fields happen to be populated.
+ */
+export interface TaskAttachment {
+  id: string;
+  task_id: string;
+  kind: "file" | "link";
+
+  /** kind = "link" */
+  url: string | null;
+
+  /** kind = "file" */
+  original_name: string | null;
+  stored_name: string | null;
+  mime_type: string | null;
+  size_bytes: number | null;
+
+  label: string | null;
+  uploaded_by: string;
+  uploadedBy?: TaskUser | null;
+  created_at: string;
+}
+
 export interface TaskDepartment {
   id: string;
   name: string;
@@ -240,6 +266,71 @@ class TasksService {
 
   async deleteComment(commentId: string): Promise<void> {
     await apiClient.delete(`/tasks/comments/${commentId}`);
+  }
+
+  // --- Attachments ---
+
+  async listAttachments(id: string): Promise<TaskAttachment[]> {
+    const response = await apiClient.get(`/tasks/${id}/attachments`);
+    return response.data;
+  }
+
+  async addLinkAttachment(
+    id: string,
+    url: string,
+    label?: string,
+  ): Promise<TaskAttachment> {
+    const response = await apiClient.post(`/tasks/${id}/attachments/link`, {
+      url,
+      label,
+    });
+    return response.data;
+  }
+
+  async uploadAttachment(
+    id: string,
+    file: File,
+    label?: string,
+  ): Promise<TaskAttachment> {
+    const form = new FormData();
+    form.append("file", file);
+    if (label) form.append("label", label);
+    // Content-Type is deliberately not set: the browser must add the multipart
+    // boundary itself, and an explicit header would omit it.
+    const response = await apiClient.post(
+      `/tasks/${id}/attachments/upload`,
+      form,
+    );
+    return response.data;
+  }
+
+  async deleteAttachment(attachmentId: string): Promise<void> {
+    await apiClient.delete(`/tasks/attachments/${attachmentId}`);
+  }
+
+  /**
+   * Blob download, matching `filesService.downloadAttachment` and
+   * `documentsService.download`. Deliberately not a plain anchor to the API
+   * URL: that would depend on cookie auth being enabled and on the cookie being
+   * visible cross-subdomain, whereas going through apiClient works on both the
+   * cookie and Bearer paths and keeps the refresh interceptor in play.
+   */
+  async downloadAttachment(
+    attachmentId: string,
+    filename: string,
+  ): Promise<void> {
+    const response = await apiClient.get(
+      `/tasks/attachments/${attachmentId}/download`,
+      { responseType: "blob" },
+    );
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   }
 }
 

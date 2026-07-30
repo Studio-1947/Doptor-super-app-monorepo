@@ -437,10 +437,18 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       hardened in M-6 (handshake JWT verified, membership checks, CORS locked down), so
       what is being retired is sound code for a product decision, not a liability.
 
-- [ ] **M-6** 🟡 `communication.gateway.ts` has no WebSocket authentication —
-      `handleConnection` never verifies the socket's identity, and `sendMessage` trusts a
-      client-supplied `payload.userId` instead of one derived from an authenticated
-      session, so any connected client can send messages impersonating any user.
+- [ ] **M-6** 🟡➡️⚪ **Inert as of 2026-07-28 — reclassified 2026-07-29 from "security gap"
+      to "dead code to delete".** The defect is real and unfixed: `handleConnection` never
+      verifies the socket's identity, and `sendMessage` trusts a client-supplied
+      `payload.userId` rather than an authenticated session, so any connected client could
+      impersonate any user. **But the gateway never instantiates** — `CommunicationModule` is
+      deliberately unregistered in `app.module.ts` (chat was removed when the product went
+      Office-only), so there is no socket server listening and no exposure.
+      **Do not "fix" this — delete it.** The whole `modules/communication/` tree (gateway,
+      controller, service, module) is unreachable code carrying a known auth hole; keeping it
+      risks someone re-registering the module and reopening the vulnerability for real. If
+      chat ever returns, port the tracker's gateway-auth-in-middleware approach rather than
+      reviving this. The `communication` DB schema is untouched by this (drop separately).
 - [ ] **M-10** 🟡 Found 2026-07-03 while testing H-1: `POST /campus/classes` doesn't
       exist on the backend at all (404) despite the frontend's `CreateClassDialog.tsx`
       calling it — "Create Class" has never worked. Also the dialog only collects
@@ -652,8 +660,11 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       2026-07-28, only `src/common/guards/` exists. `src/modules/auth/guards/` is gone.
 - [x] **L-3** ~~Reconcile duplicate `audit.schema.ts` / `audit-log.schema.ts`~~ — **stale
       entry**; checked 2026-07-28, only `audit-log.schema.ts` exists.
-- [ ] **L-4** 🔵 Confirm `features/office/*` vs `features/verticals/office/*` duplicate
-      component trees noted in the prior audit are resolved or dead-code one of them.
+- [x] **L-4** ~~Confirm `features/office/*` vs `features/verticals/office/*` duplicate
+      component trees noted in the prior audit are resolved or dead-code one of them.~~ —
+      **resolved; verified 2026-07-29.** `features/verticals/` does not exist; only
+      `features/office/*` remains. (Office roadmap Phase 6 already recorded this; the box
+      here was simply never ticked.)
 
 ---
 

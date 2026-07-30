@@ -185,8 +185,9 @@ documented deviation (Decision C values — see below).
       upgraded (0.29 has no `check()` helper; the invariant is enforced in the service).
 
 - **Exit:** a task has a ref, multiple assignees, labels, comments, subtasks, and a full audit
-      trail — all org-scoped and permission-gated. **Code complete; not yet verified against a
-      live database.**
+      trail — all org-scoped and permission-gated. ✅ **Verified against a live database
+      2026-07-24** — see the Verification section below. (This line previously still read
+      "not yet verified", contradicting that section; corrected 2026-07-29.)
 
 ### Phase 2.5 — Standard office roles at onboarding ✅ done 2026-07-24
 

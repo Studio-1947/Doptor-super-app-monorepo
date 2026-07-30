@@ -12,7 +12,10 @@ import {
     LeaveBalance,
     LeaveRequest,
     LeaveType,
+    WorkingDaysPreview,
 } from "@/services/attendance.service";
+import { AttendanceCalendar } from "@/features/attendance/AttendanceCalendar";
+import { AttendanceAdmin } from "@/features/attendance/AttendanceAdmin";
 import { displayName, formatDate } from "@/lib/display";
 
 const statusChip: Record<string, string> = {
@@ -32,13 +35,15 @@ function fmtTime(iso: string | null): string {
 export default function AttendancePage() {
     const { hasPermission } = useAuth();
     const canApprove = hasPermission("approve", "attendance");
+    const canManage = hasPermission("update", "attendance");
 
     const [today, setToday] = useState<AttendanceRecord | null>(null);
     const [balances, setBalances] = useState<LeaveBalance[]>([]);
     const [myLeave, setMyLeave] = useState<LeaveRequest[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
     const [queue, setQueue] = useState<LeaveRequest[]>([]);
-    const [tab, setTab] = useState<"mine" | "approvals">("mine");
+    const [tab, setTab] = useState<"mine" | "calendar" | "approvals" | "manage">("mine");
+    const [preview, setPreview] = useState<WorkingDaysPreview | null>(null);
     const [punching, setPunching] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -66,6 +71,24 @@ export default function AttendancePage() {
         Promise.resolve().then(loadMine).finally(() => setLoading(false));
         loadQueue();
     }, [loadMine, loadQueue]);
+
+    /**
+     * Ask the server what the range actually costs rather than counting Mon–Fri
+     * here. Counting client-side would ignore the org's holidays and quote a
+     * number the server then disagrees with at submit time.
+     */
+    useEffect(() => {
+        if (!formStart || !formEnd || formEnd < formStart) {
+            setPreview(null);
+            return;
+        }
+        let cancelled = false;
+        attendanceService
+            .workingDays(formStart, formEnd)
+            .then((p) => { if (!cancelled) setPreview(p); })
+            .catch(() => { if (!cancelled) setPreview(null); });
+        return () => { cancelled = true; };
+    }, [formStart, formEnd]);
 
     const punch = async (dir: "in" | "out") => {
         setPunching(true);
@@ -197,17 +220,23 @@ export default function AttendancePage() {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-slate-200 dark:border-slate-800">
+            <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
                 <button
                     onClick={() => setTab("mine")}
-                    className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 ${tab === "mine" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                    className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 whitespace-nowrap ${tab === "mine" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
                 >
                     My Leave
+                </button>
+                <button
+                    onClick={() => setTab("calendar")}
+                    className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 whitespace-nowrap ${tab === "calendar" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                >
+                    Calendar
                 </button>
                 {canApprove && (
                     <button
                         onClick={() => setTab("approvals")}
-                        className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 inline-flex items-center gap-2 ${tab === "approvals" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                        className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 inline-flex items-center gap-2 whitespace-nowrap ${tab === "approvals" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
                     >
                         Approvals
                         {queue.length > 0 && (
@@ -215,10 +244,22 @@ export default function AttendancePage() {
                         )}
                     </button>
                 )}
+                {canManage && (
+                    <button
+                        onClick={() => setTab("manage")}
+                        className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 whitespace-nowrap ${tab === "manage" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                    >
+                        Manage
+                    </button>
+                )}
             </div>
 
             {loading ? (
                 <div className="flex justify-center py-10"><Loader2 className="animate-spin text-slate-400" size={24} /></div>
+            ) : tab === "calendar" ? (
+                <AttendanceCalendar />
+            ) : tab === "manage" ? (
+                <AttendanceAdmin />
             ) : tab === "mine" ? (
                 <div className="space-y-3">
                     <div className="flex justify-end">
@@ -254,6 +295,21 @@ export default function AttendancePage() {
                             </div>
                             <input value={formReason} onChange={(e) => setFormReason(e.target.value)} placeholder="Reason (optional)"
                                 className="sm:col-span-2 w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800" />
+
+                            {preview && (
+                                <p className="sm:col-span-2 text-xs text-slate-500">
+                                    This request costs{" "}
+                                    <span className="font-bold text-slate-900 dark:text-white">
+                                        {preview.days} day{preview.days === 1 ? "" : "s"}
+                                    </span>
+                                    {preview.holidays.length > 0 && (
+                                        <> — {preview.holidays.length} public holiday
+                                            {preview.holidays.length === 1 ? "" : "s"} excluded</>
+                                    )}
+                                    . Weekends are never counted.
+                                </p>
+                            )}
+
                             <div className="sm:col-span-2 flex justify-end">
                                 <button type="submit" disabled={submitting}
                                     className="px-4 py-2 text-xs font-black uppercase tracking-widest bg-primary-600 text-white disabled:opacity-40 hover:bg-primary-700 transition-colors">

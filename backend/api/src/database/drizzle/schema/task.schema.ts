@@ -180,14 +180,23 @@ export const taskComments = pgTable(
 );
 
 /**
- * A task attachment is either an uploaded file or an external link. The
- * tracker enforces that with a CHECK constraint; drizzle-orm 0.29 has no
- * `check()` helper, so the invariant is enforced in TasksService and should be
- * added as a real constraint when drizzle is upgraded:
+ * A task attachment is either an uploaded file or an external link — never both,
+ * never neither.
  *
- *   ALTER TABLE task_attachments ADD CONSTRAINT task_attachments_file_or_link
- *     CHECK ((kind = 'file'  AND stored_name IS NOT NULL AND url IS NULL)
- *         OR (kind = 'link'  AND url IS NOT NULL AND stored_name IS NULL));
+ * That invariant is enforced in **three** places, deliberately:
+ *   1. The API surface — separate `/attachments/link` and `/attachments/upload`
+ *      endpoints, so `kind` is decided by the route, never by the client.
+ *   2. `TasksService.assertAttachmentShape()` — produces a useful error message.
+ *   3. A real CHECK constraint, added in migration `0017`:
+ *
+ *        ALTER TABLE task_attachments ADD CONSTRAINT task_attachments_file_or_link
+ *          CHECK ((kind = 'file' AND stored_name IS NOT NULL AND url IS NULL)
+ *              OR (kind = 'link' AND url IS NOT NULL AND stored_name IS NULL));
+ *
+ * The constraint is not declared here because drizzle-orm 0.29 has no `check()`
+ * helper — but that only ever limited the *TypeScript declaration*, not the
+ * constraint, since every migration in this project is hand-written SQL. When
+ * drizzle is upgraded, move the declaration here; do not re-add the constraint.
  */
 export const taskAttachments = pgTable(
   "task_attachments",

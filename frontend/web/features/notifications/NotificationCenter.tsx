@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
     Bell, Check, CheckCheck, CheckSquare, MessageCircle,
-    Send, ThumbsUp, XCircle, Loader2,
+    Send, ThumbsUp, XCircle, Loader2, Paperclip,
     CalendarCheck, CalendarX, FileCheck, FileX,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -19,6 +19,7 @@ function iconFor(type: string) {
     switch (type) {
         case 'task_assigned': return <CheckSquare size={16} className="text-blue-500" />;
         case 'task_commented': return <MessageCircle size={16} className="text-purple-500" />;
+        case 'task_attachment_added': return <Paperclip size={16} className="text-slate-500" />;
         case 'file_forwarded': return <Send size={16} className="text-indigo-500" />;
         case 'file_approved': return <ThumbsUp size={16} className="text-emerald-500" />;
         case 'file_rejected': return <XCircle size={16} className="text-red-500" />;

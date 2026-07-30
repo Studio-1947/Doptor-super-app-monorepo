@@ -9,6 +9,7 @@ import apiClient from "../lib/api-client";
 export type NotificationType =
   | "task_assigned"
   | "task_commented"
+  | "task_attachment_added"
   | "file_forwarded"
   | "file_approved"
   | "file_rejected"

@@ -10,6 +10,7 @@ import { USER_SUMMARY_COLUMNS } from "../../common/constants/safe-user-columns";
 export const NOTIFICATION_TYPES = [
   "task_assigned",
   "task_commented",
+  "task_attachment_added",
   "file_forwarded",
   "file_approved",
   "file_rejected",

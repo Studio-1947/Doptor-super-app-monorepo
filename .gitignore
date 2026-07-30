@@ -89,7 +89,10 @@ drizzle/meta/
 backend/api/uploads/
 
 # Playwright e2e artifacts
-/test-results/
-/playwright-report/
-/blob-report/
-/.playwright/
+# NOT anchored with a leading slash: Playwright writes these wherever it is invoked
+# from, and a stray run inside backend/api/ left an untracked backend/api/test-results/
+# that the previously-anchored patterns did not catch.
+test-results/
+playwright-report/
+blob-report/
+.playwright/
