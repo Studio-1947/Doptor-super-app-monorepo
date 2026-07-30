@@ -14,6 +14,7 @@ export const NOTIFICATION_TYPES = [
   "file_forwarded",
   "file_approved",
   "file_rejected",
+  "leave_requested",
   "leave_approved",
   "leave_rejected",
   "document_approved",

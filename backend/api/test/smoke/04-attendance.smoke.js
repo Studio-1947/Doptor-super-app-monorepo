@@ -102,6 +102,30 @@ const year = new Date().getUTCFullYear();
   const requestId = req1.data.id;
   const requestDays = req1.data.days;
 
+  // Submission must notify the approvers, not just sit in a queue nobody is
+  // told about. The owner holds `approve:attendance` via the "*" grant.
+  const ownerNotifs = await req('GET', '/notifications?unread_only=true', { token: ownerToken });
+  check('submission notifies the approver',
+    (ownerNotifs.data?.data || []).some(
+      n => n.type === 'leave_requested' && n.data?.leave_request_id === requestId),
+    `types ${JSON.stringify((ownerNotifs.data?.data||[]).map(n=>n.type))}`);
+
+  // Actor-dropping, tested where it can actually fail: the OWNER files their own
+  // leave. Asserting this against `staffToken` would pass vacuously — Staff has
+  // only create/read:attendance, so staff is never in the approver set at all
+  // and would receive nothing whether safeNotifyMany dropped the actor or not.
+  const ownReq = await req('POST', '/attendance/leave/requests', {
+    token: ownerToken,
+    body: { leave_type_id: leaveTypeId, start_date: `${year}-08-13`, end_date: `${year}-08-13` },
+  });
+  check('an approver can file their own leave request', Boolean(ownReq.data?.id),
+    `status ${ownReq.status}`);
+  const ownerAfterSelf = await req('GET', '/notifications?unread_only=true', { token: ownerToken });
+  check('approver is not notified of their own request',
+    !(ownerAfterSelf.data?.data || []).some(
+      n => n.type === 'leave_requested' && n.data?.leave_request_id === ownReq.data?.id),
+    `notified about own request ${ownReq.data?.id}`);
+
   // end before start rejected
   const badRange = await req('POST', '/attendance/leave/requests', {
     token: staffToken, body: { leave_type_id: leaveTypeId, start_date: `${year}-08-12`, end_date: `${year}-08-10` },

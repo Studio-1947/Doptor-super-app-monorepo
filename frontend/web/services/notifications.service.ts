@@ -13,6 +13,7 @@ export type NotificationType =
   | "file_forwarded"
   | "file_approved"
   | "file_rejected"
+  | "leave_requested"
   | "leave_approved"
   | "leave_rejected"
   | "document_approved"

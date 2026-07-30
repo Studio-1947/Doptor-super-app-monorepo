@@ -437,18 +437,18 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       hardened in M-6 (handshake JWT verified, membership checks, CORS locked down), so
       what is being retired is sound code for a product decision, not a liability.
 
-- [ ] **M-6** 🟡➡️⚪ **Inert as of 2026-07-28 — reclassified 2026-07-29 from "security gap"
-      to "dead code to delete".** The defect is real and unfixed: `handleConnection` never
-      verifies the socket's identity, and `sendMessage` trusts a client-supplied
-      `payload.userId` rather than an authenticated session, so any connected client could
-      impersonate any user. **But the gateway never instantiates** — `CommunicationModule` is
-      deliberately unregistered in `app.module.ts` (chat was removed when the product went
-      Office-only), so there is no socket server listening and no exposure.
-      **Do not "fix" this — delete it.** The whole `modules/communication/` tree (gateway,
-      controller, service, module) is unreachable code carrying a known auth hole; keeping it
-      risks someone re-registering the module and reopening the vulnerability for real. If
-      chat ever returns, port the tracker's gateway-auth-in-middleware approach rather than
-      reviving this. The `communication` DB schema is untouched by this (drop separately).
+- [x] **M-6** ⚪ ~~`communication.gateway.ts` has no WebSocket authentication.~~ —
+      **resolved by deletion 2026-07-30** (commit `7bf693b`), the outcome recommended when this
+      was reclassified on 2026-07-29 from "security gap" to "dead code to delete".
+      The defect was real: `handleConnection` never verified the socket's identity and
+      `sendMessage` trusted a client-supplied `payload.userId`, so any connected client could
+      impersonate any user. It was never exposed — `CommunicationModule` had been unregistered
+      from `app.module.ts` when the product went Office-only, so the gateway never instantiated.
+      The whole `modules/communication/` tree is now gone, which is what closes this for good:
+      there is no longer a module anyone can re-register to reopen the hole. If chat ever
+      returns, port the tracker's gateway-auth-in-middleware approach rather than reviving this.
+      **Tail:** the `communication` DB schema and its (empty) `conversations`/`messages` tables
+      are still in place — inert and now unreferenced by any module; drop them separately.
 - [ ] **M-10** 🟡 Found 2026-07-03 while testing H-1: `POST /campus/classes` doesn't
       exist on the backend at all (404) despite the frontend's `CreateClassDialog.tsx`
       calling it — "Create Class" has never worked. Also the dialog only collects

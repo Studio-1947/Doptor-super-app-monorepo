@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     Bell, Check, CheckCheck, CheckSquare, MessageCircle,
     Send, ThumbsUp, XCircle, Loader2, Paperclip,
-    CalendarCheck, CalendarX, FileCheck, FileX,
+    CalendarCheck, CalendarClock, CalendarX, FileCheck, FileX,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -23,6 +23,7 @@ function iconFor(type: string) {
         case 'file_forwarded': return <Send size={16} className="text-indigo-500" />;
         case 'file_approved': return <ThumbsUp size={16} className="text-emerald-500" />;
         case 'file_rejected': return <XCircle size={16} className="text-red-500" />;
+        case 'leave_requested': return <CalendarClock size={16} className="text-amber-500" />;
         case 'leave_approved': return <CalendarCheck size={16} className="text-emerald-500" />;
         case 'leave_rejected': return <CalendarX size={16} className="text-red-500" />;
         case 'document_approved': return <FileCheck size={16} className="text-emerald-500" />;

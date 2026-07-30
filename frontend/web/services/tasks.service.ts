@@ -295,11 +295,22 @@ class TasksService {
     const form = new FormData();
     form.append("file", file);
     if (label) form.append("label", label);
-    // Content-Type is deliberately not set: the browser must add the multipart
-    // boundary itself, and an explicit header would omit it.
+    // `Content-Type: multipart/form-data` is REQUIRED here, and not for the
+    // reason it looks like. apiClient sets a default `application/json`, and
+    // axios's transformRequest converts FormData to
+    // `JSON.stringify(formDataToJSON(data))` whenever the content type is
+    // already JSON (axios/lib/defaults/index.js) — the file is dropped and the
+    // API answers `400 property file should not exist`. The adapter's
+    // "reset the header for FormData" logic (helpers/resolveConfig.js) runs
+    // *after* transformRequest, so it cannot save us.
+    // Setting it here loses nothing: in a browser axios strips this value and
+    // lets the browser write the real header *with* the multipart boundary.
+    // Matches `documentsService.upload` and `filesService.uploadAttachment`.
+    // Verified 2026-07-30 against the live API: without this header 400, with it 201.
     const response = await apiClient.post(
       `/tasks/${id}/attachments/upload`,
       form,
+      { headers: { "Content-Type": "multipart/form-data" } },
     );
     return response.data;
   }

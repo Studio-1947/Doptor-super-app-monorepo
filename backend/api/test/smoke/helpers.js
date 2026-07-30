@@ -37,8 +37,16 @@ async function req(method, path, { token, body } = {}) {
  *
  * SQL goes in over stdin (`-f -`) rather than `-c "..."`, so it needs no quote
  * escaping and survives being tunnelled through ssh.
+ *
+ * `-v ON_ERROR_STOP=1` is load-bearing, not tidiness. Without it psql running a
+ * script exits **0 even after an ERROR**, so `execSync` never throws: a failed
+ * statement returned "" and the suite carried on as if it had worked. That made
+ * every `try { sql(...) } catch` check silently vacuous — suite 10's
+ * "CHECK constraint rejects a file+link hybrid row" reported the constraint
+ * *missing* while psql was visibly rejecting the row (found 2026-07-30, the
+ * first time that suite was ever run). Setup statements failed just as quietly.
  */
-const sqlRows = (q) => execSync(`${PSQL_CMD} -t -A -f -`, { input: q, encoding: "utf8" })
+const sqlRows = (q) => execSync(`${PSQL_CMD} -v ON_ERROR_STOP=1 -t -A -f -`, { input: q, encoding: "utf8" })
   .trim().split("\n").map((s) => s.trim()).filter(Boolean);
 
 /**

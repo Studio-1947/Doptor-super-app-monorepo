@@ -496,6 +496,8 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
                                         <button
                                             onClick={attachLink}
                                             disabled={isAttaching || !linkUrl.trim()}
+                                            title="Attach link"
+                                            aria-label="Attach link"
                                             className="p-2 rounded-lg bg-primary-600 text-white disabled:opacity-40 hover:bg-primary-700 transition-colors"
                                         >
                                             {isAttaching

@@ -44,6 +44,26 @@ would triple the download for no extra signal.
 E2E_BASE_URL=http://localhost:3000 E2E_API_URL=http://localhost:3001 pnpm test:e2e
 ```
 
+### Running against a local stack — set `COOKIE_AUTH_ENABLED`
+
+Start the frontend with it, or **two specs fail for a purely environmental reason**:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3001 COOKIE_AUTH_ENABLED=1 npx next dev -p 3000
+```
+
+`middleware.ts` returns `NextResponse.next()` immediately when `COOKIE_AUTH_ENABLED` is
+unset, so **all route gating goes quiet** — by design, since the backend is the real
+authorisation boundary (see `common/config/auth-cookies.ts`). The variable lives only in the
+un-versioned VPS `.env`, so a local run without it fails
+*"a signed-in user is bounced off the login page"* and *"a reload holds the route"* while the
+application code is perfectly fine. Confirmed both directions on 2026-07-30: 2 failures
+without the flag, 0 with it.
+
+Cold-load specs may also report **flaky** locally — a first hit on a route in `next dev`
+compiles it, and the config's single retry exists to absorb exactly that. Flaky-then-passing
+on a cold compile is expected; two consecutive failures are real.
+
 ## Database-backed specs
 
 Most specs need only the API: they register a throwaway organisation, whose founding user
@@ -81,7 +101,13 @@ this at an environment holding real tenants.**
 | `cold-load.spec.ts` | Every route an Organisation Admin can reach survives a **cold** `page.goto` and a reload, plus the same for a Staff user. This is the generalisation of M-21: the bug class is a provider above `AuthGuard` deciding something during the loading window, and clicking through the app hides all of it |
 | `vertical-routing.spec.ts` | An enabled vertical is reachable by URL, not only by clicking; a vertical the org did *not* enable is still refused |
 | `token-storage.spec.ts` | Nothing JWT-shaped is reachable from `localStorage`, `sessionStorage` or `document.cookie` after signing in; the session still works and survives a reload; clearing cookies really ends it. Written *before* the fix and confirmed red against the then-live deployment, which dumped both tokens in its failure output |
-| `network-vertical.spec.ts` | An organisation that **already** enabled Network is redirected off `/network` and its sub-pages, Network is gone from the switcher, and signup no longer offers it. The redirect is client-side, so a curl sees 200 and the page HTML — this is only observable in a browser |
+| `page-shell.spec.ts` | The shared shell (sidebar, header, switcher) renders on every route rather than only on the dashboard |
+| `unshipped-surfaces.spec.ts` | Routes for retired or frozen verticals do not present themselves as working product |
+| `task-attachments.spec.ts` | A real file uploaded through the drawer appears as a row with its name and size; a link renders as an external anchor rather than a dead download button; the board/table toggle switches views and survives a reload; the attendance calendar and manage tabs show a seeded holiday. **Written 2026-07-30 for a bug nothing else could see:** the upload posted `FormData` through axios with the instance's default `Content-Type: application/json`, and axios serialises FormData to JSON when the content type is already JSON — so the file was dropped client-side and the API answered `400 property file should not exist`. It typechecked, and the HTTP smoke suite passed because it uploads with raw `fetch` and never touches axios |
+
+> `network-vertical.spec.ts` was listed here until 2026-07-30 but no longer exists — it was
+> removed with the Network vertical itself. `page-shell` and `unshipped-surfaces` shipped
+> without ever being added to this table. Verify with `ls e2e/*.spec.ts` before trusting it.
 
 The fabrication assertions are deliberately written as *"the real value is present **and**
 the invented one is absent"*. Asserting only the real value would pass against a page
