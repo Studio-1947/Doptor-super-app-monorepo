@@ -401,22 +401,22 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
                             <Field label="Attachments" icon={<Paperclip size={12} />}>
                                 <div className="space-y-2">
                                     {attachments.length === 0 && (
-                                        <p className="text-xs text-slate-400">No attachments yet</p>
+                                        <p className="text-xs text-slate-400 dark:text-slate-400">No attachments yet</p>
                                     )}
                                     {attachments.map((a) => (
                                         <div
                                             key={a.id}
-                                            className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2"
+                                            className="flex items-center gap-2 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2"
                                         >
                                             {a.kind === 'link'
                                                 ? <Link2 size={14} className="shrink-0 text-slate-400" />
                                                 : <Paperclip size={14} className="shrink-0 text-slate-400" />}
 
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-sm text-slate-700 truncate">
+                                                <p className="text-sm text-slate-700 dark:text-slate-200 truncate">
                                                     {a.label || a.original_name || a.url}
                                                 </p>
-                                                <p className="text-[10px] text-slate-400">
+                                                <p className="text-[10px] text-slate-400 dark:text-slate-400">
                                                     {a.kind === 'file' && a.size_bytes != null
                                                         ? `${formatBytes(a.size_bytes)} · `
                                                         : ''}
@@ -456,7 +456,7 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
 
                                 <div className="flex items-center gap-2 mt-3">
                                     <label
-                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold cursor-pointer hover:border-primary-500 transition-colors ${isAttaching ? 'opacity-40 pointer-events-none' : ''}`}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 cursor-pointer hover:border-primary-500 transition-colors ${isAttaching ? 'opacity-40 pointer-events-none' : ''}`}
                                     >
                                         {isAttaching
                                             ? <Loader2 size={13} className="animate-spin" />
@@ -478,7 +478,7 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
                                     <button
                                         onClick={() => setShowLinkForm((s) => !s)}
                                         disabled={isAttaching}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold disabled:opacity-40 hover:border-primary-500 transition-colors"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 disabled:opacity-40 hover:border-primary-500 transition-colors"
                                     >
                                         <Link2 size={13} /> Add link
                                     </button>
@@ -491,7 +491,7 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
                                             onChange={(e) => setLinkUrl(e.target.value)}
                                             onKeyDown={(e) => { if (e.key === 'Enter') attachLink(); }}
                                             placeholder="https://…"
-                                            className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-primary-500"
+                                            className="flex-1 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-primary-500"
                                         />
                                         <button
                                             onClick={attachLink}

@@ -139,8 +139,8 @@ export function TaskTable() {
         <div className="flex flex-col h-full overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Task Table</h1>
-                    <p className="text-slate-500 mt-1">Filter, sort and page through every task</p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Task Table</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">Filter, sort and page through every task</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="relative">
@@ -150,7 +150,7 @@ export function TaskTable() {
                             placeholder="Search tasks..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 w-full sm:w-64"
+                            className="pl-9 pr-4 py-2 bg-white dark:bg-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 w-full sm:w-64"
                         />
                     </div>
                     <Button variant="primary" onClick={() => setIsCreateOpen(true)} className="flex items-center gap-2">
@@ -164,7 +164,7 @@ export function TaskTable() {
                 <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as TaskStatus | '')}
-                    className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs bg-white"
+                    className="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
                 >
                     <option value="">All statuses</option>
                     {(Object.keys(STATUS_LABELS) as TaskStatus[]).map((s) => (
@@ -175,7 +175,7 @@ export function TaskTable() {
                 <select
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as TaskPriority | '')}
-                    className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs bg-white"
+                    className="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
                 >
                     <option value="">All priorities</option>
                     {(['urgent', 'high', 'medium', 'low'] as TaskPriority[]).map((p) => (
@@ -186,7 +186,7 @@ export function TaskTable() {
                 <select
                     value={labelId}
                     onChange={(e) => setLabelId(e.target.value)}
-                    className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs bg-white"
+                    className="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200"
                 >
                     <option value="">All labels</option>
                     {labels.map((l) => (
@@ -197,30 +197,33 @@ export function TaskTable() {
                 <button
                     onClick={() => setShowArchived((v) => !v)}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${showArchived
-                        ? 'border-primary-500 text-primary-600 bg-primary-50'
-                        : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                        ? 'border-primary-500 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'}`}
                 >
                     <Archive size={13} /> {showArchived ? 'Archived shown' : 'Archived hidden'}
                 </button>
 
-                <span className="ml-auto text-xs text-slate-400">
+                <span className="ml-auto text-xs text-slate-400 dark:text-slate-400">
                     {loading ? 'Loading…' : total === 0 ? 'No tasks' : `${firstRow}–${lastRow} of ${total}`}
                 </span>
             </div>
 
             <Card className="flex-1 overflow-auto p-0">
                 <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 z-10">
+                    <thead className="sticky top-0 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 z-10">
                         <tr>
                             {COLUMNS.map((col) => (
                                 <th
                                     key={col.label}
-                                    className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 ${col.className ?? ''}`}
+                                    aria-sort={col.key
+                                        ? (sort === col.key ? (order === 'asc' ? 'ascending' : 'descending') : 'none')
+                                        : undefined}
+                                    className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ${col.className ?? ''}`}
                                 >
                                     {col.key ? (
                                         <button
                                             onClick={() => toggleSort(col.key as TaskSortField)}
-                                            className="inline-flex items-center gap-1 hover:text-slate-900 transition-colors"
+                                            className="inline-flex items-center gap-1 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                                         >
                                             {col.label}
                                             {sort === col.key
@@ -235,16 +238,16 @@ export function TaskTable() {
                     <tbody>
                         {loading ? (
                             Array.from({ length: 6 }).map((_, i) => (
-                                <tr key={i} className="border-b border-slate-100">
+                                <tr key={i} className="border-b border-slate-100 dark:border-slate-800">
                                     <td colSpan={COLUMNS.length} className="px-4 py-3">
-                                        <div className="h-5 bg-slate-100 rounded animate-pulse" />
+                                        <div className="h-5 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
                                     </td>
                                 </tr>
                             ))
                         ) : tasks.length === 0 ? (
                             <tr>
                                 <td colSpan={COLUMNS.length} className="px-4 py-16 text-center">
-                                    <p className="text-sm text-slate-500">No tasks match these filters.</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">No tasks match these filters.</p>
                                 </td>
                             </tr>
                         ) : (
@@ -252,16 +255,25 @@ export function TaskTable() {
                                 <tr
                                     key={task.id}
                                     onClick={() => setOpenTaskId(task.id)}
-                                    className={`border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors ${task.is_archived ? 'opacity-60' : ''}`}
+                                    tabIndex={0}
+                                    role="button"
+                                    aria-label={`Open ${task.reference ?? 'task'}: ${task.title}`}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setOpenTaskId(task.id);
+                                        }
+                                    }}
+                                    className={`border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors ${task.is_archived ? 'opacity-60' : ''}`}
                                 >
                                     <td className="px-4 py-3">
-                                        <span className="text-xs font-mono font-bold text-slate-400">
+                                        <span className="text-xs font-mono font-bold text-slate-400 dark:text-slate-400 whitespace-nowrap">
                                             {task.reference ?? '—'}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2 min-w-0">
-                                            <span className="text-sm font-medium text-slate-900 truncate">
+                                            <span className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                                                 {task.title}
                                             </span>
                                             {(task.comments?.length ?? 0) > 0 && (
@@ -285,12 +297,12 @@ export function TaskTable() {
                                         )}
                                     </td>
                                     <td className="px-4 py-3">
-                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${statusStyles[task.status]}`}>
+                                        <span className={`inline-block whitespace-nowrap text-[10px] font-bold px-2 py-1 rounded-full border ${statusStyles[task.status]}`}>
                                             {STATUS_LABELS[task.status]}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3">
-                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full border capitalize ${priorityStyles[task.priority]}`}>
+                                        <span className={`inline-block whitespace-nowrap text-[10px] font-bold px-2 py-1 rounded-full border capitalize ${priorityStyles[task.priority]}`}>
                                             {task.priority}
                                         </span>
                                     </td>
@@ -315,10 +327,10 @@ export function TaskTable() {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-xs text-slate-500">
+                                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                         {task.due_date ? new Date(task.due_date).toLocaleDateString() : '—'}
                                     </td>
-                                    <td className="px-4 py-3 text-xs text-slate-500">
+                                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                         {new Date(task.updated_at).toLocaleDateString()}
                                     </td>
                                 </tr>

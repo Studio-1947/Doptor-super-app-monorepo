@@ -223,20 +223,20 @@ export default function AttendancePage() {
             <div className="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
                 <button
                     onClick={() => setTab("mine")}
-                    className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 whitespace-nowrap ${tab === "mine" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                    className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 whitespace-nowrap ${tab === "mine" ? "text-primary-600 dark:text-primary-400 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"}`}
                 >
                     My Leave
                 </button>
                 <button
                     onClick={() => setTab("calendar")}
-                    className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 whitespace-nowrap ${tab === "calendar" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                    className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 whitespace-nowrap ${tab === "calendar" ? "text-primary-600 dark:text-primary-400 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"}`}
                 >
                     Calendar
                 </button>
                 {canApprove && (
                     <button
                         onClick={() => setTab("approvals")}
-                        className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 inline-flex items-center gap-2 whitespace-nowrap ${tab === "approvals" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                        className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 inline-flex items-center gap-2 whitespace-nowrap ${tab === "approvals" ? "text-primary-600 dark:text-primary-400 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"}`}
                     >
                         Approvals
                         {queue.length > 0 && (
@@ -247,7 +247,7 @@ export default function AttendancePage() {
                 {canManage && (
                     <button
                         onClick={() => setTab("manage")}
-                        className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 whitespace-nowrap ${tab === "manage" ? "text-primary-600 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600"}`}
+                        className={`px-4 py-2 text-xs font-black uppercase tracking-widest border-b-2 whitespace-nowrap ${tab === "manage" ? "text-primary-600 dark:text-primary-400 border-primary-500" : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"}`}
                     >
                         Manage
                     </button>

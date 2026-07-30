@@ -596,6 +596,37 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       estimated. Row shapes are pinned in suites `04` and `05` (+6 checks), because a
       dropped `with:` relation would blank the rows silently instead of erroring.
 
+- [ ] **M-23** 🟡 **`/analytics` is a fabricated, orphaned page that fetches a hardcoded
+      `http://localhost:3000` URL.** Found 2026-07-30 while auditing UI/UX; **pre-existing,
+      not from the tasks/attendance batch.** Four separate problems, all in
+      `features/analytics/AnalyticsDashboard.tsx`:
+      **(1)** line 24 is `await fetch('http://localhost:3000/analytics/overview')` — an
+      absolute localhost URL in shipped client code, so on any real deployment the *visitor's
+      browser* calls **its own** `localhost:3000`. It resolves to nothing, every value falls
+      back to `0`, and the comment above it (`// In production, use env variable for base URL`)
+      records that this was known and left.
+      **(2)** It expects `revenue`, `totalMessages` and `activeSessions`, **none of which the
+      API has ever returned.** `GET /analytics/overview` really returns `totalUsers`,
+      `totalFiles`, `totalTasks`, `openTasks`, `totalDocuments`, `documentsPendingReview`,
+      `totalDepartments`, `currentlyCheckedIn`, `pendingLeaveRequests` — verified live. So the
+      component was written against an API that never existed. "Total Revenue" has no meaning
+      in an office suite, and "Total Messages" refers to chat, **deleted** under Office-only.
+      **(3)** The rest is inline fabrication: trend badges hardcoded `+20.1% / +15.2% / +5.4%
+      / +2.3%`, a "Revenue Growth" chart with invented bar heights, and traffic sources
+      "Direct 45% / Social Media 25%".
+      **(4)** It fails `cold-load.spec.ts` **consistently against a production build (2/2),
+      while passing in `next dev`** — `waitForLoadState('networkidle')` times out. The visible
+      network activity is just the one 404 above; the stall itself is not fully root-caused.
+      **Note it is linked from no navigation** — reachable only by typing the URL, which is why
+      nobody has reported it, and why it also **evaded the fabricated-data sweep**: that greps
+      for `const UPPER_CASE = [...]` arrays and this page's fake values are inline JSX
+      literals. Exactly the evasion recorded in `PORTING-GAPS.md` § G-4.
+      **Recommendation: delete it**, consistent with how Network and the fabricated approvals
+      components were handled. If analytics is wanted, rewrite against the real nine-field
+      endpoint using the existing `services/analytics.service.ts`, which already goes through
+      `apiClient` correctly and is what `/admin` uses for its real counts. **Do not merely fix
+      the URL** — that would render a page of zeroes and invented percentages.
+
 - [ ] **M-20** 🟡 `/campus/faculty` and `/campus/students` are fabricated ("Dr. Sarah
       Connor", "Publications 1,240", "2,840 students", "Aarav Sharma") **despite
       `GET /campus/faculty` and `GET /campus/students` existing, being org-scoped since
@@ -665,6 +696,25 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       **resolved; verified 2026-07-29.** `features/verticals/` does not exist; only
       `features/office/*` remains. (Office roadmap Phase 6 already recorded this; the box
       here was simply never ticked.)
+- [ ] **L-5** 🟡 **Dark mode is unevenly applied and, on some surfaces, unreadable.** Found
+      2026-07-30 by measuring WCAG contrast in the live DOM rather than reading classes.
+      Dark mode is a shipped feature (`darkMode: "class"`, `ThemeToggle`, `ThemeContext`) but
+      applied per class, so any `text-slate-900` without a `dark:` variant renders near-black
+      on a near-black surface. Measured, worst first:
+      **`/tasks` board (kanban) — 42 AA failures, 27 of them below 1.5:1**, including every
+      task title at **1:1** (identical foreground and background);
+      **`/settings` — 17 failures, 7 invisible** (the user's own name, "Email Notifications",
+      "Push Notifications" all at 1:1, plus inputs with light text on `bg-white`);
+      `/office/files` — 4 failures, 2 invisible; `/approvals` — 6 failures, none invisible.
+      The new `TaskTable`, `AttendanceCalendar` and `AttendanceAdmin` were fixed to **0
+      failures** on 2026-07-30, which means the table now reads *better* than the board beside
+      it — visible inconsistency, and the reason not to leave this long.
+      `e2e/dark-mode-contrast.spec.ts` guards the fixed surfaces at a **1.5:1 (legibility)**
+      threshold rather than AA's 4.5:1, precisely because these routes would fail an AA gate
+      today. **When fixing these, raise that threshold toward 4.5 and add the route to the
+      spec** — otherwise the fix has nothing holding it in place. The measurement scripts are
+      throwaway but the method is in the spec: compute luminance from `getComputedStyle`,
+      resolving the background through ancestors.
 
 ---
 

@@ -19,7 +19,7 @@ Every claim below was verified against the code on 2026-07-29, not read off a ch
 >
 > 1. **Push and merge.** The commits closing G-1…G-5 are local-only; nothing is on `origin`,
 >    no PR, not deployed.
-> 2. **Apply migrations `0017` and `0018`** to dev by hand via psql. Both are *additive*, so
+> 2. **Apply migrations `0017` and `0018`** to dev by hand via psql. Both are _additive_, so
 >    the normal order applies — **migrate first, then deploy** (`0016`'s reversed order was a
 >    one-off; see §4). Exact commands are in each file's header.
 > 3. ~~**Verify against a live database.**~~ ✅ **done 2026-07-30, locally** — `0016`→`0018`
@@ -31,9 +31,9 @@ Every claim below was verified against the code on 2026-07-29, not read off a ch
 >    worst defect of the batch: **the file upload never worked from the UI** (G-8). The new
 >    `e2e/task-attachments.spec.ts` covers upload, links, the table toggle and the calendar.
 > 5. **Three gaps this file missed, now fixed** — G-6, G-7 and G-8. All three were found by
->    *running* or *reading* the code, none by a checklist.
+>    _running_ or _reading_ the code, none by a checklist.
 >
-> Nothing below is outstanding *engineering*. Treat unticked boxes elsewhere in the repo with
+> Nothing below is outstanding _engineering_. Treat unticked boxes elsewhere in the repo with
 > the same suspicion this banner exists to encourage.
 
 ---
@@ -43,44 +43,44 @@ Every claim below was verified against the code on 2026-07-29, not read off a ch
 **The port is ~92% delivered by deliverable count.** It is not "half done" — it is done with
 a short, well-understood tail.
 
-| Porting-plan deliverable | Status | Evidence |
-|---|---|---|
-| Decision A — `DEPT-12` refs owned by departments | ✅ | `departments.task_prefix`/`task_seq`; atomic claim in create tx |
-| Decision B — `labels` + `task_labels`, drop `tags` | ✅ | both tables live; `tags` dropped in migration `0016` |
-| Decision C — status/priority as pg enums | ✅ ⚠️ | enums live, **lowercase values kept** — deliberate deviation, see below |
-| Decision D — HR attendance separate from campus | ✅ | 4 org-scoped tables, migration `0014` |
-| Tasks schema (6 new tables) | ✅ | `task_assignees`, `labels`, `task_labels`, `task_comments`, `task_attachments`, `task_audit_logs` |
-| Tasks service depth | ✅ | 859-line service; per-field audit written in the same tx |
-| Tasks controller + RBAC | ✅ | 18 endpoints, all `@Permissions`-gated (`read/create/update/delete/assign:tasks`) |
-| Tasks frontend | ✅ | Kanban + detail drawer + create dialog + `TaskTable` board/table toggle (2026-07-30) |
-| **Task attachments end-to-end** | ✅ | 5 endpoints + service methods + drawer UI (2026-07-30); was the one real hole |
-| Attendance backend | ✅ | 16 endpoints, `approve:/update:attendance` gated; + holiday CRUD (2026-07-30) |
-| Attendance frontend | ✅ | punch, balances, leave form, approval queue, `AttendanceCalendar`, `AttendanceAdmin` |
+| Porting-plan deliverable                           | Status | Evidence                                                                                          |
+| -------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------- |
+| Decision A — `DEPT-12` refs owned by departments   | ✅     | `departments.task_prefix`/`task_seq`; atomic claim in create tx                                   |
+| Decision B — `labels` + `task_labels`, drop `tags` | ✅     | both tables live; `tags` dropped in migration `0016`                                              |
+| Decision C — status/priority as pg enums           | ✅ ⚠️  | enums live, **lowercase values kept** — deliberate deviation, see below                           |
+| Decision D — HR attendance separate from campus    | ✅     | 4 org-scoped tables, migration `0014`                                                             |
+| Tasks schema (6 new tables)                        | ✅     | `task_assignees`, `labels`, `task_labels`, `task_comments`, `task_attachments`, `task_audit_logs` |
+| Tasks service depth                                | ✅     | 859-line service; per-field audit written in the same tx                                          |
+| Tasks controller + RBAC                            | ✅     | 18 endpoints, all `@Permissions`-gated (`read/create/update/delete/assign:tasks`)                 |
+| Tasks frontend                                     | ✅     | Kanban + detail drawer + create dialog + `TaskTable` board/table toggle (2026-07-30)              |
+| **Task attachments end-to-end**                    | ✅     | 5 endpoints + service methods + drawer UI (2026-07-30); was the one real hole                     |
+| Attendance backend                                 | ✅     | 16 endpoints, `approve:/update:attendance` gated; + holiday CRUD (2026-07-30)                     |
+| Attendance frontend                                | ✅     | punch, balances, leave form, approval queue, `AttendanceCalendar`, `AttendanceAdmin`              |
 
 **Scale for context:** 148 API endpoints (118 in live Office; 30 in frozen Campus),
 ~17,100 lines of frontend, 9 smoke suites (218 checks) + 10 Playwright specs (61 tests),
-16 applied migrations. *(2026-07-30: now 10 smoke suites — suite `10` is written but unrun, so
+16 applied migrations. _(2026-07-30: now 10 smoke suites — suite `10` is written but unrun, so
 the check count is not yet a verified number; and migrations `0017`/`0018` are written but **not
-applied**, so 16 remains the count of what the dev database actually has.)*
+applied**, so 16 remains the count of what the dev database actually has.)_
 
 ### The gap in one paragraph
 
-*As written 2026-07-29:* one feature was genuinely missing end-to-end (**task attachments**),
+_As written 2026-07-29:_ one feature was genuinely missing end-to-end (**task attachments**),
 one view was never built (**tasks list/table**), three attendance items were consciously
 deferred (**calendar, leave-type UI, holiday calendar**), and one constraint was believed
 **blocked upstream** on a drizzle-orm upgrade. Everything else labelled "open" in the tracking
-docs was already done, frozen with Campus, or dead code. The largest *real* risk was not
+docs was already done, frozen with Campus, or dead code. The largest _real_ risk was not
 missing features — it was that **the docs understated completion badly enough to be a
 hazard**.
 
-*As of 2026-07-30:* all of it is written, `tsc`-clean, and committed locally; the drizzle
+_As of 2026-07-30:_ all of it is written, `tsc`-clean, and committed locally; the drizzle
 "block" was a misreading (see G-5). **The remaining risk is unchanged in kind — unshipped,
 unverified code plus docs that drift within a day.**
 
 ### Decision C deviation (accept, don't re-open)
 
 The plan said adopt the tracker's UPPERCASE enum values (`TODO`, `MEDIUM`). Shipped code kept
-Doptor's lowercase (`todo`, `medium`). The stated goal of Decision C was *preventing drift*,
+Doptor's lowercase (`todo`, `medium`). The stated goal of Decision C was _preventing drift_,
 which the enum type achieves on its own. Re-casing now means a data migration plus churn
 through every DTO and the whole frontend for no functional gain, now that the tracker is a
 reference implementation and not a merge target. **Recommendation: ratify the deviation,
@@ -90,16 +90,16 @@ don't reverse it.** Rationale is already documented in `task.schema.ts`.
 
 ## 2. The gaps, and how each was closed
 
-*Written as a to-do list on 2026-07-29; kept in place with outcomes recorded against each item,
+_Written as a to-do list on 2026-07-29; kept in place with outcomes recorded against each item,
 because the reasoning behind the fixes is the part worth keeping. **Nothing in this section is
-outstanding** — for what is, see §3.*
+outstanding** — for what is, see §3._
 
 ### G-1 — Task attachments, end-to-end ✅ **built 2026-07-30**
 
 `task_attachments` is a **dead table**: the schema, the `file|link` enum and the invariant all
 exist, but there are **zero write endpoints** in `tasks.controller.ts` and zero frontend
 references. The single mention anywhere is `attachments: true` in one relations query
-(`tasks.service.ts:437`) — so the table is *read* but nothing can ever put a row in it.
+(`tasks.service.ts:437`) — so the table is _read_ but nothing can ever put a row in it.
 
 **This is low-risk work because it is a copy job.** `modules/documents/` already solves the
 identical problem and shipped 2026-07-27: `createLink()` / `createUpload()` /
@@ -155,7 +155,7 @@ Three items deferred at Phase 4, in descending value:
 - [x] **My-attendance calendar** — `features/attendance/AttendanceCalendar.tsx` (199 lines),
       month view over `GET /attendance/me` with the holiday overlay drawn on top.
 - [x] **Leave-type management UI** — `features/attendance/AttendanceAdmin.tsx` (260 lines),
-      covering leave types *and* holidays. Both new tabs are wired into
+      covering leave types _and_ holidays. Both new tabs are wired into
       `app/attendance/page.tsx`; admins no longer need raw API calls.
 - [x] **Holiday calendar** — the correctness bug, fixed properly: migration `0018` adds an
       org-scoped `holidays` table, `workingDays()` now takes a holiday set, and
@@ -175,17 +175,17 @@ deleted on 2026-07-29 (all fabricated: `ApprovalInbox`, `ApprovalDetail`, `Appro
 "Q3 Marketing Budget / $50,000", fake attendance history and dead buttons). The rest are
 judgement calls, deliberately left:
 
-| Orphan | Lines | Call |
-|---|---|---|
-| ~~`features/office/FileInbox.tsx`~~ | 108 | ✅ **deleted** — superseded by `FileList` |
-| ~~`features/office/FileCreateForm.tsx`~~ | 157 | ✅ **deleted** — superseded by `FileCreateModal` |
-| `features/campus/students/StudentList.tsx` | 344 | **Keep** — Campus is frozen, not deleted |
-| `features/campus/AttendanceTracker.tsx` | 146 | **Keep** — same |
-| `features/campus/admin/CampusAdminDashboard.tsx` | 94 | **Keep** — same |
-| `components/ComingSoon.tsx` | 60 | Keep — generic, reusable, no fake data |
-| `components/dashboard/DashboardHeader.tsx` | 24 | Keep — generic presentational |
+| Orphan                                           | Lines | Call                                             |
+| ------------------------------------------------ | ----- | ------------------------------------------------ |
+| ~~`features/office/FileInbox.tsx`~~              | 108   | ✅ **deleted** — superseded by `FileList`        |
+| ~~`features/office/FileCreateForm.tsx`~~         | 157   | ✅ **deleted** — superseded by `FileCreateModal` |
+| `features/campus/students/StudentList.tsx`       | 344   | **Keep** — Campus is frozen, not deleted         |
+| `features/campus/AttendanceTracker.tsx`          | 146   | **Keep** — same                                  |
+| `features/campus/admin/CampusAdminDashboard.tsx` | 94    | **Keep** — same                                  |
+| `components/ComingSoon.tsx`                      | 60    | Keep — generic, reusable, no fake data           |
+| `components/dashboard/DashboardHeader.tsx`       | 24    | Keep — generic presentational                    |
 
-The two Office ones are *API-wired but unreachable* — they were earlier iterations superseded
+The two Office ones are _API-wired but unreachable_ — they were earlier iterations superseded
 during the shell rework, **not** a routing regression (verified: `app/office/files/page.tsx`
 imports `FileList` and `FileCreateModal` instead).
 
@@ -194,23 +194,23 @@ imports `FileList` and `FileCreateModal` instead).
       client-supplied `payload.userId` — but `CommunicationModule` was unregistered in
       `app.module.ts`, so it never instantiated and there was **no live exposure**. Deleted
       rather than fixed, so nobody can re-register the module and reopen the vulnerability for
-      real. **Still outstanding:** the `communication` DB *schema* file and its tables are
+      real. **Still outstanding:** the `communication` DB _schema_ file and its tables are
       untouched — drop them separately, they are inert but no longer referenced by any module.
 
 > **Lesson worth keeping:** the existing "find every mock page" sweep greps for
 > `const UPPER_CASE = [...]` arrays. `ApprovalDetail.tsx` — 146 lines of pure fabrication —
 > **evaded it entirely** because its fake data was inline JSX literals, not an array. Any
-> future sweep must also check for *components nothing imports*, which is how all four were
+> future sweep must also check for _components nothing imports_, which is how all four were
 > ultimately found.
 
 ### G-5 — `task_attachments` CHECK constraint ✅ **written 2026-07-30 — was never actually blocked**
 
 - [x] Migration `0017` adds the constraint. **The "blocked on a drizzle-orm upgrade" framing
       was wrong**, and it is worth understanding why, because the same mistake generalises:
-      drizzle 0.29 having no `check()` helper blocked *declaring* the constraint in
+      drizzle 0.29 having no `check()` helper blocked _declaring_ the constraint in
       **TypeScript** — it never blocked the **constraint**. Every migration in this project is
       hand-written SQL; Postgres was always willing to enforce it. An upstream limitation in
-      how a tool *describes* schema is not a limitation on the schema.
+      how a tool _describes_ schema is not a limitation on the schema.
 
 The service still enforces the same invariant in `assertAttachmentShape()`, so the two agree
 and applying the migration cannot reject a write the API would have accepted. `task.schema.ts`
@@ -222,7 +222,7 @@ documents the constraint in a comment, since it can't be expressed in the table 
 than the checklists, which is the only reason it surfaced.
 
 `submitLeaveRequest` wrote the row and returned. `approveLeaveRequest` and
-`rejectLeaveRequest` both notified the requester, so the *outbound* half of the loop looked
+`rejectLeaveRequest` both notified the requester, so the _outbound_ half of the loop looked
 complete — but **the approvers were never told a request existed.** The approval queue at
 `/approvals` only worked if an admin happened to look at it; a leave request could sit pending
 indefinitely with nobody aware of it. Every other multi-party action in the app (task assign,
@@ -233,7 +233,7 @@ task comment, file forward, document approve) notifies its counterparty.
       string `AttendanceController` gates approve/reject on, so **the notified set is exactly
       the set that can act.** Scoped via `roles.organisation_id`: `user_roles` has no org
       column of its own, so joining through `roles` is what keeps it tenant-safe.
-      Approval is a *permission* here, not a reporting relationship — Doptor has no manager
+      Approval is a _permission_ here, not a reporting relationship — Doptor has no manager
       hierarchy to walk.
 - [x] New `leave_requested` notification type, added to the backend `NOTIFICATION_TYPES`
       union, the frontend `NotificationType` union, and the `NotificationCenter` icon map —
@@ -241,7 +241,7 @@ task comment, file forward, document approve) notifies its counterparty.
       missed one degrades silently to a generic bell.
       **No migration needed:** `notifications.type` is deliberately free `text`, not an enum.
 - [x] Three checks added to `04-attendance.smoke.js`, all passing against a live DB: the
-      approver *is* notified (matched on `data.leave_request_id`, not just on type), an approver
+      approver _is_ notified (matched on `data.leave_request_id`, not just on type), an approver
       can file their own leave, and **the approver is not notified of their own request**.
       That last one is deliberately asserted against the **owner**, not the requesting Staff
       user: Staff holds only `create/read:attendance`, so it is never in the approver set and
@@ -260,20 +260,20 @@ guarding it.
       suite 10's "CHECK constraint rejects a file+link hybrid row" reporting **FAIL — insert of
       an invalid row succeeded — is migration 0017 applied?** while psql was printing
       `violates check constraint "task_attachments_file_or_link"` two lines above it. The
-      constraint was fine; the *test* was blind.
+      constraint was fine; the _test_ was blind.
       **Blast radius is every suite, not just this check:** any `try { sql(…) } catch` check was
-      vacuous, and any failing *setup* statement passed silently and left the suite running on
+      vacuous, and any failing _setup_ statement passed silently and left the suite running on
       an empty string. Fixed in `helpers.js`; all 10 suites re-run green afterwards, so nothing
       depended on the tolerant behaviour.
 - [x] **Verified `0017` independently of the suite** before trusting either: read
       `pg_get_constraintdef` out of `pg_constraint`, then probed a
       `CREATE TEMP TABLE … (LIKE task_attachments INCLUDING ALL)` copy — both valid shapes
-      accepted, the file+link hybrid rejected. Worth noting the first probe attempt was *also*
+      accepted, the file+link hybrid rejected. Worth noting the first probe attempt was _also_
       malformed (it tripped `organisation_id NOT NULL` before reaching the CHECK, which proves
       nothing about the CHECK).
 
 > **Lesson, and it is the same one twice:** a test that has never run is not a test, it is a
-> hypothesis — and both traps here produced *green-looking* or *misattributed* results rather
+> hypothesis — and both traps here produced _green-looking_ or _misattributed_ results rather
 > than honest failures. Suite 10 sat "written" for a day and the assumption "attachments work"
 > was really a claim about TypeScript compiling.
 
@@ -301,17 +301,17 @@ string and no longer FormData. It cannot save the call.
 
 Why every existing check missed it:
 
-| Layer | Why it passed |
-|---|---|
-| `tsc` | `apiClient.post(url, form)` is perfectly typed |
-| Smoke suite 10 | uploads with raw `fetch`; never touches axios |
-| Code review by reading | the original comment *argued for* omitting the header — "the browser must add the multipart boundary itself" — which sounds right and is wrong |
+| Layer                  | Why it passed                                                                                                                                  |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tsc`                  | `apiClient.post(url, form)` is perfectly typed                                                                                                 |
+| Smoke suite 10         | uploads with raw `fetch`; never touches axios                                                                                                  |
+| Code review by reading | the original comment _argued for_ omitting the header — "the browser must add the multipart boundary itself" — which sounds right and is wrong |
 
 - [x] **Fix:** pass `{ headers: { "Content-Type": "multipart/form-data" } }`, matching
       `documentsService.upload` and `filesService.uploadAttachment`, which both had it all
       along — **this was the only upload path in the app missing it.** The header is not what
       goes on the wire: in a browser axios strips this value and lets the browser write the
-      real header *with* the boundary. Its job here is to defeat the JSON transform. The
+      real header _with_ the boundary. Its job here is to defeat the JSON transform. The
       comment now says so, because the plausible-sounding rationale is what caused the bug and
       would justify "cleaning up" the header again.
 - [x] **Proved before fixing:** replayed the frontend's exact axios instance against the live
@@ -326,10 +326,81 @@ Why every existing check missed it:
       unreachable by `getByRole('button', { name })` and, more importantly, by a screen reader.
       Now `aria-label="Attach link"`.
 
-> **The generalisable point:** `tsc` covers the *shape* of a call, the smoke suites cover the
-> API's *behaviour*, and neither covers the *client library sitting between them*. Anything
+> **The generalisable point:** `tsc` covers the _shape_ of a call, the smoke suites cover the
+> API's _behaviour_, and neither covers the _client library sitting between them_. Anything
 > whose behaviour depends on axios config — uploads, blob downloads, interceptors, header
 > defaults — is invisible to both and needs a browser.
+
+### G-9 — UI/UX audit of the new surfaces ✅ **audited and fixed 2026-07-30**
+
+Everything above verifies the features *work*. This is the separate question of whether they are
+**usable**, measured rather than eyeballed: contrast ratios read out of the live DOM,
+viewport-overflow measured at 390px, and screenshots at two themes × two widths.
+
+#### The finding that mattered: dark mode was never applied to the new tasks UI
+
+Dark mode is a **real shipped feature** — `darkMode: "class"`, `ThemeToggle` in the header,
+`ThemeContext` persisting the choice — and it is applied per class, so a `text-slate-900` with no
+`dark:` variant stays near-black on a near-black surface. `TaskTable` shipped with **zero `dark:`
+variants across 43 light-surface classes**, and the result was measurable:
+
+| Surface                      | Before                                          | After           |
+| ---------------------------- | ----------------------------------------------- | --------------- |
+| `/tasks` table (new)         | 30 AA failures, **18 invisible** — titles at 1:1 | **0 failures**  |
+| `/attendance` calendar (new) | 33 failures, 0 invisible                        | **0 failures**  |
+| `/attendance` manage (new)   | 1 failure                                       | **0 failures**  |
+
+**1:1 means `rgb(15,23,42)` text on `rgb(15,23,42)` — the same colour.** Every task title in the
+table was invisible in dark mode. The rows were present, the e2e assertions passed, and a
+dark-mode user saw blank space where the titles should be. The filter selects were the mirror
+image: light text inherited from a `dark:` ancestor over a `bg-white` with no dark variant.
+
+- [x] `dark:` variants across `TaskTable`, the `/tasks` view toggle, the drawer's attachments
+      block and `AttendanceCalendar`; active-tab colour raised from `primary-600` (3.54:1) to
+      `dark:primary-400` across the whole attendance tab row so it stays uniform.
+- [x] **Regression guard:** `e2e/dark-mode-contrast.spec.ts` computes WCAG contrast in the live
+      DOM and fails on anything below **1.5:1**. Verified by re-introducing the bug and watching
+      it go red. The threshold is legibility, not AA compliance — deliberately; see the spec
+      header and **BACKLOG L-5**.
+
+#### Also fixed
+
+- [x] **Table rows were mouse-only.** `TaskKanban` cards are `role="button"` + `tabIndex={0}` +
+      Enter, so switching from board to table silently cost keyboard users any way to open a
+      task. Rows now match the board, and `aria-sort` announces the sorted column.
+- [x] **Chips and refs wrapped onto two lines at 390px** ("In Progress", `OPERAT-` / `5`) —
+      `whitespace-nowrap`.
+- [x] The icon-only attach-link button had **no accessible name** (G-8).
+
+#### Corrections to findings made earlier in the same audit
+
+Two things read off screenshots did not survive measurement, and the record should say so:
+
+- **"The calendar clips the Sunday column on mobile" — false.** Measured at 390px,
+  `document.scrollWidth === 390`; nothing overflows. What looked like clipping was the narrow
+  cell wrapping "Founders Day" under `line-clamp-2`. The `flex-wrap` added to the calendar
+  header is **defensive only** and is commented as such — it fixed nothing, confirmed by
+  reverting it and re-measuring to an identical result.
+- **"The attendance tab bar clips Manage" — not a defect.** The strip is already
+  `overflow-x-auto` with `whitespace-nowrap`; it scrolls. The one element past the viewport edge
+  is that tab, which is how a scrollable tab strip is supposed to behave.
+
+#### Not fixed — pre-existing, and larger than this batch
+
+The same measurement across every Office route shows this is **not new debt**, and in one case
+the pre-existing surface is worse than the new one:
+
+| Route                   | AA failures | invisible (<1.5:1) |
+| ----------------------- | ----------- | ------------------ |
+| `/tasks` board (kanban) | 42          | **27**             |
+| `/settings`             | 17          | **7**              |
+| `/office/files`         | 4           | 2                  |
+| `/approvals`            | 6           | 0                  |
+
+Filed as **BACKLOG L-5** rather than fixed here: the kanban board and `/settings` are shipped
+components outside this batch, and restyling them is worth reviewing on its own. Note the
+ordering — **the new table is now cleaner than the board beside it**, which is its own
+inconsistency and an argument for doing L-5 soon.
 
 ---
 
@@ -344,7 +415,7 @@ The build queue is empty. This is a **ship-and-verify** list, in order:
    Both applied cleanly to a scratch DB on 2026-07-30, so the SQL itself is proven.
 3. **Re-run both suites against dev** once deployed: smoke (10/10, 250 checks locally) and
    Playwright (65 tests, 9 specs locally). Green locally proves the code, not the deployment.
-   Note that a *local* Playwright run needs `COOKIE_AUTH_ENABLED=1` on the frontend or two
+   Note that a _local_ Playwright run needs `COOKIE_AUTH_ENABLED=1` on the frontend or two
    specs fail environmentally — see `e2e/README.md`.
 4. **Drop the inert `communication` tables** (G-4 tail).
 5. **G-5 in TypeScript** — restate the CHECK in `task.schema.ts` whenever drizzle is upgraded,
