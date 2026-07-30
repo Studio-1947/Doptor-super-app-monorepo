@@ -100,3 +100,16 @@ export class ReviewLeaveRequestDto {
   @MaxLength(1000)
   note?: string;
 }
+
+export class CreateHolidayDto {
+  @ApiProperty({ example: "2026-08-15" })
+  @IsDateString()
+  @IsNotEmpty()
+  date: string;
+
+  @ApiProperty({ example: "Independence Day" })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(120)
+  name: string;
+}

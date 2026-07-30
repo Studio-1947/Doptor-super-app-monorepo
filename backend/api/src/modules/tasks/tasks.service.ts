@@ -5,11 +5,14 @@ import {
   ForbiddenException,
   Inject,
 } from "@nestjs/common";
+import * as fs from "fs";
+import * as path from "path";
 import { eq, and, or, ilike, desc, asc, inArray, sql } from "drizzle-orm";
 import {
   tasks,
   taskAssignees,
   taskComments,
+  taskAttachments,
   taskAuditLogs,
   taskLabels,
   labels,
@@ -28,6 +31,12 @@ import { NotificationsService } from "../notifications/notifications.service";
 
 export type TaskStatus = (typeof taskStatusEnum.enumValues)[number];
 export type TaskPriority = (typeof taskPriorityEnum.enumValues)[number];
+
+/**
+ * Task attachments share the file-attachment disk volume, own subfolder —
+ * same arrangement `documents` uses (see DOCUMENTS_UPLOAD_DIR).
+ */
+export const TASKS_UPLOAD_DIR = path.join(process.cwd(), "uploads", "tasks");
 
 /** Any drizzle handle — the real db or a transaction. Lets helpers run inside a tx. */
 type Db = PostgresJsDatabase<typeof schema>;
@@ -855,5 +864,234 @@ export class TasksService {
 
     await this.db.delete(taskComments).where(eq(taskComments.id, commentId));
     return { message: "Comment deleted" };
+  }
+
+  // ------------------------------------------------------------ attachments
+
+  /**
+   * An attachment is either an uploaded file or an external link, never both
+   * and never neither. That invariant belongs in a CHECK constraint, and as of
+   * migration `0017` it is one — but it is enforced here too, because the
+   * constraint cannot produce a useful error message and drizzle 0.29 cannot
+   * declare it in the schema. Keep both: the service explains, the constraint
+   * guarantees.
+   */
+  private assertAttachmentShape(row: {
+    kind: "file" | "link";
+    url?: string | null;
+    stored_name?: string | null;
+  }) {
+    if (row.kind === "link") {
+      if (!row.url) {
+        throw new BadRequestException("A link attachment needs a url");
+      }
+      if (row.stored_name) {
+        throw new BadRequestException(
+          "A link attachment cannot carry an uploaded file",
+        );
+      }
+    } else {
+      if (!row.stored_name) {
+        throw new BadRequestException("A file attachment needs an upload");
+      }
+      if (row.url) {
+        throw new BadRequestException(
+          "A file attachment cannot also carry a url",
+        );
+      }
+    }
+  }
+
+  private async findAttachmentInOrg(
+    attachmentId: string,
+    organisationId: string,
+  ) {
+    const row = await this.db.query.taskAttachments.findFirst({
+      where: and(
+        eq(taskAttachments.id, attachmentId),
+        eq(taskAttachments.organisation_id, organisationId),
+      ),
+    });
+    if (!row) throw new NotFoundException("Attachment not found");
+    return row;
+  }
+
+  async listAttachments(taskId: string, organisationId: string) {
+    await this.findTaskInOrg(taskId, organisationId);
+    return await this.db.query.taskAttachments.findMany({
+      where: and(
+        eq(taskAttachments.task_id, taskId),
+        eq(taskAttachments.organisation_id, organisationId),
+      ),
+      orderBy: [desc(taskAttachments.created_at)],
+      with: { uploadedBy: { columns: USER_SUMMARY_COLUMNS } },
+    });
+  }
+
+  /**
+   * Shared tail of both add paths: insert + audit in one transaction, then
+   * notify the task's other assignees. Mirrors `addComment`.
+   */
+  private async insertAttachment(
+    taskId: string,
+    organisationId: string,
+    userId: string,
+    values: typeof taskAttachments.$inferInsert,
+    describe: string,
+  ) {
+    const { attachment, task } = await this.db.transaction(async (tx) => {
+      const t = await this.findTaskInOrg(taskId, organisationId, tx);
+
+      const [a] = await tx.insert(taskAttachments).values(values).returning();
+
+      await this.writeAudit(tx, [
+        {
+          task_id: taskId,
+          organisation_id: organisationId,
+          actor_id: userId,
+          action: "attached",
+          field: "attachments",
+          after_value: {
+            attachment_id: a.id,
+            kind: a.kind,
+            label: a.label ?? describe,
+          },
+        },
+      ]);
+
+      return { attachment: a, task: t };
+    });
+
+    const recipients = await this.assigneeIds(taskId, userId);
+    if (task.created_by && task.created_by !== userId) {
+      recipients.push(task.created_by);
+    }
+    const reference = await this.referenceFor(task);
+    await this.notifications.safeNotifyMany(recipients, {
+      organisationId,
+      actorId: userId,
+      type: "task_attachment_added",
+      title: `New attachment on ${reference ?? "a task"}`,
+      body: describe,
+      link: `/tasks/${taskId}`,
+      data: { task_id: taskId, attachment_id: attachment.id, reference },
+    });
+
+    return attachment;
+  }
+
+  async addLinkAttachment(
+    taskId: string,
+    organisationId: string,
+    userId: string,
+    data: { url: string; label?: string },
+  ) {
+    this.assertAttachmentShape({ kind: "link", url: data.url });
+    return this.insertAttachment(
+      taskId,
+      organisationId,
+      userId,
+      {
+        task_id: taskId,
+        organisation_id: organisationId,
+        uploaded_by: userId,
+        kind: "link",
+        url: data.url,
+        label: data.label,
+      },
+      data.label || data.url,
+    );
+  }
+
+  async addFileAttachment(
+    taskId: string,
+    organisationId: string,
+    userId: string,
+    upload: {
+      originalname: string;
+      filename: string;
+      mimetype: string;
+      size: number;
+    },
+    meta: { label?: string } = {},
+  ) {
+    this.assertAttachmentShape({ kind: "file", stored_name: upload.filename });
+    return this.insertAttachment(
+      taskId,
+      organisationId,
+      userId,
+      {
+        task_id: taskId,
+        organisation_id: organisationId,
+        uploaded_by: userId,
+        kind: "file",
+        original_name: upload.originalname,
+        stored_name: upload.filename,
+        mime_type: upload.mimetype,
+        size_bytes: upload.size,
+        label: meta.label,
+      },
+      meta.label || upload.originalname,
+    );
+  }
+
+  async getAttachmentForDownload(
+    attachmentId: string,
+    organisationId: string,
+  ) {
+    const attachment = await this.findAttachmentInOrg(
+      attachmentId,
+      organisationId,
+    );
+    if (attachment.kind !== "file" || !attachment.stored_name) {
+      throw new BadRequestException(
+        "This attachment is a link, not an uploaded file",
+      );
+    }
+    const diskPath = path.join(TASKS_UPLOAD_DIR, attachment.stored_name);
+    if (!fs.existsSync(diskPath)) {
+      throw new NotFoundException("Attachment file is missing on disk");
+    }
+    return { attachment, diskPath };
+  }
+
+  async removeAttachment(
+    attachmentId: string,
+    organisationId: string,
+    actorId: string,
+  ) {
+    const attachment = await this.findAttachmentInOrg(
+      attachmentId,
+      organisationId,
+    );
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(taskAttachments)
+        .where(eq(taskAttachments.id, attachmentId));
+
+      await this.writeAudit(tx, [
+        {
+          task_id: attachment.task_id,
+          organisation_id: organisationId,
+          actor_id: actorId,
+          action: "detached",
+          field: "attachments",
+          before_value: {
+            attachment_id: attachment.id,
+            kind: attachment.kind,
+            label: attachment.label ?? attachment.original_name ?? attachment.url,
+          },
+        },
+      ]);
+    });
+
+    // Best-effort disk cleanup; a missing file must not fail the delete.
+    if (attachment.stored_name) {
+      const diskPath = path.join(TASKS_UPLOAD_DIR, attachment.stored_name);
+      fs.promises.unlink(diskPath).catch(() => undefined);
+    }
+
+    return { message: "Attachment deleted", attachment };
   }
 }

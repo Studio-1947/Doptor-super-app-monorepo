@@ -8,6 +8,7 @@ import {
   IsDateString,
   IsArray,
   IsHexColor,
+  IsUrl,
   MaxLength,
   ArrayMaxSize,
 } from "class-validator";
@@ -167,4 +168,36 @@ export class SetArchivedDto {
   @IsBoolean()
   @IsNotEmpty()
   is_archived: boolean;
+}
+
+/**
+ * Link attachments only. File attachments arrive as multipart and carry no JSON
+ * body beyond an optional label, so they use `UploadAttachmentMetaDto` — the
+ * file-or-link invariant is decided by which endpoint was called, never by a
+ * client-supplied `kind`.
+ */
+export class CreateLinkAttachmentDto {
+  @ApiProperty({ example: "https://example.com/spec.pdf" })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2048)
+  @IsUrl(
+    { require_protocol: true, protocols: ["http", "https"] },
+    { message: "url must be a valid http(s) URL" },
+  )
+  url: string;
+
+  @ApiProperty({ required: false, example: "Vendor specification" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  label?: string;
+}
+
+export class UploadAttachmentMetaDto {
+  @ApiProperty({ required: false, example: "Signed contract" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  label?: string;
 }

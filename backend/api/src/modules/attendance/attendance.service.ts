@@ -11,6 +11,7 @@ import {
   leaveTypes,
   leaveBalances,
   leaveRequests,
+  holidays,
 } from "../../database/drizzle/schema/attendance.schema";
 import { DRIZZLE } from "../../database/drizzle/database.module";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -35,11 +36,18 @@ function yearOf(dateValue: string | Date): number {
 }
 
 /**
- * Working days between two ISO dates, inclusive, excluding Saturdays and
- * Sundays. Public holidays are not modelled yet — a holiday calendar would
- * refine this later.
+ * Working days between two ISO dates, inclusive, excluding Saturdays, Sundays
+ * and any date in `holidayDates` (a set of YYYY-MM-DD strings).
+ *
+ * Callers must pass the organisation's holidays — omitting them silently
+ * over-counts, which is the bug this parameter exists to fix. `submitLeaveRequest`
+ * loads them for the requested range; see `holidaysInRange`.
  */
-function workingDays(startIso: string, endIso: string): number {
+function workingDays(
+  startIso: string,
+  endIso: string,
+  holidayDates: ReadonlySet<string> = new Set(),
+): number {
   const start = new Date(startIso + "T00:00:00Z");
   const end = new Date(endIso + "T00:00:00Z");
   if (end < start) return 0;
@@ -47,7 +55,7 @@ function workingDays(startIso: string, endIso: string): number {
   const cur = new Date(start);
   while (cur <= end) {
     const day = cur.getUTCDay(); // 0 Sun … 6 Sat
-    if (day !== 0 && day !== 6) count++;
+    if (day !== 0 && day !== 6 && !holidayDates.has(toDateStr(cur))) count++;
     cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return count;
@@ -299,6 +307,109 @@ export class AttendanceService {
     });
   }
 
+  // --------------------------------------------------------------- holidays
+
+  /**
+   * Holiday dates for an org within an inclusive range, as YYYY-MM-DD strings
+   * ready for `workingDays`. drizzle returns `date` columns as Date objects on
+   * some driver versions and strings on others, so both are normalised here
+   * rather than at every call site.
+   */
+  private async holidaysInRange(
+    organisationId: string,
+    startIso: string,
+    endIso: string,
+  ): Promise<Set<string>> {
+    const rows = await this.db.query.holidays.findMany({
+      where: and(
+        eq(holidays.organisation_id, organisationId),
+        gte(holidays.date, startIso),
+        lte(holidays.date, endIso),
+      ),
+    });
+    return new Set(
+      rows.map((h) =>
+        typeof h.date === "string" ? h.date : toDateStr(h.date as Date),
+      ),
+    );
+  }
+
+  async listHolidays(organisationId: string, year?: number) {
+    const conditions = [eq(holidays.organisation_id, organisationId)];
+    if (year) {
+      conditions.push(gte(holidays.date, `${year}-01-01`));
+      conditions.push(lte(holidays.date, `${year}-12-31`));
+    }
+    return await this.db.query.holidays.findMany({
+      where: and(...conditions),
+      orderBy: [holidays.date],
+    });
+  }
+
+  async createHoliday(
+    organisationId: string,
+    data: { date: string; name: string },
+  ) {
+    const existing = await this.db.query.holidays.findFirst({
+      where: and(
+        eq(holidays.organisation_id, organisationId),
+        eq(holidays.date, data.date),
+      ),
+    });
+    if (existing) {
+      throw new BadRequestException(
+        `${data.date} is already a holiday ("${existing.name}")`,
+      );
+    }
+    const [row] = await this.db
+      .insert(holidays)
+      .values({
+        organisation_id: organisationId,
+        date: data.date,
+        name: data.name,
+      })
+      .returning();
+    return row;
+  }
+
+  async deleteHoliday(id: string, organisationId: string) {
+    const row = await this.db.query.holidays.findFirst({
+      where: and(
+        eq(holidays.id, id),
+        eq(holidays.organisation_id, organisationId),
+      ),
+    });
+    if (!row) throw new NotFoundException("Holiday not found");
+    await this.db.delete(holidays).where(eq(holidays.id, id));
+    return { message: "Holiday deleted", holiday: row };
+  }
+
+  /**
+   * Working-day count for a range, holidays included. Lets the frontend show
+   * the true cost of a leave request before it is submitted, instead of
+   * counting Mon–Fri client-side and disagreeing with the server.
+   */
+  async previewWorkingDays(
+    organisationId: string,
+    startIso: string,
+    endIso: string,
+  ) {
+    if (endIso < startIso) {
+      throw new BadRequestException("end_date cannot be before start_date");
+    }
+    const holidayDates = await this.holidaysInRange(
+      organisationId,
+      startIso,
+      endIso,
+    );
+    return {
+      start_date: startIso,
+      end_date: endIso,
+      days: workingDays(startIso, endIso, holidayDates),
+      holidays: [...holidayDates].sort(),
+    };
+  }
+
   // --------------------------------------------------------- leave requests
 
   async submitLeaveRequest(
@@ -316,7 +427,12 @@ export class AttendanceService {
     if (data.end_date < data.start_date) {
       throw new BadRequestException("end_date cannot be before start_date");
     }
-    const days = workingDays(data.start_date, data.end_date);
+    const holidayDates = await this.holidaysInRange(
+      organisationId,
+      data.start_date,
+      data.end_date,
+    );
+    const days = workingDays(data.start_date, data.end_date, holidayDates);
     if (days <= 0) {
       throw new BadRequestException(
         "The requested range contains no working days",

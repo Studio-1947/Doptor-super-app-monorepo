@@ -7,8 +7,21 @@ deployed multi-vertical shell.
 **Direction (decided):** Doptor is home base. We port _into_ Doptor; the tracker is the
 reference implementation, not something we merge wholesale.
 
-**Status of this doc:** Finalized build spec (Decisions A–D locked 2026-07-24). Nothing is
-built yet — ready to start Phase 0.
+**Status of this doc:** ⚠️ **Historical build spec — the port is substantially DONE.**
+Decisions A–D were locked 2026-07-24 and all four phases shipped 2026-07-24…27 and are live
+on dev. This file is kept for the *reasoning* behind Decisions A–D, not as a to-do list.
+
+- **Live status lives in [`OFFICE-ROADMAP.md`](./OFFICE-ROADMAP.md)** (Phase 2 = porting
+  Phases 1–2; Phase 4 = porting Phases 3–4).
+- **Remaining gaps are tracked in [`PORTING-GAPS.md`](./PORTING-GAPS.md)** — one real feature
+  hole (task attachments), one missing view, and attendance polish.
+- **Decision C shipped with a deliberate deviation:** Doptor kept its *lowercase* enum values
+  (`todo`, `medium`) rather than adopting the tracker's UPPERCASE ones. The enum type alone
+  achieves the stated anti-drift goal; re-casing would have meant a data migration plus churn
+  through every DTO and the whole web frontend. See `task.schema.ts` for the rationale in situ.
+
+The phase checkboxes below were **never ticked as work completed** — do not read an unticked
+box here as outstanding work. Verify against `OFFICE-ROADMAP.md` and `PORTING-GAPS.md`.
 
 ---
 

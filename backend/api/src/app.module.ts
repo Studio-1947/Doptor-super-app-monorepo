@@ -19,12 +19,19 @@ import { NotificationsModule } from "./modules/notifications/notifications.modul
 
 import { AppController } from "./app.controller";
 
-// CommunicationModule (chat) is deliberately not registered — chat is not a
-// product we ship (backlog M-5, closed 2026-07-28 by removal). Its module,
-// service and WebSocket gateway remain in the tree but are unwired, so the
-// gateway no longer listens. The `conversations`/`messages` tables are left
-// in place: dropping them needs a migration and is destructive, and they are
-// empty. Re-register this module to bring chat back.
+// Chat is not a product we ship (backlog M-5, closed 2026-07-28 by removal).
+// `modules/communication/` was unregistered then, and **deleted 2026-07-29**
+// (backlog M-6): its WebSocket gateway authenticated nothing — `handleConnection`
+// never verified the socket's identity and `sendMessage` trusted a client-supplied
+// `payload.userId` — so leaving it in the tree meant one `imports:` line stood
+// between the repo and a live user-impersonation hole. Deleting beats commenting.
+//
+// The `conversations`/`messages` tables are deliberately left in place: dropping
+// them needs a destructive migration, and they are empty. The schema is still
+// exported from the drizzle barrel.
+//
+// If chat returns, do not restore the old gateway — port the task-tracker's
+// gateway-auth-in-middleware approach instead (see docs/PORTING-GAPS.md § G-4).
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),

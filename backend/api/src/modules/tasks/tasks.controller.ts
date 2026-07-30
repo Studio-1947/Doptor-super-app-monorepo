@@ -1,3 +1,6 @@
+import * as fs from "fs";
+import * as path from "path";
+import * as crypto from "crypto";
 import {
   Controller,
   Get,
@@ -7,18 +10,25 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   Query,
   Request,
+  Res,
   BadRequestException,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { diskStorage } from "multer";
+import type { Response } from "express";
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiConsumes,
   ApiQuery,
 } from "@nestjs/swagger";
-import { TasksService } from "./tasks.service";
+import { TasksService, TASKS_UPLOAD_DIR } from "./tasks.service";
 import type {
   TaskStatus,
   TaskPriority,
@@ -33,6 +43,8 @@ import {
   CreateLabelDto,
   CreateCommentDto,
   SetArchivedDto,
+  CreateLinkAttachmentDto,
+  UploadAttachmentMetaDto,
   TASK_STATUSES,
   TASK_PRIORITIES,
   TASK_SORT_FIELDS,
@@ -40,6 +52,9 @@ import {
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { PermissionsGuard } from "../../common/guards/permissions.guard";
 import { Permissions } from "../../common/decorators/permissions.decorator";
+
+/** Matches the documents module's 25 MB ceiling — same disk volume, same limit. */
+const MAX_TASK_ATTACHMENT_SIZE = 25 * 1024 * 1024; // 25 MB
 
 /** Query params bypass the DTO pipeline, so enum-ish values are checked here. */
 function assertOneOf<T extends string>(
@@ -313,6 +328,101 @@ export class TasksController {
       req.user.organisation_id,
       req.user.id,
       body.body,
+    );
+  }
+
+  // ------------------------------------------------------------ attachments
+  // The `attachments/:attachmentId` routes address an attachment directly rather
+  // than nesting under its task: an attachment id is already unique and org-scoped,
+  // so threading the task id through only creates a second thing to keep consistent.
+  // They cannot collide with `:id` (two path segments vs one), but they are kept
+  // above `@Delete(":id")` to match the ordering convention used for labels.
+
+  @Get(":id/attachments")
+  @Permissions("read:tasks")
+  @ApiOperation({ summary: "List a task's attachments" })
+  listAttachments(@Param("id") id: string, @Request() req) {
+    return this.tasksService.listAttachments(id, req.user.organisation_id);
+  }
+
+  @Post(":id/attachments/link")
+  @Permissions("update:tasks")
+  @ApiOperation({ summary: "Attach an external link to a task" })
+  addLinkAttachment(
+    @Param("id") id: string,
+    @Body() body: CreateLinkAttachmentDto,
+    @Request() req,
+  ) {
+    return this.tasksService.addLinkAttachment(
+      id,
+      req.user.organisation_id,
+      req.user.id,
+      body,
+    );
+  }
+
+  @Post(":id/attachments/upload")
+  @Permissions("update:tasks")
+  @ApiConsumes("multipart/form-data")
+  @ApiOperation({ summary: "Upload a file attachment to a task" })
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: diskStorage({
+        destination: (req, file, cb) => {
+          fs.mkdirSync(TASKS_UPLOAD_DIR, { recursive: true });
+          cb(null, TASKS_UPLOAD_DIR);
+        },
+        filename: (req, file, cb) => {
+          const ext = path.extname(file.originalname);
+          cb(null, `${crypto.randomUUID()}${ext}`);
+        },
+      }),
+      limits: { fileSize: MAX_TASK_ATTACHMENT_SIZE },
+    }),
+  )
+  uploadAttachment(
+    @Param("id") id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() meta: UploadAttachmentMetaDto,
+    @Request() req,
+  ) {
+    if (!file) throw new BadRequestException("No file was uploaded");
+    return this.tasksService.addFileAttachment(
+      id,
+      req.user.organisation_id,
+      req.user.id,
+      file,
+      meta,
+    );
+  }
+
+  @Get("attachments/:attachmentId/download")
+  @Permissions("read:tasks")
+  @ApiOperation({ summary: "Download a task's file attachment" })
+  async downloadAttachment(
+    @Param("attachmentId") attachmentId: string,
+    @Request() req,
+    @Res() res: Response,
+  ) {
+    const { attachment, diskPath } =
+      await this.tasksService.getAttachmentForDownload(
+        attachmentId,
+        req.user.organisation_id,
+      );
+    res.download(diskPath, attachment.original_name ?? "attachment");
+  }
+
+  @Delete("attachments/:attachmentId")
+  @Permissions("update:tasks")
+  @ApiOperation({ summary: "Remove an attachment from a task" })
+  removeAttachment(
+    @Param("attachmentId") attachmentId: string,
+    @Request() req,
+  ) {
+    return this.tasksService.removeAttachment(
+      attachmentId,
+      req.user.organisation_id,
+      req.user.id,
     );
   }
 

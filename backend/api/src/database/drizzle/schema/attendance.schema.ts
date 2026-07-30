@@ -171,3 +171,37 @@ export const leaveRequests = pgTable(
     ),
   }),
 );
+
+/**
+ * Public holidays, per organisation, per date.
+ *
+ * Leave-day arithmetic previously counted every Mon–Fri in a range as a working
+ * day, so a request spanning a public holiday silently over-counted and debited
+ * the requester's balance for a day nobody worked. Holidays are org-scoped
+ * because they are jurisdiction- and company-specific — there is no sensible
+ * global default, and guessing one would reintroduce the same wrong answer.
+ *
+ * `date` is stored without a year constraint so recurring holidays are entered
+ * per year explicitly; a "repeats annually" flag would need calendar rules
+ * (Easter, lunar dates) that this does not attempt to model.
+ */
+export const holidays = pgTable(
+  "holidays",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organisation_id: uuid("organisation_id")
+      .references(() => organisations.id, { onDelete: "cascade" })
+      .notNull(),
+    date: date("date").notNull(),
+    name: text("name").notNull(),
+    created_at: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    // One holiday per date per org — a second entry for the same day would
+    // double-exclude it from working-day counts.
+    orgDateUnique: uniqueIndex("holidays_org_date_unique").on(
+      table.organisation_id,
+      table.date,
+    ),
+  }),
+);

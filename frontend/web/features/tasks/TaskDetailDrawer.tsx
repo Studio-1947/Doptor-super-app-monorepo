@@ -4,10 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 import {
     X, Loader2, Send, Trash2, Archive, ArchiveRestore,
     Tag, Users, Clock, Building2, Calendar, CornerDownRight,
+    Paperclip, Upload, Link2, Download, ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
     tasksService, Task, TaskStatus, TaskPriority, TaskLabel, TaskAuditEntry,
+    TaskAttachment,
 } from '@/services/tasks.service';
 import { usersService, UserListItem } from '@/services/users.service';
 import { initials, displayName as fullName } from '@/lib/display';
@@ -20,6 +22,13 @@ const STATUSES: { id: TaskStatus; label: string }[] = [
 ];
 
 const PRIORITIES: TaskPriority[] = ['low', 'medium', 'high', 'urgent'];
+
+/** Human-readable file size for attachment rows. */
+function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 
 /** Renders an audit row as a readable sentence. */
@@ -59,6 +68,10 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
     const [loading, setLoading] = useState(false);
     const [comment, setComment] = useState('');
     const [isPosting, setIsPosting] = useState(false);
+    const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
+    const [linkUrl, setLinkUrl] = useState('');
+    const [showLinkForm, setShowLinkForm] = useState(false);
+    const [isAttaching, setIsAttaching] = useState(false);
     const [titleDraft, setTitleDraft] = useState('');
     const [descDraft, setDescDraft] = useState('');
 
@@ -73,6 +86,10 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
         tasksService.getHistory(id).then(setHistory).catch(() => setHistory([]));
     }, []);
 
+    const loadAttachments = useCallback((id: string) => {
+        tasksService.listAttachments(id).then(setAttachments).catch(() => setAttachments([]));
+    }, []);
+
     useEffect(() => {
         if (!taskId) { setTask(null); return; }
         setLoading(true);
@@ -81,7 +98,8 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
             .catch(() => toast.error('Failed to load task'))
             .finally(() => setLoading(false));
         loadHistory(taskId);
-    }, [taskId, loadHistory]);
+        loadAttachments(taskId);
+    }, [taskId, loadHistory, loadAttachments]);
 
     useEffect(() => {
         if (!taskId) return;
@@ -110,6 +128,70 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
             return;
         }
         await run(() => tasksService.update(task.id, { [field]: value }), `Failed to update ${field}`);
+    };
+
+    /** Both add paths refresh the same three things: list, task, history. */
+    const afterAttachmentChange = async (id: string) => {
+        loadAttachments(id);
+        loadHistory(id);
+        try {
+            apply(await tasksService.getById(id));
+        } catch {
+            // The attachment itself succeeded; a failed refresh must not read
+            // as a failed upload. The list above is already correct.
+        }
+    };
+
+    const attachLink = async () => {
+        if (!task || !linkUrl.trim()) return;
+        setIsAttaching(true);
+        try {
+            await tasksService.addLinkAttachment(task.id, linkUrl.trim());
+            setLinkUrl('');
+            setShowLinkForm(false);
+            await afterAttachmentChange(task.id);
+            toast.success('Link attached');
+        } catch (err: any) {
+            toast.error(err?.response?.data?.message || 'Failed to attach link');
+        } finally {
+            setIsAttaching(false);
+        }
+    };
+
+    const attachFile = async (file: File) => {
+        if (!task) return;
+        setIsAttaching(true);
+        try {
+            await tasksService.uploadAttachment(task.id, file);
+            await afterAttachmentChange(task.id);
+            toast.success('File attached');
+        } catch (err: any) {
+            toast.error(err?.response?.data?.message || 'Failed to upload file');
+        } finally {
+            setIsAttaching(false);
+        }
+    };
+
+    const removeAttachment = async (attachment: TaskAttachment) => {
+        if (!task) return;
+        try {
+            await tasksService.deleteAttachment(attachment.id);
+            await afterAttachmentChange(task.id);
+            toast.success('Attachment removed');
+        } catch (err: any) {
+            toast.error(err?.response?.data?.message || 'Failed to remove attachment');
+        }
+    };
+
+    const downloadAttachment = async (attachment: TaskAttachment) => {
+        try {
+            await tasksService.downloadAttachment(
+                attachment.id,
+                attachment.original_name || attachment.label || 'attachment',
+            );
+        } catch (err: any) {
+            toast.error(err?.response?.data?.message || 'Failed to download attachment');
+        }
     };
 
     const postComment = async () => {
@@ -315,6 +397,114 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
                                     </ul>
                                 </Field>
                             )}
+
+                            <Field label="Attachments" icon={<Paperclip size={12} />}>
+                                <div className="space-y-2">
+                                    {attachments.length === 0 && (
+                                        <p className="text-xs text-slate-400">No attachments yet</p>
+                                    )}
+                                    {attachments.map((a) => (
+                                        <div
+                                            key={a.id}
+                                            className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2"
+                                        >
+                                            {a.kind === 'link'
+                                                ? <Link2 size={14} className="shrink-0 text-slate-400" />
+                                                : <Paperclip size={14} className="shrink-0 text-slate-400" />}
+
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm text-slate-700 truncate">
+                                                    {a.label || a.original_name || a.url}
+                                                </p>
+                                                <p className="text-[10px] text-slate-400">
+                                                    {a.kind === 'file' && a.size_bytes != null
+                                                        ? `${formatBytes(a.size_bytes)} · `
+                                                        : ''}
+                                                    {new Date(a.created_at).toLocaleDateString()}
+                                                </p>
+                                            </div>
+
+                                            {a.kind === 'link' ? (
+                                                <a
+                                                    href={a.url ?? '#'}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title="Open link"
+                                                    className="p-1.5 text-slate-400 hover:text-primary-600 transition-colors"
+                                                >
+                                                    <ExternalLink size={14} />
+                                                </a>
+                                            ) : (
+                                                <button
+                                                    onClick={() => downloadAttachment(a)}
+                                                    title="Download"
+                                                    className="p-1.5 text-slate-400 hover:text-primary-600 transition-colors"
+                                                >
+                                                    <Download size={14} />
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => removeAttachment(a)}
+                                                title="Remove"
+                                                className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex items-center gap-2 mt-3">
+                                    <label
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold cursor-pointer hover:border-primary-500 transition-colors ${isAttaching ? 'opacity-40 pointer-events-none' : ''}`}
+                                    >
+                                        {isAttaching
+                                            ? <Loader2 size={13} className="animate-spin" />
+                                            : <Upload size={13} />}
+                                        Upload
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            disabled={isAttaching}
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                // Reset first: picking the same file twice must
+                                                // still fire onChange.
+                                                e.target.value = '';
+                                                if (file) attachFile(file);
+                                            }}
+                                        />
+                                    </label>
+                                    <button
+                                        onClick={() => setShowLinkForm((s) => !s)}
+                                        disabled={isAttaching}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold disabled:opacity-40 hover:border-primary-500 transition-colors"
+                                    >
+                                        <Link2 size={13} /> Add link
+                                    </button>
+                                </div>
+
+                                {showLinkForm && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <input
+                                            value={linkUrl}
+                                            onChange={(e) => setLinkUrl(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') attachLink(); }}
+                                            placeholder="https://…"
+                                            className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-primary-500"
+                                        />
+                                        <button
+                                            onClick={attachLink}
+                                            disabled={isAttaching || !linkUrl.trim()}
+                                            className="p-2 rounded-lg bg-primary-600 text-white disabled:opacity-40 hover:bg-primary-700 transition-colors"
+                                        >
+                                            {isAttaching
+                                                ? <Loader2 size={14} className="animate-spin" />
+                                                : <Send size={14} />}
+                                        </button>
+                                    </div>
+                                )}
+                            </Field>
 
                             <Field label="Comments">
                                 <div className="space-y-3">
