@@ -85,8 +85,8 @@ export function TaskKanban() {
         <div className="flex flex-col h-full overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 shrink-0">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Task Board</h1>
-                    <p className="text-slate-500 mt-1">Manage and track your team&apos;s work</p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Task Board</h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-1">Manage and track your team&apos;s work</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="relative">
@@ -96,7 +96,7 @@ export function TaskKanban() {
                             placeholder="Search tasks..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 w-full sm:w-64"
+                            className="pl-9 pr-4 py-2 bg-white dark:bg-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 w-full sm:w-64"
                         />
                     </div>
                     <Button
@@ -117,12 +117,12 @@ export function TaskKanban() {
                     {COLUMNS.map(column => {
                         const columnTasks = filteredTasks.filter(t => t.status === column.id);
                         return (
-                            <div key={column.id} className="flex-1 flex flex-col min-w-[280px] bg-slate-50 rounded-xl border border-slate-200 h-full">
-                                <div className="p-4 flex items-center justify-between border-b border-slate-200 shrink-0">
+                            <div key={column.id} className="flex-1 flex flex-col min-w-[280px] bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 h-full">
+                                <div className="p-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 shrink-0">
                                     <div className="flex items-center gap-2">
                                         <div className={`w-3 h-3 rounded-full ${column.color}`} />
-                                        <span className="font-semibold text-slate-900">{column.title}</span>
-                                        <span className="text-xs text-slate-500 font-medium bg-slate-200 px-2 py-0.5 rounded-full">
+                                        <span className="font-semibold text-slate-900 dark:text-slate-100">{column.title}</span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-300 font-medium bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">
                                             {columnTasks.length}
                                         </span>
                                     </div>
@@ -131,7 +131,7 @@ export function TaskKanban() {
                                 <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">
                                     {loading ? (
                                         Array.from({ length: 2 }).map((_, i) => (
-                                            <div key={i} className="h-28 rounded-lg bg-slate-100 animate-pulse" />
+                                            <div key={i} className="h-28 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse" />
                                         ))
                                     ) : columnTasks.map(task => (
                                         // Card is a presentational primitive with no onClick, so the
@@ -139,12 +139,12 @@ export function TaskKanban() {
                                         <div key={task.id} onClick={() => setOpenTaskId(task.id)} role="button" tabIndex={0}
                                             onKeyDown={(e) => { if (e.key === 'Enter') setOpenTaskId(task.id); }}>
                                         <Card
-                                            className={`p-4 border-slate-200 hover:shadow-md transition-shadow cursor-pointer bg-white group ${task.is_archived ? 'opacity-60' : ''}`}
+                                            className={`p-4 border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow cursor-pointer bg-white dark:bg-slate-900 group ${task.is_archived ? 'opacity-60' : ''}`}
                                         >
                                             <div className="flex items-start justify-between mb-2 gap-2">
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     {task.reference && (
-                                                        <span className="text-[10px] font-black text-primary-600 tracking-tight shrink-0">
+                                                        <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 tracking-tight shrink-0">
                                                             {task.reference}
                                                         </span>
                                                     )}
@@ -157,7 +157,7 @@ export function TaskKanban() {
                                                     <select
                                                         value={task.status}
                                                         onChange={(e) => moveTask(task.id, e.target.value as TaskStatus)}
-                                                        className="text-xs border border-slate-200 rounded px-1 py-0.5 focus:outline-none"
+                                                        className="text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded px-1 py-0.5 focus:outline-none"
                                                         onClick={(e) => e.stopPropagation()}
                                                     >
                                                         {COLUMNS.map(c => (
@@ -167,9 +167,9 @@ export function TaskKanban() {
                                                 </div>
                                             </div>
 
-                                            <h3 className="font-semibold text-slate-900 mb-1 leading-snug">{task.title}</h3>
+                                            <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1 leading-snug">{task.title}</h3>
                                             {task.description && (
-                                                <p className="text-xs text-slate-500 line-clamp-2 mb-3">{task.description}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">{task.description}</p>
                                             )}
 
                                             {task.labels.length > 0 && (
@@ -191,7 +191,7 @@ export function TaskKanban() {
                                             )}
 
                                             <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                                                <div className="flex items-center gap-3 text-slate-400">
+                                                <div className="flex items-center gap-3 text-slate-400 dark:text-slate-400">
                                                     {task.due_date && (
                                                         <span className={`text-[10px] font-medium ${new Date(task.due_date) < new Date() && task.status !== 'done' ? 'text-red-500' : 'text-slate-400'}`}>
                                                             {new Date(task.due_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
@@ -220,7 +220,7 @@ export function TaskKanban() {
                                                         </div>
                                                     ))}
                                                     {task.assignees.length > 3 && (
-                                                        <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-[9px] font-bold border border-white ring-1 ring-slate-200">
+                                                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 flex items-center justify-center text-[9px] font-bold border border-white dark:border-slate-900 ring-1 ring-slate-200 dark:ring-slate-700">
                                                             +{task.assignees.length - 3}
                                                         </div>
                                                     )}
@@ -230,13 +230,13 @@ export function TaskKanban() {
                                         </div>
                                     ))}
                                     {!loading && columnTasks.length === 0 && (
-                                        <p className="text-xs text-slate-400 text-center py-6">No tasks here</p>
+                                        <p className="text-xs text-slate-400 dark:text-slate-400 text-center py-6">No tasks here</p>
                                     )}
                                 </div>
 
                                 <button
                                     onClick={() => setIsCreateOpen(true)}
-                                    className="p-3 m-2 text-sm text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center gap-2 transition-colors"
+                                    className="p-3 m-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 transition-colors"
                                 >
                                     <Plus size={16} /> Add Task
                                 </button>

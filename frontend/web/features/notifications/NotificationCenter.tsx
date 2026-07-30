@@ -19,7 +19,7 @@ function iconFor(type: string) {
     switch (type) {
         case 'task_assigned': return <CheckSquare size={16} className="text-blue-500" />;
         case 'task_commented': return <MessageCircle size={16} className="text-purple-500" />;
-        case 'task_attachment_added': return <Paperclip size={16} className="text-slate-500" />;
+        case 'task_attachment_added': return <Paperclip size={16} className="text-slate-500 dark:text-slate-400" />;
         case 'file_forwarded': return <Send size={16} className="text-indigo-500" />;
         case 'file_approved': return <ThumbsUp size={16} className="text-emerald-500" />;
         case 'file_rejected': return <XCircle size={16} className="text-red-500" />;
@@ -28,7 +28,7 @@ function iconFor(type: string) {
         case 'leave_rejected': return <CalendarX size={16} className="text-red-500" />;
         case 'document_approved': return <FileCheck size={16} className="text-emerald-500" />;
         case 'document_rejected': return <FileX size={16} className="text-red-500" />;
-        default: return <Bell size={16} className="text-slate-500" />;
+        default: return <Bell size={16} className="text-slate-500 dark:text-slate-400" />;
     }
 }
 
@@ -105,7 +105,7 @@ export function NotificationCenter() {
                     )}
                 </h3>
                 {unread > 0 && (
-                    <button onClick={markAll} className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                    <button onClick={markAll} className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 font-medium flex items-center gap-1">
                         <CheckCheck size={14} /> Mark all read
                     </button>
                 )}
@@ -116,7 +116,7 @@ export function NotificationCenter() {
                     <button
                         key={tab}
                         onClick={() => switchTab(tab)}
-                        className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 capitalize ${activeTab === tab ? 'text-primary-600 border-primary-500 bg-primary-50/50 dark:bg-primary-900/10' : 'text-slate-500 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                        className={`flex-1 py-2 text-xs font-semibold uppercase tracking-wider transition-colors border-b-2 capitalize ${activeTab === tab ? 'text-primary-600 dark:text-primary-400 border-primary-500 bg-primary-50/50 dark:bg-primary-900/10' : 'text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                     >
                         {tab}
                     </button>
@@ -161,7 +161,7 @@ export function NotificationCenter() {
                                     {!n.read_at && (
                                         <button
                                             onClick={(e) => markOne(n.id, e)}
-                                            className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-full transition-all self-start"
+                                            className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-full transition-all self-start"
                                             title="Mark as read"
                                         >
                                             <Check size={14} />

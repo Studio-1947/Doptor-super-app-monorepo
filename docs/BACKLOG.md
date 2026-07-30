@@ -696,25 +696,31 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       **resolved; verified 2026-07-29.** `features/verticals/` does not exist; only
       `features/office/*` remains. (Office roadmap Phase 6 already recorded this; the box
       here was simply never ticked.)
-- [ ] **L-5** 🟡 **Dark mode is unevenly applied and, on some surfaces, unreadable.** Found
-      2026-07-30 by measuring WCAG contrast in the live DOM rather than reading classes.
-      Dark mode is a shipped feature (`darkMode: "class"`, `ThemeToggle`, `ThemeContext`) but
-      applied per class, so any `text-slate-900` without a `dark:` variant renders near-black
-      on a near-black surface. Measured, worst first:
-      **`/tasks` board (kanban) — 42 AA failures, 27 of them below 1.5:1**, including every
-      task title at **1:1** (identical foreground and background);
-      **`/settings` — 17 failures, 7 invisible** (the user's own name, "Email Notifications",
-      "Push Notifications" all at 1:1, plus inputs with light text on `bg-white`);
-      `/office/files` — 4 failures, 2 invisible; `/approvals` — 6 failures, none invisible.
-      The new `TaskTable`, `AttendanceCalendar` and `AttendanceAdmin` were fixed to **0
-      failures** on 2026-07-30, which means the table now reads *better* than the board beside
-      it — visible inconsistency, and the reason not to leave this long.
-      `e2e/dark-mode-contrast.spec.ts` guards the fixed surfaces at a **1.5:1 (legibility)**
-      threshold rather than AA's 4.5:1, precisely because these routes would fail an AA gate
-      today. **When fixing these, raise that threshold toward 4.5 and add the route to the
-      spec** — otherwise the fix has nothing holding it in place. The measurement scripts are
-      throwaway but the method is in the spec: compute luminance from `getComputedStyle`,
-      resolving the background through ancestors.
+- [x] **L-5** ~~Dark mode is unevenly applied and, on some surfaces, unreadable.~~ —
+      **closed 2026-07-30, measured to zero.** Found by computing WCAG contrast in the live
+      DOM rather than reading classes: dark mode is a shipped feature (`darkMode: "class"`,
+      `ThemeToggle`, `ThemeContext`) applied per class, so any `text-slate-900` without a
+      `dark:` variant rendered near-black on a near-black surface.
+      **137 AA failures across 10 routes, 54 of them below 1.5:1 → 0 across 11 route/view
+      combinations.** Worst cases were every task title on both the kanban board and the table
+      at exactly **1:1** (`rgb(15,23,42)` on `rgb(15,23,42)`), and `/settings` rendering the
+      user's own name the same way.
+      **The root cause worth remembering:** `components/ReadyUI.tsx` — the page-shell wrapper
+      for `/approvals`, `/admin/*` and `/office/*` — had `bg-white` with no dark pair, so the
+      whole content panel stayed white in dark mode. Adding `dark:` *text* variants to pages
+      inside it therefore made them **worse** (light-grey text on a white panel, 2.56:1);
+      `/approvals` went 6 → 10 failures before the container was fixed and it dropped to 0.
+      Fix the surface before the text.
+      Files touched: `ReadyUI`, `TaskKanban`, `TaskTable`, `ProfileSettings`,
+      `DocumentExplorer`, `NotificationCenter`, `AttendanceCalendar`, `app/approvals`,
+      `app/office/files`, `app/tasks`, `app/attendance`, `TaskDetailDrawer`.
+      **Guard:** `e2e/dark-mode-contrast.spec.ts` now asserts **full AA** (4.5:1 body, 3:1
+      large) over all 11 combinations, up from the interim 1.5:1 legibility threshold it
+      shipped with that morning. Verified by re-introducing the `/settings` bug and watching it
+      go red. Two measurement rules are baked in: resolve the background through ancestors, and
+      skip checkbox/radio inputs (their `color` is an accent judged at 3:1, not body text —
+      counting them overstated `/settings` by two).
+
 
 ---
 

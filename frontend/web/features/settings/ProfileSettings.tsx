@@ -44,8 +44,8 @@ export function ProfileSettings() {
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-                <p className="text-slate-500 mt-1">Manage your profile and preferences</p>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Settings</h1>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your profile and preferences</p>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -53,7 +53,7 @@ export function ProfileSettings() {
 
                     {/* Left Column: Avatar & Basic Info */}
                     <div className="space-y-6">
-                        <Card className="p-6 text-center border-slate-200">
+                        <Card className="p-6 text-center border-slate-200 dark:border-slate-700">
                             <div className="relative inline-block mb-4 group cursor-pointer">
                                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-3xl font-bold border-4 border-white shadow-md">
                                     SD
@@ -62,80 +62,80 @@ export function ProfileSettings() {
                                     <Camera size={24} className="text-white" />
                                 </div>
                             </div>
-                            <h3 className="font-bold text-slate-900">{formData.firstName} {formData.lastName}</h3>
-                            <p className="text-sm text-slate-500">{formData.designation}</p>
+                            <h3 className="font-bold text-slate-900 dark:text-slate-100">{formData.firstName} {formData.lastName}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{formData.designation}</p>
                         </Card>
                     </div>
 
                     {/* Right Column: Form Fields */}
                     <div className="md:col-span-2 space-y-6">
-                        <Card className="p-6 border-slate-200">
-                            <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                <User size={18} className="text-slate-500" />
+                        <Card className="p-6 border-slate-200 dark:border-slate-700">
+                            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                                <User size={18} className="text-slate-500 dark:text-slate-400" />
                                 Personal Information
                             </h3>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">First Name</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">First Name</label>
                                     <input
                                         type="text"
                                         value={formData.firstName}
                                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Last Name</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Last Name</label>
                                     <input
                                         type="text"
                                         value={formData.lastName}
                                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                        className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Email</label>
                                     <div className="relative">
                                         <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
                                             type="email"
                                             value={formData.email}
                                             disabled
-                                            className="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm bg-slate-50 text-slate-500"
+                                            className="w-full border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-300"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1">Phone</label>
                                     <div className="relative">
                                         <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                         <input
                                             type="tel"
                                             value={formData.phone}
                                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            className="w-full border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                            className="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                         />
                                     </div>
                                 </div>
                             </div>
                         </Card>
 
-                        <Card className="p-6 border-slate-200">
-                            <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                <Bell size={18} className="text-slate-500" />
+                        <Card className="p-6 border-slate-200 dark:border-slate-700">
+                            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                                <Bell size={18} className="text-slate-500 dark:text-slate-400" />
                                 Notifications
                             </h3>
 
                             <div className="space-y-3">
-                                <label className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer">
+                                <label className="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-blue-50 text-blue-600 rounded">
                                             <Mail size={16} />
                                         </div>
                                         <div>
-                                            <span className="font-medium text-slate-900 block text-sm">Email Notifications</span>
-                                            <span className="text-xs text-slate-500">Receive updates via email</span>
+                                            <span className="font-medium text-slate-900 dark:text-slate-100 block text-sm">Email Notifications</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">Receive updates via email</span>
                                         </div>
                                     </div>
                                     <input
@@ -146,14 +146,14 @@ export function ProfileSettings() {
                                     />
                                 </label>
 
-                                <label className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer">
+                                <label className="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-purple-50 text-purple-600 rounded">
                                             <Laptop size={16} />
                                         </div>
                                         <div>
-                                            <span className="font-medium text-slate-900 block text-sm">Push Notifications</span>
-                                            <span className="text-xs text-slate-500">Receive browser alerts</span>
+                                            <span className="font-medium text-slate-900 dark:text-slate-100 block text-sm">Push Notifications</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">Receive browser alerts</span>
                                         </div>
                                     </div>
                                     <input

@@ -397,10 +397,26 @@ the pre-existing surface is worse than the new one:
 | `/office/files`         | 4           | 2                  |
 | `/approvals`            | 6           | 0                  |
 
-Filed as **BACKLOG L-5** rather than fixed here: the kanban board and `/settings` are shipped
-components outside this batch, and restyling them is worth reviewing on its own. Note the
-ordering — **the new table is now cleaner than the board beside it**, which is its own
-inconsistency and an argument for doing L-5 soon.
+**Closed the same day.** These were filed as **BACKLOG L-5** and then fixed rather than
+deferred, because leaving the new table cleaner than the board beside it was its own
+inconsistency. Final state, measured: **0 AA failures across 11 route/view combinations**,
+down from 137 failures / 54 invisible.
+
+The root cause behind the pre-existing pages turned out to be one component:
+`components/ReadyUI.tsx`, the page-shell wrapper for `/approvals`, `/admin/*` and `/office/*`,
+had `bg-white` with **no dark pair**, so the whole content panel stayed white in dark mode.
+That is why a first mechanical pass adding `dark:` *text* variants made `/approvals` **worse**
+— 6 → 10 failures, light-grey text on a white panel at 2.56:1 — before fixing the container
+dropped it to 0. **Fix the surface before the text.**
+
+The guard was then raised from the interim 1.5:1 legibility threshold to **full AA** (4.5:1
+body, 3:1 large) across all 11 combinations, and re-verified by re-introducing the `/settings`
+bug and watching it fail.
+
+Two corrections to the numbers reported earlier in this section: `/settings` was overstated by
+two, because a checkbox's `color` is an accent judged at 3:1 rather than body text at 4.5:1
+(the probe now skips checkbox/radio inputs); and the `/dashboard` row was measuring the **404
+page** — the dashboard is at `/`, which measures 30 elements and **was never broken**.
 
 ---
 
