@@ -46,11 +46,12 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
             { icon: Settings, label: 'Settings', href: '/settings' },
         ],
-        student: [
-            { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
-            { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
-            { icon: Settings, label: 'Settings', href: '/settings' },
-        ]
+        // No office user can resolve to `student` any more — the role does not
+        // exist in the database, and `deriveLegacyRole` now falls back to
+        // `staff`. Kept only to satisfy the `Record<UserRole, …>` type while
+        // Campus stays frozen-but-intact; if Campus is deleted outright, drop
+        // `student` from `UserRole` and this entry goes with it.
+        student: []
     },
     office: {
         all: [],

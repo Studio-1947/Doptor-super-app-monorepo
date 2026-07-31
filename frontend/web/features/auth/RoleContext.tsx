@@ -24,18 +24,34 @@ const RoleContext = createContext<RoleContextType | undefined>(undefined);
 // Principal, Volunteer, Coordinator, Field Worker, Department Head) are
 // treated as generic "staff" for nav purposes until the frontend migrates
 // off this shim to `hasRole`/`hasAnyRole` directly.
+// The six roles every organisation actually gets are Organisation Admin,
+// Manager, Department Head, Staff, Auditor and HR Manager. `hr manager` and
+// `auditor` were missing here until 2026-07-31 and fell through to the generic
+// fallback — which mattered for HR Manager, whose `approve:attendance` and
+// `create:users` are manager-tier work, but who was shown Staff navigation
+// without the approvals queue they are responsible for.
+//
+// Auditor is read-only everywhere. It maps to `staff` because that is the
+// least-privileged bucket this legacy shim has; there is no read-only tier.
 const ROLE_PRIORITY: { legacy: UserRole; matchNames: string[] }[] = [
     { legacy: 'super_admin', matchNames: ['super admin'] },
     { legacy: 'org_admin', matchNames: ['organisation admin', 'org admin'] },
-    { legacy: 'manager', matchNames: ['manager', 'department head'] },
-    { legacy: 'staff', matchNames: ['staff', 'coordinator', 'field worker', 'professor', 'principal', 'volunteer'] },
+    { legacy: 'manager', matchNames: ['manager', 'hr manager', 'department head'] },
+    { legacy: 'staff', matchNames: ['staff', 'auditor', 'coordinator', 'field worker', 'professor', 'principal', 'volunteer'] },
     { legacy: 'student', matchNames: ['student'] },
 ];
 
 function deriveLegacyRole(userRoles: Array<{ name: string }> | undefined): UserRole {
-    // No roles at all (unauthenticated, or a real account with none assigned)
-    // is the only case that should get the least-privileged nav.
-    if (!userRoles || userRoles.length === 0) return 'student';
+    // No roles at all — unauthenticated, an account with none assigned, or a
+    // session where `/auth/me` has not resolved yet.
+    //
+    // This returned `'student'` until 2026-07-31, on the reasoning that it was
+    // the least-privileged nav. In an office product it is not less privileged,
+    // it is a *different product*: `student` routed `/` to the fabricated
+    // CampusDashboard, so a roleless corporate user was shown invented campus
+    // metrics. `staff` is the real floor here — the least-privileged role that
+    // actually exists in an office organisation.
+    if (!userRoles || userRoles.length === 0) return 'staff';
 
     const normalized = userRoles.map(r => r.name.toLowerCase());
     for (const { legacy, matchNames } of ROLE_PRIORITY) {

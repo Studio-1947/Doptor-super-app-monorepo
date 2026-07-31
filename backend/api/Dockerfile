@@ -36,6 +36,23 @@ WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nestjs
+
+# Create the uploads directory *in the image*, owned by the user the process
+# runs as. `docker-compose.prod.yml` mounts a named volume here, and Docker
+# takes a fresh volume's ownership from the image directory it covers — so if
+# the path does not exist in the image, Docker creates the mountpoint as
+# root:root and the unprivileged process can never write to it.
+#
+# That is not hypothetical: on dev this produced
+# `EACCES: permission denied, mkdir '/app/uploads/tasks'` on every upload, and
+# because nothing else touches the directory, /app/uploads sat empty since
+# 2026-07-24 — document uploads had never once succeeded there either. It was
+# invisible to every test that runs against a local API, where the process owns
+# its own working directory.
+#
+# Ownership must be set before `USER`, since only root can chown.
+RUN mkdir -p /app/uploads && chown -R nestjs:nodejs /app/uploads
+
 USER nestjs
 
 COPY --from=installer /app .

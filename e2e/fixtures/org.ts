@@ -130,3 +130,28 @@ export function seedUserWithRole(
 
   return { email, password: PASSWORD };
 }
+
+/**
+ * Creates a user with **no role assigned at all**.
+ *
+ * Not a hypothetical: this is the state that made `deriveLegacyRole()` answer
+ * `'student'` and put an office user on the fabricated campus dashboard. It
+ * cannot be produced through the API — the invite flow always attaches a role —
+ * so it has to be written directly.
+ *
+ * Only callable when {@link hasDb} is true.
+ */
+export function seedUserWithoutRole(
+  orgId: string,
+  tag: string,
+): { email: string; password: string } {
+  const uniq = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+  const email = `${tag}+${uniq}@verify.test`;
+
+  sql(
+    `insert into users (email, password_hash, organisation_id, email_verified, first_name, last_name)
+     values ('${email}', '${bcryptHash(PASSWORD)}', '${orgId}', true, '${tag}', 'User')`,
+  );
+
+  return { email, password: PASSWORD };
+}
