@@ -1,16 +1,157 @@
-name: Deploy to VPS
+name: CI & Deploy
+
+# Until 2026-07-31 this file contained the deploy job alone: a push to `main`
+# went straight to the VPS with nothing run against it. Every suite in this
+# repo — 10 smoke suites and 74 Playwright tests — existed but was only ever
+# executed by hand, which is how a fabricated campus dashboard reached a real
+# user's screen. The tests were not missing; they were not wired up.
+#
+# `deploy` now needs `verify`, so nothing reaches dev that has not been type
+# checked, built, and driven in a browser first.
 
 on:
+  pull_request:
   push:
     branches: [main]
-  workflow_dispatch: {} # allows manual "Run workflow" from the Actions tab
+  workflow_dispatch: {}
 
 concurrency:
   group: deploy-vps
   cancel-in-progress: false # never interrupt an in-flight deploy
 
 jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: doptor
+          POSTGRES_PASSWORD: doptor
+          POSTGRES_DB: doptor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U doptor -d doptor"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://doptor:doptor@localhost:5432/doptor
+      JWT_SECRET: ci-only-not-a-real-secret-value-0000
+      JWT_REFRESH_SECRET: ci-only-not-a-real-refresh-secret-0000
+      PORT: "3001"
+      NODE_ENV: test
+      FRONTEND_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      # Two specs assert cookie-based auth and fail environmentally without
+      # this — see e2e/README.md.
+      COOKIE_AUTH_ENABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.1.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install psql client
+        # The smoke and e2e helpers shell out to psql for the checks that need
+        # to see the database directly.
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Apply migrations
+        # There is no migration runner in this project — every migration is
+        # hand-written SQL applied in order. ON_ERROR_STOP is load-bearing:
+        # without it psql exits 0 after an ERROR and a broken migration looks
+        # like a clean run.
+        run: |
+          set -e
+          for f in backend/api/src/database/drizzle/migrations/*.sql; do
+            echo "--- applying $(basename "$f")"
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f "$f"
+          done
+
+      - name: Verify schema landed
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "
+            SELECT to_regclass('public.holidays') AS holidays,
+                   to_regclass('public.task_attachments') AS task_attachments,
+                   (SELECT count(*) FROM pg_constraint
+                     WHERE conname='task_attachments_file_or_link') AS file_or_link_check;"
+
+      - name: Typecheck
+        run: |
+          set -e
+          (cd backend/api && npx tsc --noEmit)
+          (cd frontend/web && npx tsc --noEmit)
+
+      - name: Build
+        run: |
+          set -e
+          (cd backend/api && pnpm build)
+          (cd frontend/web && pnpm build)
+
+      - name: Start API
+        run: |
+          (cd backend/api && node dist/main > "$RUNNER_TEMP/api.log" 2>&1 &)
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3001/health && break
+            sleep 2
+          done
+          curl -sf http://localhost:3001/health || { cat "$RUNNER_TEMP/api.log"; exit 1; }
+
+      - name: Start web
+        run: |
+          (cd frontend/web && npx next start -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &)
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3000/login && break
+            sleep 2
+          done
+          curl -sf http://localhost:3000/login || { cat "$RUNNER_TEMP/web.log"; exit 1; }
+
+      - name: Smoke suites
+        env:
+          SMOKE_BASE_URL: http://localhost:3001
+          SMOKE_PSQL_CMD: psql postgresql://doptor:doptor@localhost:5432/doptor
+        run: node backend/api/test/smoke/run-all.js
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_API_URL: http://localhost:3001
+          E2E_PSQL_CMD: psql postgresql://doptor:doptor@localhost:5432/doptor
+        run: npx playwright test
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-artifacts
+          path: |
+            playwright-report/
+            test-results/
+            ${{ runner.temp }}/api.log
+            ${{ runner.temp }}/web.log
+          retention-days: 7
+
   deploy:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy over SSH
@@ -27,3 +168,18 @@ jobs:
             git pull --ff-only
             docker compose -f docker-compose.prod.yml up -d --build
             docker image prune -f
+
+      - name: Verify the deployment is actually serving
+        # `docker compose up --build` failing leaves the previous containers
+        # running, so a broken deploy is silent without this.
+        run: |
+          set -e
+          for i in $(seq 1 30); do
+            if curl -sf https://api.dev.doptor.in/health && curl -sf -o /dev/null https://dev.doptor.in/login; then
+              echo "deployment healthy"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::deploy finished but dev is not serving healthy responses"
+          exit 1
