@@ -107,11 +107,25 @@ jobs:
                    (SELECT count(*) FROM pg_constraint
                      WHERE conname='task_attachments_file_or_link') AS file_or_link_check;"
 
+      # `pnpm exec`, never `npx`. npx is not pnpm-aware: when it cannot resolve
+      # a binary it silently downloads something of that name from the
+      # registry, and `npx tsc` fetches an unrelated abandoned package called
+      # `tsc` that exits 1 with a message about not being the compiler you are
+      # looking for. That is what broke the first run of this workflow.
+      # `pnpm exec` resolves from the workspace and fails loudly if the binary
+      # is genuinely missing, which is the behaviour worth having.
+      - name: Verify local toolchain resolves
+        run: |
+          set -e
+          (cd backend/api && pnpm exec tsc --version)
+          (cd frontend/web && pnpm exec tsc --version)
+          pnpm exec playwright --version
+
       - name: Typecheck
         run: |
           set -e
-          (cd backend/api && npx tsc --noEmit)
-          (cd frontend/web && npx tsc --noEmit)
+          (cd backend/api && pnpm exec tsc --noEmit)
+          (cd frontend/web && pnpm exec tsc --noEmit)
 
       - name: Build
         run: |
@@ -130,7 +144,7 @@ jobs:
 
       - name: Start web
         run: |
-          (cd frontend/web && npx next start -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &)
+          (cd frontend/web && pnpm exec next start -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &)
           for i in $(seq 1 60); do
             curl -sf http://localhost:3000/login && break
             sleep 2
@@ -144,14 +158,14 @@ jobs:
         run: node backend/api/test/smoke/run-all.js
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Playwright
         env:
           E2E_BASE_URL: http://localhost:3000
           E2E_API_URL: http://localhost:3001
           E2E_PSQL_CMD: psql postgresql://doptor:doptor@localhost:5432/doptor
-        run: npx playwright test
+        run: pnpm exec playwright test
 
       - name: Upload failure artifacts
         if: failure()
