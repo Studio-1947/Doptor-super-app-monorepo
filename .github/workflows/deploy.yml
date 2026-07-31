@@ -107,31 +107,47 @@ jobs:
                    (SELECT count(*) FROM pg_constraint
                      WHERE conname='task_attachments_file_or_link') AS file_or_link_check;"
 
-      # `pnpm exec`, never `npx`. npx is not pnpm-aware: when it cannot resolve
-      # a binary it silently downloads something of that name from the
-      # registry, and `npx tsc` fetches an unrelated abandoned package called
-      # `tsc` that exits 1 with a message about not being the compiler you are
-      # looking for. That is what broke the first run of this workflow.
-      # `pnpm exec` resolves from the workspace and fails loudly if the binary
-      # is genuinely missing, which is the behaviour worth having.
-      - name: Verify local toolchain resolves
+      # Everything below runs through a package.json script rather than `npx`
+      # or `pnpm exec`, because both have now failed here in different ways:
+      #
+      #   `npx tsc`        — npx is not pnpm-aware. Rather than fail it
+      #                      downloaded an unrelated abandoned package named
+      #                      `tsc` from the registry and ran that.
+      #   `pnpm exec tsc`  — resolved to the *runner's global* TypeScript, not
+      #                      the workspace one: it reported 7.0.2 where this
+      #                      repo pins ^5 and installs 5.9.3. `pnpm exec
+      #                      playwright` then failed outright, since there is
+      #                      no global playwright to fall back to.
+      #
+      # `pnpm run` puts the package's own node_modules/.bin at the front of
+      # PATH, which is the one mechanism that cannot silently resolve to
+      # something else.
+      - name: Toolchain diagnostics
+        # Printed unconditionally so a resolution failure is diagnosable from
+        # the log alone. The versions here must match what the repo pins; a
+        # major-version surprise means PATH is being consulted, not the
+        # workspace.
         run: |
-          set -e
-          (cd backend/api && pnpm exec tsc --version)
-          (cd frontend/web && pnpm exec tsc --version)
-          pnpm exec playwright --version
+          echo "pnpm:  $(pnpm --version)"
+          echo "node:  $(node --version)"
+          echo "--- root .bin ---";        ls node_modules/.bin 2>/dev/null | head -20 || echo "MISSING"
+          echo "--- backend/api .bin ---"; ls backend/api/node_modules/.bin 2>/dev/null | head -10 || echo "MISSING"
+          echo "--- frontend/web .bin ---";ls frontend/web/node_modules/.bin 2>/dev/null | head -10 || echo "MISSING"
+          echo "--- resolved versions ---"
+          pnpm --filter @doptor/backend-api exec tsc --version || true
+          pnpm --filter doptor-super-app exec playwright --version || true
 
       - name: Typecheck
         run: |
           set -e
-          (cd backend/api && pnpm exec tsc --noEmit)
-          (cd frontend/web && pnpm exec tsc --noEmit)
+          pnpm --filter @doptor/backend-api run typecheck
+          pnpm --filter @doptor/web run typecheck
 
       - name: Build
         run: |
           set -e
-          (cd backend/api && pnpm build)
-          (cd frontend/web && pnpm build)
+          pnpm --filter @doptor/backend-api run build
+          pnpm --filter @doptor/web run build
 
       - name: Start API
         run: |
@@ -144,7 +160,7 @@ jobs:
 
       - name: Start web
         run: |
-          (cd frontend/web && pnpm exec next start -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &)
+          (cd frontend/web && pnpm run start -- -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &)
           for i in $(seq 1 60); do
             curl -sf http://localhost:3000/login && break
             sleep 2
@@ -158,14 +174,14 @@ jobs:
         run: node backend/api/test/smoke/run-all.js
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm run test:e2e:install
 
       - name: Playwright
         env:
           E2E_BASE_URL: http://localhost:3000
           E2E_API_URL: http://localhost:3001
           E2E_PSQL_CMD: psql postgresql://doptor:doptor@localhost:5432/doptor
-        run: pnpm exec playwright test
+        run: pnpm run test:e2e
 
       - name: Upload failure artifacts
         if: failure()
