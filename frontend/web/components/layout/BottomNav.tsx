@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { useRole } from '@/features/auth/RoleContext';
 import { useVertical } from '@/contexts/VerticalContext';
 import { verticalMenus } from './Sidebar';
+import { menuFor } from './menuTypes';
 
 const MAX_TABS = 4;
 
@@ -16,7 +17,7 @@ export function BottomNav() {
     const { activeVertical } = useVertical();
 
     const verticalSpecific = verticalMenus[activeVertical];
-    const roleSpecific = verticalSpecific[role] || [];
+    const roleSpecific = menuFor(verticalSpecific, role);
     const commonMenus = verticalSpecific['all'] || [];
     const menuItems = [...commonMenus, ...roleSpecific].slice(0, MAX_TABS);
 
