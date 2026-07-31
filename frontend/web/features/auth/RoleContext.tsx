@@ -24,22 +24,36 @@ const RoleContext = createContext<RoleContextType | undefined>(undefined);
 // Principal, Volunteer, Coordinator, Field Worker, Department Head) are
 // treated as generic "staff" for nav purposes until the frontend migrates
 // off this shim to `hasRole`/`hasAnyRole` directly.
-// The six roles every organisation actually gets are Organisation Admin,
-// Manager, Department Head, Staff, Auditor and HR Manager. `hr manager` and
-// `auditor` were missing here until 2026-07-31 and fell through to the generic
-// fallback — which mattered for HR Manager, whose `approve:attendance` and
-// `create:users` are manager-tier work, but who was shown Staff navigation
-// without the approvals queue they are responsible for.
+// Office role names. These are the six every organisation actually gets:
+// Organisation Admin, Manager, Department Head, Staff, Auditor and HR Manager.
 //
-// Auditor is read-only everywhere. It maps to `staff` because that is the
-// least-privileged bucket this legacy shim has; there is no read-only tier.
-const ROLE_PRIORITY: { legacy: UserRole; matchNames: string[] }[] = [
+// `hr manager` and `auditor` were missing until 2026-07-31 and fell through to
+// the generic fallback — which mattered for HR Manager, whose
+// `approve:attendance` and `create:users` are manager-tier work, but who was
+// shown Staff navigation without the approvals queue they are responsible for.
+// Auditor is read-only everywhere and maps to `staff`, the least-privileged
+// bucket this legacy shim has; there is no read-only tier.
+const OFFICE_ROLES: { legacy: UserRole; matchNames: string[] }[] = [
     { legacy: 'super_admin', matchNames: ['super admin'] },
     { legacy: 'org_admin', matchNames: ['organisation admin', 'org admin'] },
     { legacy: 'manager', matchNames: ['manager', 'hr manager', 'department head'] },
-    { legacy: 'staff', matchNames: ['staff', 'auditor', 'coordinator', 'field worker', 'professor', 'principal', 'volunteer'] },
+    { legacy: 'staff', matchNames: ['staff', 'auditor', 'coordinator', 'field worker', 'volunteer'] },
+];
+
+// Campus role names, kept separate on purpose. Campus is frozen for a future
+// product, and its vocabulary must not be merged into Office's — `student` in
+// particular, because it used to be reachable from an office session and sent
+// the user to a fabricated campus dashboard.
+//
+// These are matched only *after* every office name above, so an account that
+// somehow holds both is treated as its office role. No organisation currently
+// issues any of them.
+const CAMPUS_ROLES: { legacy: UserRole; matchNames: string[] }[] = [
+    { legacy: 'staff', matchNames: ['professor', 'principal'] },
     { legacy: 'student', matchNames: ['student'] },
 ];
+
+const ROLE_PRIORITY = [...OFFICE_ROLES, ...CAMPUS_ROLES];
 
 function deriveLegacyRole(userRoles: Array<{ name: string }> | undefined): UserRole {
     // No roles at all — unauthenticated, an account with none assigned, or a

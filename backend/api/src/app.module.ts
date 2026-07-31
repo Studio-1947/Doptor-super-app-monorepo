@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { ThrottlerModule } from "@nestjs/throttler";
+import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { APP_GUARD } from "@nestjs/core";
 import { DatabaseModule } from "./database/drizzle/database.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { UsersModule } from "./modules/users/users.module";
@@ -35,10 +36,23 @@ import { AppController } from "./app.controller";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Rate limiting. This module was configured from the start but the guard
+    // was never registered, and NestJS does not apply ThrottlerGuard on its
+    // own — so until 2026-07-31 nothing in the API was throttled at all and
+    // the 10/minute below was inert.
+    //
+    // Enabling it as written would have taken the app down: 10 requests per
+    // minute is far below what one dashboard load costs. The limit is now a
+    // ceiling against scripted abuse, not a per-user quota, and the endpoints
+    // that actually need a tight bound carry their own `@Throttle`.
+    //
+    // Overridable by environment because the sane value depends on where it
+    // runs: CI drives the whole suite from a single IP and needs the ceiling
+    // lifted, while real users arrive from many addresses.
     ThrottlerModule.forRoot([
       {
-        ttl: 60000, // 60 seconds
-        limit: 10, // 10 requests per minute
+        ttl: Number(process.env.THROTTLE_TTL ?? 60_000),
+        limit: Number(process.env.THROTTLE_LIMIT ?? 300),
       },
     ]),
     DatabaseModule,
@@ -53,13 +67,15 @@ import { AppController } from "./app.controller";
     DocumentsModule,
     AttendanceModule,
     FilesModule,
-    AttendanceModule,
-    FilesModule,
     CampusModule,
     AnalyticsModule,
     NotificationsModule,
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [
+    // The missing half of the rate limiting above. Without this provider the
+    // ThrottlerModule import does nothing.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

@@ -1,16 +1,33 @@
 'use client';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, FileText, Settings, Bell, ChevronLeft, Menu, ClipboardList, CheckSquare, MessageSquare, Calendar, BarChart3, Building2, Shield, GraduationCap, Globe2, Award, FolderOpen } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Settings, Bell, ChevronLeft, Menu, ClipboardList, CheckSquare, Calendar, BarChart3, Building2, Shield, FolderOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { useRole, UserRole } from '@/features/auth/RoleContext';
+import { useRole } from '@/features/auth/RoleContext';
 import { useVertical, VerticalType } from '@/contexts/VerticalContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { type VerticalMenu, menuFor } from './menuTypes';
+// The single, deliberate seam between the two products: campus *navigation
+// data* is composed in here so one Sidebar can serve either vertical. No
+// campus component, service or page is imported anywhere outside `campus/` —
+// `e2e/product-isolation.spec.ts` enforces that.
+import { campusMenus } from '@/features/campus/campusMenus';
 
-// Define menus for each vertical and role
-export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon: any, label: string, href: string }[]>> = {
+/**
+ * Navigation per vertical.
+ *
+ * `core` and `office` are the shipping product and are defined here. `campus`
+ * is imported from the campus feature and is **the only vertical with a
+ * `student` role** — Office declares no student navigation at all, because an
+ * office organisation has no students. The roles it really has are
+ * Organisation Admin, Manager, Department Head, Staff, Auditor and HR Manager.
+ *
+ * The type is deliberately `Partial`, so neither product has to declare a role
+ * belonging to the other just to satisfy it. See `menuTypes.ts`.
+ */
+export const verticalMenus: Record<VerticalType, VerticalMenu> = {
     core: {
         all: [],
         super_admin: [
@@ -46,12 +63,9 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
             { icon: Calendar, label: 'Attendance', href: '/attendance' },
             { icon: Settings, label: 'Settings', href: '/settings' },
         ],
-        // No office user can resolve to `student` any more — the role does not
-        // exist in the database, and `deriveLegacyRole` now falls back to
-        // `staff`. Kept only to satisfy the `Record<UserRole, …>` type while
-        // Campus stays frozen-but-intact; if Campus is deleted outright, drop
-        // `student` from `UserRole` and this entry goes with it.
-        student: []
+        // No `student` key: an office organisation has no students, and the
+        // role cannot be reached here — `deriveLegacyRole` falls back to
+        // `staff`.
     },
     office: {
         all: [],
@@ -73,31 +87,10 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
         staff: [
             { icon: FileText, label: 'My Files', href: '/office/files' },
         ],
-        student: []
+        // No `student` key — see `core` above.
     },
-    campus: {
-        all: [],
-        super_admin: [
-            { icon: GraduationCap, label: 'Campus Dashboard', href: '/campus' },
-            { icon: Award, label: 'Exam Results', href: '/campus/results' },
-        ],
-        org_admin: [
-            { icon: GraduationCap, label: 'Campus Dashboard', href: '/campus' },
-            { icon: Users, label: 'Students', href: '/campus/students' },
-            { icon: Users, label: 'Faculty', href: '/campus/faculty' },
-            { icon: Calendar, label: 'Attendance', href: '/campus/attendance/calendar' },
-            { icon: Award, label: 'Exam Results', href: '/campus/results' },
-        ],
-        manager: [
-            { icon: Users, label: 'Students', href: '/campus/students' },
-            { icon: Users, label: 'Faculty', href: '/campus/faculty' },
-            { icon: BarChart3, label: 'Reports', href: '/campus/attendance/reports' },
-        ],
-        staff: [
-            { icon: Calendar, label: 'Mark Attendance', href: '/campus/attendance/mark' },
-        ],
-        student: []
-    },
+    // Defined in the campus feature, deliberately not inlined here.
+    campus: campusMenus,
 };
 
 const adminMenus = [
@@ -122,7 +115,7 @@ export function Sidebar() {
 
     // Combine 'all' menus with role-specific menus for the active vertical
     const verticalSpecific = verticalMenus[activeVertical];
-    const roleSpecific = verticalSpecific[role] || [];
+    const roleSpecific = menuFor(verticalSpecific, role);
     const commonMenus = verticalSpecific['all'] || [];
 
     let menuItems = [...commonMenus, ...roleSpecific];

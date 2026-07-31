@@ -15,6 +15,7 @@ import {
 } from "@nestjs/common";
 import type { Response } from "express";
 import { Throttle } from "@nestjs/throttler";
+import { AUTH_THROTTLE, EMAIL_THROTTLE } from "../../common/config/throttle";
 import {
   ApiTags,
   ApiOperation,
@@ -64,7 +65,7 @@ export class AuthController {
   @ApiOperation({ summary: "Register a new user" })
   @ApiResponse({ status: 201, description: "User successfully registered" })
   @ApiResponse({ status: 400, description: "Bad Request" })
-  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 requests per minute
+  @Throttle(AUTH_THROTTLE)
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
@@ -75,7 +76,7 @@ export class AuthController {
     status: 201,
     description: "Organisation and admin successfully registered",
   })
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle(AUTH_THROTTLE)
   async registerOrganisation(
     @Body() dto: RegisterOrganisationDto,
     @Res({ passthrough: true }) res: Response,
@@ -93,7 +94,7 @@ export class AuthController {
     description: "Browser/Client user agent string",
     required: false,
   })
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @Throttle(AUTH_THROTTLE)
   async login(
     @Body() loginDto: LoginDto,
     @Ip() ipAddress: string,
@@ -110,7 +111,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Request password reset link" })
   @ApiResponse({ status: 200, description: "Reset email sent if user exists" })
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle(EMAIL_THROTTLE)
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
   }
@@ -119,7 +120,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Reset password using token" })
   @ApiResponse({ status: 200, description: "Password successfully reset" })
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle(AUTH_THROTTLE)
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }
@@ -143,6 +144,8 @@ export class AuthController {
 
   @Post("resend-verification")
   @HttpCode(HttpStatus.OK)
+  // Sends mail to a caller-supplied address, same as forgot-password.
+  @Throttle(EMAIL_THROTTLE)
   @ApiOperation({ summary: "Resend email verification link" })
   @ApiBody({
     schema: {
