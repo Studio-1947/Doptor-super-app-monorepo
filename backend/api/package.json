@@ -24,7 +24,8 @@
     "db:sync-permissions:dist": "node dist/database/drizzle/sync-permissions.js",
     "db:generate": "drizzle-kit generate:pg",
     "db:migrate": "drizzle-kit push:pg",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit",
+    "build:ci": "node ./node_modules/@nestjs/cli/bin/nest.js build"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
