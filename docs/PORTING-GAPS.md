@@ -472,6 +472,42 @@ production build:
 | Playwright               | **69/69** (66 + 3 new analytics specs)                        |
 | Dark-mode AA guard       | passes with `/analytics` added — 12 route/view combinations   |
 
+### G-10 — file uploads had never worked on dev ❌➡️✅ **found and fixed 2026-07-31**
+
+Found by running the suites **against the deployment** rather than locally, which is the only
+reason it surfaced. Suite `10` failed on dev while passing locally, with `502 Bad Gateway` on
+the upload and download checks. The API log gave the real error:
+
+```
+Error: EACCES: permission denied, mkdir '/app/uploads/tasks'
+    at DiskStorage._handleFile (multer/storage/disk.js:30:8)
+```
+
+`backend/api/Dockerfile` creates the `nestjs` user (uid 1001) and switches to it, but **never
+created `/app/uploads`**. `docker-compose.prod.yml` mounts a named volume there, and Docker
+takes a fresh volume's ownership from the image directory it covers — with no such directory
+in the image, Docker created the mountpoint as `root:root` mode 755, which an unprivileged
+process cannot write to.
+
+**This was not new, and not limited to tasks.** `/app/uploads` was **empty** and dated
+`Jul 24`, so *no* upload had ever succeeded on dev — document uploads (Phase 5, shipped
+2026-07-27) had been silently broken there the whole time. G-8 fixed the *client* half of
+uploading; this was the server half, and the two were never exercised together anywhere but
+locally.
+
+- [x] **Immediate:** `chown -R 1001:65533 /app/uploads` on the existing volume, since the
+      Dockerfile change cannot retroactively repair a volume that already exists.
+- [x] **Durable:** the Dockerfile now creates `/app/uploads` and chowns it to `nestjs` **before**
+      the `USER` line (only root can chown), so any rebuilt environment starts correct.
+- [x] **Verified:** suite `10` went 0 → **29/29** on dev, and the full run is **10/10 (250
+      checks)**; Playwright is **69/69** against `https://dev.doptor.in`.
+
+> **The lesson is the one this file keeps re-learning:** green locally proves the code, not the
+> deployment. Every layer of testing passed on a developer machine, where the process owns its
+> own working directory. Only a run against the real container, with its real unprivileged
+> user and its real volume, could see this — and the failure presented as an nginx `502`, which
+> says nothing about permissions until you read the upstream's own log.
+
 > **A local-environment trap that cost about an hour.** `pnpm install --force` aborts with
 > `ERR_PNPM_EPERM` on `bcrypt.node` when the API is running, because a live node process holds
 > the native module open. The install stops **half-way**, leaving `node_modules` missing files
