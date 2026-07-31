@@ -596,8 +596,8 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       estimated. Row shapes are pinned in suites `04` and `05` (+6 checks), because a
       dropped `with:` relation would blank the rows silently instead of erroring.
 
-- [ ] **M-23** 🟡 **`/analytics` is a fabricated, orphaned page that fetches a hardcoded
-      `http://localhost:3000` URL.** Found 2026-07-30 while auditing UI/UX; **pre-existing,
+- [x] **M-23** 🟡 ~~**`/analytics` is a fabricated, orphaned page that fetches a hardcoded
+      `http://localhost:3000` URL.**~~ Found 2026-07-30 while auditing UI/UX; **pre-existing,
       not from the tasks/attendance batch.** Four separate problems, all in
       `features/analytics/AnalyticsDashboard.tsx`:
       **(1)** line 24 is `await fetch('http://localhost:3000/analytics/overview')` — an
@@ -626,6 +626,35 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       endpoint using the existing `services/analytics.service.ts`, which already goes through
       `apiClient` correctly and is what `/admin` uses for its real counts. **Do not merely fix
       the URL** — that would render a page of zeroes and invented percentages.
+
+      **Closed 2026-07-31 by rebuild, not deletion.** The rebuild happened in two steps, and
+      the first one is the part worth keeping:
+      - `1eb094c` (2026-07-30) removed the localhost URL, the three imaginary fields and every
+        invented percentage, wiring the page to `analyticsService.getOverview()`. That fixed
+        **(1)**, **(2)** and **(3)**.
+      - It also **reintroduced a smaller version of the same defect**, which is why this entry
+        stayed open a day longer: a "System Status" card whose four green lights were the
+        literal `active={true}`, asserting health nothing had measured — the same thing M-16
+        deleted from `/admin/settings`. And because it hand-rolled its own tile markup instead
+        of using `DashboardPrimitives`, it fell back to `0` on a failed request, so a broken
+        page was indistinguishable from a brand-new organisation. That primitive's own comment
+        warns against exactly this: *"showing '0' before the data arrives reads as real data
+        and is the failure mode this whole change exists to remove."*
+      - **2026-07-31:** rebuilt on `useAsync` + `StatTile`/`ErrorNote`, so all nine counts show,
+        a failure renders the error instead of zeroes, and dark-mode AA comes from primitives
+        already proven at AA. The status card is gone; the reason it is gone is recorded in the
+        component, because "add a system status panel" is an obvious-looking idea.
+      - **(4) is fixed and verified against a production build** — `/analytics stays put` in
+        `cold-load.spec.ts` passes, where it previously failed 2/2. The `networkidle` stall went
+        with the 404 that caused it.
+      - **No longer orphaned:** a sidebar entry for `super_admin`/`org_admin` (`Sidebar.tsx`),
+        and `/analytics` added to `dark-mode-contrast.spec.ts`, since a route in the nav is one
+        worth guarding.
+      - **Guarded by `e2e/analytics.spec.ts`** (3 specs): tiles must match counts fetched
+        independently from the API, the status-panel strings must be absent, and a stubbed 500
+        must render an error with **no** tile showing a number. Each was verified by
+        reintroducing its own bug and watching only that spec go red — the zero-fallback and
+        the status panel were each restored, rebuilt and re-run.
 
 - [ ] **M-20** 🟡 `/campus/faculty` and `/campus/students` are fabricated ("Dr. Sarah
       Connor", "Publications 1,240", "2,840 students", "Aarav Sharma") **despite

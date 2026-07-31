@@ -11,8 +11,10 @@ import {
   uniqueIndex,
   index,
   primaryKey,
+  check,
 } from "drizzle-orm/pg-core";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organisations } from "./organisation.schema";
 import { users } from "./user.schema";
 import { departments } from "./department.schema";
@@ -193,10 +195,13 @@ export const taskComments = pgTable(
  *          CHECK ((kind = 'file' AND stored_name IS NOT NULL AND url IS NULL)
  *              OR (kind = 'link' AND url IS NOT NULL AND stored_name IS NULL));
  *
- * The constraint is not declared here because drizzle-orm 0.29 has no `check()`
- * helper — but that only ever limited the *TypeScript declaration*, not the
- * constraint, since every migration in this project is hand-written SQL. When
- * drizzle is upgraded, move the declaration here; do not re-add the constraint.
+ * It is now declared below as well, so the TypeScript matches the database.
+ * This was twice recorded as impossible — first as "blocked on a drizzle-orm
+ * upgrade", then as "0.29 has no `check()` helper". Both were wrong: 0.29.5
+ * exports `check` from `drizzle-orm/pg-core` and registers it in the table
+ * config. The declaration is documentation, not enforcement — `0017` already
+ * created the constraint, and drizzle only reads `checks` when generating DDL,
+ * never when querying. Do not let a `db:generate` re-add it.
  */
 export const taskAttachments = pgTable(
   "task_attachments",
@@ -227,6 +232,11 @@ export const taskAttachments = pgTable(
   },
   (table) => ({
     taskIdx: index("task_attachments_task_idx").on(table.task_id),
+    fileOrLink: check(
+      "task_attachments_file_or_link",
+      sql`(${table.kind} = 'file' AND ${table.stored_name} IS NOT NULL AND ${table.url} IS NULL)
+       OR (${table.kind} = 'link' AND ${table.url} IS NOT NULL AND ${table.stored_name} IS NULL)`,
+    ),
   }),
 );
 

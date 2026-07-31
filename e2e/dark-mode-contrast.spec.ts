@@ -122,7 +122,10 @@ test('every Office route meets AA contrast in dark mode', async ({ page, request
 
   // The dashboard lives at `/`, not `/dashboard` — probing the latter measures
   // the 404 page and reports its (real, but irrelevant) failures.
-  for (const route of ['/', '/tasks', '/attendance', '/approvals', '/documents', '/notifications', '/settings', '/office/files']) {
+  // `/analytics` joined this list on 2026-07-31, when it stopped being an
+  // unlinked page and gained a sidebar entry for admins. A route nobody could
+  // reach was arguably not worth guarding; one in the nav is.
+  for (const route of ['/', '/analytics', '/tasks', '/attendance', '/approvals', '/documents', '/notifications', '/settings', '/office/files']) {
     await page.goto(route);
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(1200);

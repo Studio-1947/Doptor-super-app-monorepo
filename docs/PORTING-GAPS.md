@@ -433,14 +433,54 @@ The build queue is empty. This is a **ship-and-verify** list, in order:
    Playwright (65 tests, 9 specs locally). Green locally proves the code, not the deployment.
    Note that a _local_ Playwright run needs `COOKIE_AUTH_ENABLED=1` on the frontend or two
    specs fail environmentally — see `e2e/README.md`.
-4. **Drop the inert `communication` tables** (G-4 tail).
-5. **G-5 in TypeScript** — restate the CHECK in `task.schema.ts` whenever drizzle is upgraded,
-   purely so the declaration matches the database. The constraint itself is already there;
-   this is cosmetic and genuinely low priority.
+4. ~~**Drop the inert `communication` tables**~~ ✅ **written 2026-07-31** — migration `0019`
+   drops `messages`, `conversation_participants`, `conversations`, and
+   `communication.schema.ts` is deleted from the drizzle barrel. Verified empty (0/0/0 rows)
+   on the local scratch DB first; the migration includes the same count query so dev can be
+   checked before applying. **Destructive but order-independent**, unlike `0016` — nothing has
+   queried these since the module was deleted, so a stale table object is inert metadata.
+   **Not yet applied to dev.**
+5. ~~**G-5 in TypeScript**~~ ✅ **done 2026-07-31 — and the blocker was fiction, twice.** This
+   was recorded first as "blocked on a drizzle-orm upgrade", corrected on 2026-07-30 to "0.29
+   has no `check()` helper". **Both were wrong.** drizzle-orm 0.29.5 exports `check` from
+   `drizzle-orm/pg-core`, and `getTableConfig()` confirms it registers — checked at runtime,
+   not assumed, because "it typechecks" would not have distinguished a real registration from
+   a loosely-typed extra-config object that drizzle silently ignores. The declaration renders
+   to SQL identical to `0017` (verified via `PgDialect.sqlToQuery`). It is documentation, not
+   enforcement — `0017` already created the constraint.
+
+   > **The generalisable bit:** two rounds of "this is blocked upstream" survived because
+   > nobody ran a three-line probe. The cost of checking was about a minute.
 
 Beyond the port, the only open backlog items are the design-token migration, the frozen Campus
 entries (**M-1, M-2, M-10, M-20** — not real work while the product is Office-only), and
-**L-1** (`frontend/mobile/` has no application code).
+**L-1** (`frontend/mobile/` has no application code). **M-23 (`/analytics`) closed 2026-07-31**
+— rebuilt on the shared dashboard primitives, linked in the sidebar, and guarded by
+`e2e/analytics.spec.ts`; the production-build cold-load failure went with it.
+
+### Local verification, 2026-07-31
+
+Everything above was re-run end to end against a **production build** served by `next start`,
+not `next dev`, because the one failure this batch inherited only reproduced under a
+production build:
+
+| Check                    | Result                                                        |
+| ------------------------ | ------------------------------------------------------------- |
+| `tsc --noEmit` (both)    | clean                                                         |
+| `next build`             | clean; `/analytics` prerenders static at 2.88 kB              |
+| Smoke suites             | **10/10, 250 checks**                                         |
+| Playwright               | **69/69** (66 + 3 new analytics specs)                        |
+| Dark-mode AA guard       | passes with `/analytics` added — 12 route/view combinations   |
+
+> **A local-environment trap that cost about an hour.** `pnpm install --force` aborts with
+> `ERR_PNPM_EPERM` on `bcrypt.node` when the API is running, because a live node process holds
+> the native module open. The install stops **half-way**, leaving `node_modules` missing files
+> such as `next/dist/bin/next` — which then presents as a mysterious `MODULE_NOT_FOUND` on the
+> next build, looking like spontaneous corruption rather than an install that never finished.
+> **Stop every node server before installing.** The working order is: stop servers → install →
+> build → start → test. Note also that killing the shell that launched `next start` does not
+> always kill `next` itself; the leftover process holds port 3000 and the replacement dies with
+> `EADDRINUSE`, which produced one run of test failures that proved nothing at all.
 
 ## 4. Deploy note that applies to all of it
 
