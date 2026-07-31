@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit",
+    "build:ci": "node ./node_modules/next/dist/bin/next build",
+    "start:ci": "node ./node_modules/next/dist/bin/next start"
   },
   "dependencies": {
     "@doptor/shared": "workspace:*",

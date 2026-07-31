@@ -107,21 +107,30 @@ jobs:
                    (SELECT count(*) FROM pg_constraint
                      WHERE conname='task_attachments_file_or_link') AS file_or_link_check;"
 
-      # Everything below runs through a package.json script rather than `npx`
-      # or `pnpm exec`, because both have now failed here in different ways:
+      # Every tool below is invoked as `node <path/to/module/bin>` through a
+      # `:ci` script, never by name. Three rounds were lost to name resolution
+      # picking something other than this repo's own toolchain:
       #
-      #   `npx tsc`        — npx is not pnpm-aware. Rather than fail it
-      #                      downloaded an unrelated abandoned package named
-      #                      `tsc` from the registry and ran that.
-      #   `pnpm exec tsc`  — resolved to the *runner's global* TypeScript, not
-      #                      the workspace one: it reported 7.0.2 where this
-      #                      repo pins ^5 and installs 5.9.3. `pnpm exec
-      #                      playwright` then failed outright, since there is
-      #                      no global playwright to fall back to.
+      #   `npx tsc`       — npx is not pnpm-aware, so instead of failing it
+      #                     downloaded an unrelated abandoned package called
+      #                     `tsc` from the registry and ran that.
+      #   `pnpm exec tsc` — resolved to the runner's *global* TypeScript and
+      #                     reported 7.0.2; both workspaces pin ^5 and install
+      #                     5.9.3. `pnpm exec playwright` failed outright,
+      #                     there being no global playwright to fall back to.
+      #   `pnpm run` →
+      #   `tsc --noEmit`  — still 7.x. The script runs with the package's
+      #                     node_modules/.bin at the front of PATH, so this
+      #                     should have worked; that it did not means the bin
+      #                     links are not present on the runner the way they
+      #                     are locally. Hence the diagnostics step below.
       #
-      # `pnpm run` puts the package's own node_modules/.bin at the front of
-      # PATH, which is the one mechanism that cannot silently resolve to
-      # something else.
+      # The tell each time was the version. TypeScript 7 removed `baseUrl`,
+      # which is why the last failure was `error TS5102: Option 'baseUrl' has
+      # been removed` — a real error, from the wrong compiler, about a
+      # tsconfig that is correct for the version this repo actually pins.
+      # Resolving by path cannot silently land on a different binary: if the
+      # module is missing, node says so.
       - name: Toolchain diagnostics
         # Printed unconditionally so a resolution failure is diagnosable from
         # the log alone. The versions here must match what the repo pins; a
@@ -134,8 +143,13 @@ jobs:
           echo "--- backend/api .bin ---"; ls backend/api/node_modules/.bin 2>/dev/null | head -10 || echo "MISSING"
           echo "--- frontend/web .bin ---";ls frontend/web/node_modules/.bin 2>/dev/null | head -10 || echo "MISSING"
           echo "--- resolved versions ---"
-          pnpm --filter @doptor/backend-api exec tsc --version || true
-          pnpm --filter doptor-super-app exec playwright --version || true
+          echo "--- tool entrypoints (CI scripts resolve these by path) ---"
+          for f in backend/api/node_modules/typescript/bin/tsc                    frontend/web/node_modules/typescript/bin/tsc                    backend/api/node_modules/@nestjs/cli/bin/nest.js                    frontend/web/node_modules/next/dist/bin/next                    node_modules/@playwright/test/cli.js; do
+            if [ -f "$f" ]; then echo "  OK   $f"; else echo "  MISS $f"; fi
+          done
+          echo "--- versions actually resolved ---"
+          node backend/api/node_modules/typescript/bin/tsc --version || true
+          node node_modules/@playwright/test/cli.js --version || true
 
       - name: Typecheck
         run: |
@@ -146,8 +160,8 @@ jobs:
       - name: Build
         run: |
           set -e
-          pnpm --filter @doptor/backend-api run build
-          pnpm --filter @doptor/web run build
+          pnpm --filter @doptor/backend-api run build:ci
+          pnpm --filter @doptor/web run build:ci
 
       - name: Start API
         run: |
@@ -160,7 +174,7 @@ jobs:
 
       - name: Start web
         run: |
-          (cd frontend/web && pnpm run start -- -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &)
+          (cd frontend/web && pnpm run start:ci -- -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &)
           for i in $(seq 1 60); do
             curl -sf http://localhost:3000/login && break
             sleep 2
@@ -181,7 +195,7 @@ jobs:
           E2E_BASE_URL: http://localhost:3000
           E2E_API_URL: http://localhost:3001
           E2E_PSQL_CMD: psql postgresql://doptor:doptor@localhost:5432/doptor
-        run: pnpm run test:e2e
+        run: pnpm run test:e2e:ci
 
       - name: Upload failure artifacts
         if: failure()
