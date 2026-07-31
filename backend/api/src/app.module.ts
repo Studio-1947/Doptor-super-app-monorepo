@@ -26,9 +26,9 @@ import { AppController } from "./app.controller";
 // `payload.userId` — so leaving it in the tree meant one `imports:` line stood
 // between the repo and a live user-impersonation hole. Deleting beats commenting.
 //
-// The `conversations`/`messages` tables are deliberately left in place: dropping
-// them needs a destructive migration, and they are empty. The schema is still
-// exported from the drizzle barrel.
+// The `conversations`/`conversation_participants`/`messages` tables and their
+// drizzle schema were dropped on 2026-07-31 (migration `0019`), closing the
+// tail of M-6. Nothing had queried them since the module was deleted.
 //
 // If chat returns, do not restore the old gateway — port the task-tracker's
 // gateway-auth-in-middleware approach instead (see docs/PORTING-GAPS.md § G-4).

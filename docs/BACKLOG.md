@@ -437,18 +437,18 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       hardened in M-6 (handshake JWT verified, membership checks, CORS locked down), so
       what is being retired is sound code for a product decision, not a liability.
 
-- [ ] **M-6** 🟡➡️⚪ **Inert as of 2026-07-28 — reclassified 2026-07-29 from "security gap"
-      to "dead code to delete".** The defect is real and unfixed: `handleConnection` never
-      verifies the socket's identity, and `sendMessage` trusts a client-supplied
-      `payload.userId` rather than an authenticated session, so any connected client could
-      impersonate any user. **But the gateway never instantiates** — `CommunicationModule` is
-      deliberately unregistered in `app.module.ts` (chat was removed when the product went
-      Office-only), so there is no socket server listening and no exposure.
-      **Do not "fix" this — delete it.** The whole `modules/communication/` tree (gateway,
-      controller, service, module) is unreachable code carrying a known auth hole; keeping it
-      risks someone re-registering the module and reopening the vulnerability for real. If
-      chat ever returns, port the tracker's gateway-auth-in-middleware approach rather than
-      reviving this. The `communication` DB schema is untouched by this (drop separately).
+- [x] **M-6** ⚪ ~~`communication.gateway.ts` has no WebSocket authentication.~~ —
+      **resolved by deletion 2026-07-30** (commit `7bf693b`), the outcome recommended when this
+      was reclassified on 2026-07-29 from "security gap" to "dead code to delete".
+      The defect was real: `handleConnection` never verified the socket's identity and
+      `sendMessage` trusted a client-supplied `payload.userId`, so any connected client could
+      impersonate any user. It was never exposed — `CommunicationModule` had been unregistered
+      from `app.module.ts` when the product went Office-only, so the gateway never instantiated.
+      The whole `modules/communication/` tree is now gone, which is what closes this for good:
+      there is no longer a module anyone can re-register to reopen the hole. If chat ever
+      returns, port the tracker's gateway-auth-in-middleware approach rather than reviving this.
+      **Tail:** the `communication` DB schema and its (empty) `conversations`/`messages` tables
+      are still in place — inert and now unreferenced by any module; drop them separately.
 - [ ] **M-10** 🟡 Found 2026-07-03 while testing H-1: `POST /campus/classes` doesn't
       exist on the backend at all (404) despite the frontend's `CreateClassDialog.tsx`
       calling it — "Create Class" has never worked. Also the dialog only collects
@@ -596,6 +596,66 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       estimated. Row shapes are pinned in suites `04` and `05` (+6 checks), because a
       dropped `with:` relation would blank the rows silently instead of erroring.
 
+- [x] **M-23** 🟡 ~~**`/analytics` is a fabricated, orphaned page that fetches a hardcoded
+      `http://localhost:3000` URL.**~~ Found 2026-07-30 while auditing UI/UX; **pre-existing,
+      not from the tasks/attendance batch.** Four separate problems, all in
+      `features/analytics/AnalyticsDashboard.tsx`:
+      **(1)** line 24 is `await fetch('http://localhost:3000/analytics/overview')` — an
+      absolute localhost URL in shipped client code, so on any real deployment the *visitor's
+      browser* calls **its own** `localhost:3000`. It resolves to nothing, every value falls
+      back to `0`, and the comment above it (`// In production, use env variable for base URL`)
+      records that this was known and left.
+      **(2)** It expects `revenue`, `totalMessages` and `activeSessions`, **none of which the
+      API has ever returned.** `GET /analytics/overview` really returns `totalUsers`,
+      `totalFiles`, `totalTasks`, `openTasks`, `totalDocuments`, `documentsPendingReview`,
+      `totalDepartments`, `currentlyCheckedIn`, `pendingLeaveRequests` — verified live. So the
+      component was written against an API that never existed. "Total Revenue" has no meaning
+      in an office suite, and "Total Messages" refers to chat, **deleted** under Office-only.
+      **(3)** The rest is inline fabrication: trend badges hardcoded `+20.1% / +15.2% / +5.4%
+      / +2.3%`, a "Revenue Growth" chart with invented bar heights, and traffic sources
+      "Direct 45% / Social Media 25%".
+      **(4)** It fails `cold-load.spec.ts` **consistently against a production build (2/2),
+      while passing in `next dev`** — `waitForLoadState('networkidle')` times out. The visible
+      network activity is just the one 404 above; the stall itself is not fully root-caused.
+      **Note it is linked from no navigation** — reachable only by typing the URL, which is why
+      nobody has reported it, and why it also **evaded the fabricated-data sweep**: that greps
+      for `const UPPER_CASE = [...]` arrays and this page's fake values are inline JSX
+      literals. Exactly the evasion recorded in `PORTING-GAPS.md` § G-4.
+      **Recommendation: delete it**, consistent with how Network and the fabricated approvals
+      components were handled. If analytics is wanted, rewrite against the real nine-field
+      endpoint using the existing `services/analytics.service.ts`, which already goes through
+      `apiClient` correctly and is what `/admin` uses for its real counts. **Do not merely fix
+      the URL** — that would render a page of zeroes and invented percentages.
+
+      **Closed 2026-07-31 by rebuild, not deletion.** The rebuild happened in two steps, and
+      the first one is the part worth keeping:
+      - `1eb094c` (2026-07-30) removed the localhost URL, the three imaginary fields and every
+        invented percentage, wiring the page to `analyticsService.getOverview()`. That fixed
+        **(1)**, **(2)** and **(3)**.
+      - It also **reintroduced a smaller version of the same defect**, which is why this entry
+        stayed open a day longer: a "System Status" card whose four green lights were the
+        literal `active={true}`, asserting health nothing had measured — the same thing M-16
+        deleted from `/admin/settings`. And because it hand-rolled its own tile markup instead
+        of using `DashboardPrimitives`, it fell back to `0` on a failed request, so a broken
+        page was indistinguishable from a brand-new organisation. That primitive's own comment
+        warns against exactly this: *"showing '0' before the data arrives reads as real data
+        and is the failure mode this whole change exists to remove."*
+      - **2026-07-31:** rebuilt on `useAsync` + `StatTile`/`ErrorNote`, so all nine counts show,
+        a failure renders the error instead of zeroes, and dark-mode AA comes from primitives
+        already proven at AA. The status card is gone; the reason it is gone is recorded in the
+        component, because "add a system status panel" is an obvious-looking idea.
+      - **(4) is fixed and verified against a production build** — `/analytics stays put` in
+        `cold-load.spec.ts` passes, where it previously failed 2/2. The `networkidle` stall went
+        with the 404 that caused it.
+      - **No longer orphaned:** a sidebar entry for `super_admin`/`org_admin` (`Sidebar.tsx`),
+        and `/analytics` added to `dark-mode-contrast.spec.ts`, since a route in the nav is one
+        worth guarding.
+      - **Guarded by `e2e/analytics.spec.ts`** (3 specs): tiles must match counts fetched
+        independently from the API, the status-panel strings must be absent, and a stubbed 500
+        must render an error with **no** tile showing a number. Each was verified by
+        reintroducing its own bug and watching only that spec go red — the zero-fallback and
+        the status panel were each restored, rebuilt and re-run.
+
 - [ ] **M-20** 🟡 `/campus/faculty` and `/campus/students` are fabricated ("Dr. Sarah
       Connor", "Publications 1,240", "2,840 students", "Aarav Sharma") **despite
       `GET /campus/faculty` and `GET /campus/students` existing, being org-scoped since
@@ -665,6 +725,31 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       **resolved; verified 2026-07-29.** `features/verticals/` does not exist; only
       `features/office/*` remains. (Office roadmap Phase 6 already recorded this; the box
       here was simply never ticked.)
+- [x] **L-5** ~~Dark mode is unevenly applied and, on some surfaces, unreadable.~~ —
+      **closed 2026-07-30, measured to zero.** Found by computing WCAG contrast in the live
+      DOM rather than reading classes: dark mode is a shipped feature (`darkMode: "class"`,
+      `ThemeToggle`, `ThemeContext`) applied per class, so any `text-slate-900` without a
+      `dark:` variant rendered near-black on a near-black surface.
+      **137 AA failures across 10 routes, 54 of them below 1.5:1 → 0 across 11 route/view
+      combinations.** Worst cases were every task title on both the kanban board and the table
+      at exactly **1:1** (`rgb(15,23,42)` on `rgb(15,23,42)`), and `/settings` rendering the
+      user's own name the same way.
+      **The root cause worth remembering:** `components/ReadyUI.tsx` — the page-shell wrapper
+      for `/approvals`, `/admin/*` and `/office/*` — had `bg-white` with no dark pair, so the
+      whole content panel stayed white in dark mode. Adding `dark:` *text* variants to pages
+      inside it therefore made them **worse** (light-grey text on a white panel, 2.56:1);
+      `/approvals` went 6 → 10 failures before the container was fixed and it dropped to 0.
+      Fix the surface before the text.
+      Files touched: `ReadyUI`, `TaskKanban`, `TaskTable`, `ProfileSettings`,
+      `DocumentExplorer`, `NotificationCenter`, `AttendanceCalendar`, `app/approvals`,
+      `app/office/files`, `app/tasks`, `app/attendance`, `TaskDetailDrawer`.
+      **Guard:** `e2e/dark-mode-contrast.spec.ts` now asserts **full AA** (4.5:1 body, 3:1
+      large) over all 11 combinations, up from the interim 1.5:1 legibility threshold it
+      shipped with that morning. Verified by re-introducing the `/settings` bug and watching it
+      go red. Two measurement rules are baked in: resolve the background through ancestors, and
+      skip checkbox/radio inputs (their `color` is an accent judged at 3:1, not body text —
+      counting them overstated `/settings` by two).
+
 
 ---
 

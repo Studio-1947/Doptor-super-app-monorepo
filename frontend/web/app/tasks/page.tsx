@@ -34,7 +34,7 @@ export default function TasksPage() {
     return (
         <div className="flex flex-col h-full overflow-hidden">
             <div className="flex justify-end shrink-0 mb-2">
-                <div className="inline-flex border border-slate-200 rounded-lg overflow-hidden bg-white">
+                <div className="inline-flex border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900">
                     <ViewButton
                         active={view === 'board'}
                         onClick={() => choose('board')}
@@ -69,7 +69,7 @@ function ViewButton({ active, onClick, icon, label }: {
             aria-pressed={active}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-colors ${active
                 ? 'bg-primary-600 text-white'
-                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
         >
             {icon} {label}
         </button>

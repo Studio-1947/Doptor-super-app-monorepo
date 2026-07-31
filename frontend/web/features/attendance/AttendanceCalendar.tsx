@@ -100,34 +100,37 @@ export function AttendanceCalendar() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            {/* flex-wrap is defensive, not a fix for an observed bug: measured at
+                390px the row does not overflow. It keeps the month stepper and the
+                attended count from colliding below ~360px. */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-                        className="p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:border-primary-500 hover:text-primary-600 transition-colors"
+                        className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                         aria-label="Previous month"
                     >
                         <ChevronLeft size={16} />
                     </button>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white min-w-[9rem] text-center">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white min-w-[7rem] sm:min-w-[9rem] text-center">
                         {cursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                     </span>
                     <button
                         onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-                        className="p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:border-primary-500 hover:text-primary-600 transition-colors"
+                        className="p-1.5 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 dark:text-slate-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                         aria-label="Next month"
                     >
                         <ChevronRight size={16} />
                     </button>
                 </div>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-400 dark:text-slate-400">
                     {loading ? <Loader2 size={14} className="animate-spin" /> : `${presentCount} day(s) attended`}
                 </span>
             </div>
 
             <div className="grid grid-cols-7 gap-1">
                 {WEEKDAY_LABELS.map((d) => (
-                    <div key={d} className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center py-1">
+                    <div key={d} className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400 text-center py-1">
                         {d}
                     </div>
                 ))}
@@ -154,12 +157,12 @@ export function AttendanceCalendar() {
                                     : weekend ? 'bg-slate-50 dark:bg-slate-900/40'
                                         : 'bg-white dark:bg-slate-900'}`}
                         >
-                            <span className={`text-[11px] font-bold ${isToday ? 'text-primary-600' : 'text-slate-500'}`}>
+                            <span className={`text-[11px] font-bold ${isToday ? 'text-primary-600 dark:text-primary-400' : 'text-slate-500 dark:text-slate-400'}`}>
                                 {date.getDate()}
                             </span>
 
                             {holiday ? (
-                                <span className="text-[9px] font-semibold text-indigo-600 leading-tight line-clamp-2">
+                                <span className="text-[9px] font-semibold text-indigo-600 dark:text-indigo-300 leading-tight line-clamp-2">
                                     {holiday.name}
                                 </span>
                             ) : record ? (

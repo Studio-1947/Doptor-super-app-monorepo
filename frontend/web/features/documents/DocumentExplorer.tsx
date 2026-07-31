@@ -162,7 +162,7 @@ export function DocumentExplorer() {
                 <div className="flex gap-1">
                     {STATUS_TABS.map((t) => (
                         <button key={t.id} onClick={() => setTab(t.id)}
-                            className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border ${tab === t.id ? "border-primary-500 text-primary-600" : "border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600"}`}>
+                            className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border ${tab === t.id ? "border-primary-500 text-primary-600 dark:text-primary-400" : "border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"}`}>
                             {t.label}
                         </button>
                     ))}

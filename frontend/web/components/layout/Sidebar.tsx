@@ -15,6 +15,7 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
         all: [],
         super_admin: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+            { icon: BarChart3, label: 'Analytics', href: '/analytics' },
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
             { icon: FolderOpen, label: 'Documents', href: '/documents' },
             { icon: CheckSquare, label: 'Approvals', href: '/approvals' },
@@ -23,6 +24,7 @@ export const verticalMenus: Record<VerticalType, Record<UserRole | 'all', { icon
         ],
         org_admin: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+            { icon: BarChart3, label: 'Analytics', href: '/analytics' },
             { icon: ClipboardList, label: 'Tasks', href: '/tasks' },
             { icon: FolderOpen, label: 'Documents', href: '/documents' },
             { icon: CheckSquare, label: 'Approvals', href: '/approvals' },

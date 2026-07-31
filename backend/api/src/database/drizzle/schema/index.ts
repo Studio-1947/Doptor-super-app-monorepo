@@ -17,7 +17,6 @@ export * from "./attendance.schema";
 export * from "./attendance.relations";
 export * from "./files.schema";
 export * from "./campus.schema";
-export * from "./communication.schema";
 export * from "./refresh-token.schema";
 export * from "./audit-log.schema";
 export * from "./relations";

@@ -129,10 +129,10 @@ export default function ApprovalsPage() {
                 {!canApproveAnything ? (
                     <div className="flex flex-col items-center gap-3 py-12 text-center">
                         <Lock size={24} className="text-slate-400" />
-                        <p className="text-sm font-bold text-slate-900">
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                             You don&apos;t hold any approval permissions.
                         </p>
-                        <p className="text-xs text-slate-500 max-w-md">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md">
                             Approving documents needs <code>approve:workflows</code> and approving
                             leave needs <code>approve:attendance</code>. A Department Head or
                             Organisation Admin can grant these from Roles &amp; Permissions.
@@ -145,12 +145,12 @@ export default function ApprovalsPage() {
                         {canApproveDocs && (
                             <section className="space-y-3">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                    <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                                         Documents Pending Review
                                     </h3>
                                     <Link
                                         href="/documents"
-                                        className="text-[10px] font-black uppercase tracking-widest text-primary-600 hover:underline"
+                                        className="text-[10px] font-black uppercase tracking-widest text-primary-600 dark:text-primary-400 hover:underline"
                                     >
                                         All documents
                                     </Link>
@@ -163,7 +163,7 @@ export default function ApprovalsPage() {
                                 ) : !docs.data?.length ? (
                                     <EmptyState message="No documents are waiting for review." />
                                 ) : (
-                                    <div className="divide-y divide-slate-100 border border-slate-200">
+                                    <div className="divide-y divide-slate-100 border border-slate-200 dark:border-slate-700">
                                         {docs.data.map((doc) => (
                                             <Row
                                                 key={doc.id}
@@ -191,12 +191,12 @@ export default function ApprovalsPage() {
                         {canApproveLeave && (
                             <section className="space-y-3">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                    <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                                         Leave Requests Pending
                                     </h3>
                                     <Link
                                         href="/attendance"
-                                        className="text-[10px] font-black uppercase tracking-widest text-primary-600 hover:underline"
+                                        className="text-[10px] font-black uppercase tracking-widest text-primary-600 dark:text-primary-400 hover:underline"
                                     >
                                         Attendance
                                     </Link>
@@ -209,7 +209,7 @@ export default function ApprovalsPage() {
                                 ) : !leave.data?.length ? (
                                     <EmptyState message="No leave requests are waiting." />
                                 ) : (
-                                    <div className="divide-y divide-slate-100 border border-slate-200">
+                                    <div className="divide-y divide-slate-100 border border-slate-200 dark:border-slate-700">
                                         {leave.data.map((req) => (
                                             <Row
                                                 key={req.id}
@@ -251,16 +251,16 @@ function Row({
     onReject: () => void;
 }) {
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white hover:bg-slate-50 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
             <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-900 truncate">{title}</p>
-                <p className="text-xs text-slate-500 truncate">{subtitle}</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{title}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{subtitle}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
                 <button
                     onClick={onReject}
                     disabled={busy !== null}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 text-slate-600 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
                 >
                     {busy === 'reject' && <Loader2 size={12} className="animate-spin" />}
                     Reject

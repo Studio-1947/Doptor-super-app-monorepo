@@ -13,6 +13,10 @@ import {
   leaveRequests,
   holidays,
 } from "../../database/drizzle/schema/attendance.schema";
+import { userRoles } from "../../database/drizzle/schema/user-role.schema";
+import { roles } from "../../database/drizzle/schema/role.schema";
+import { rolePermissions } from "../../database/drizzle/schema/role-permission.schema";
+import { permissions } from "../../database/drizzle/schema/permission.schema";
 import { DRIZZLE } from "../../database/drizzle/database.module";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../../database/drizzle/schema";
@@ -412,6 +416,39 @@ export class AttendanceService {
 
   // --------------------------------------------------------- leave requests
 
+  /**
+   * Everyone in the org who can act on the approval queue, i.e. holders of
+   * `approve:attendance` — the same string `AttendanceController` gates
+   * approve/reject on, so the notified set is exactly the set that can respond.
+   *
+   * Resolved through roles rather than a "manager" column because Doptor has no
+   * reporting hierarchy: approval is a permission, not a relationship. Scoped by
+   * `roles.organisation_id` — `user_roles` itself has no org column, and roles
+   * are per-org, so joining through them is what keeps this tenant-safe.
+   */
+  private async attendanceApprovers(organisationId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ user_id: userRoles.user_id })
+      .from(userRoles)
+      .innerJoin(roles, eq(roles.id, userRoles.role_id))
+      .innerJoin(rolePermissions, eq(rolePermissions.role_id, userRoles.role_id))
+      .innerJoin(
+        permissions,
+        eq(permissions.id, rolePermissions.permission_id),
+      )
+      .where(
+        and(
+          eq(roles.organisation_id, organisationId),
+          eq(permissions.organisation_id, organisationId),
+          eq(permissions.action, "approve"),
+          eq(permissions.resource, "attendance"),
+        ),
+      );
+    // A user with two granting roles appears twice; safeNotifyMany dedupes, but
+    // keep the contract of this helper a distinct set.
+    return [...new Set(rows.map((r) => r.user_id))];
+  }
+
   async submitLeaveRequest(
     userId: string,
     organisationId: string,
@@ -451,6 +488,24 @@ export class AttendanceService {
         reason: data.reason,
       })
       .returning();
+
+    // Nothing told the approvers a request was waiting — the queue only worked
+    // if an admin thought to look at it. Notify every `approve:attendance`
+    // holder; `safeNotifyMany` drops the actor, so a manager filing their own
+    // leave does not notify themselves.
+    await this.notifications.safeNotifyMany(
+      await this.attendanceApprovers(organisationId),
+      {
+        organisationId,
+        actorId: userId,
+        type: "leave_requested",
+        title: "Leave request awaiting approval",
+        body: `${request.start_date} → ${request.end_date} (${request.days} day(s))`,
+        link: "/attendance",
+        data: { leave_request_id: request.id },
+      },
+    );
+
     return request;
   }
 

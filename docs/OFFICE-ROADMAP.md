@@ -172,17 +172,29 @@ documented deviation (Decision C values — see below).
   assignee add-remove, label toggle, comments, and the audit history timeline.
 - Deleted `TaskList.tsx` and `TaskDetail.tsx` — hardcoded-mock components never imported.
 
-**Still outstanding in Phase 2:**
-- [ ] List/Table view (the board is the only view; the old mock List was deleted).
-- [ ] Task attachments UI — the `task_attachments` table and its file/link invariant exist,
-      but nothing writes to it yet. Reuse the Phase 1 upload machinery from `files`.
+**Still outstanding in Phase 2:** — *nothing; all four items closed as of 2026-07-30.*
+- [x] ~~List/Table view (the board is the only view; the old mock List was deleted).~~ — done
+      2026-07-30, `features/tasks/TaskTable.tsx` + a board/table toggle on `/tasks` persisted
+      to `localStorage`. The table uses the server-side filter/sort/pagination the board
+      deliberately skips.
+- [x] ~~Task attachments UI — the `task_attachments` table and its file/link invariant exist,
+      but nothing writes to it yet. Reuse the Phase 1 upload machinery from `files`.~~ — done
+      2026-07-30, end-to-end: 5 endpoints (`tasks.controller.ts:334-425`), service methods
+      with audit-log writes, and an attachments section in `TaskDetailDrawer.tsx`. Modelled on
+      `modules/documents/` rather than `files`, which had shipped the same upload machinery
+      more recently. **Code complete but not yet run against a live database.**
 - [x] ~~Backfill + drop the deprecated `tasks.tags` and `tasks.assigned_to` columns, then
       tighten `department_id` to NOT NULL.~~ — done 2026-07-28, migration `0016`. Note it
       **runs after its code deploys**, unlike every other migration here; see the deploy
       section. The `assigned_to` *filter* had already moved to `task_assignees` long ago —
       only the column, its drizzle declaration and an unused `assignee` relation remained.
-- [ ] Add the `task_attachments` file-or-link CHECK constraint once drizzle-orm is
-      upgraded (0.29 has no `check()` helper; the invariant is enforced in the service).
+- [x] ~~Add the `task_attachments` file-or-link CHECK constraint once drizzle-orm is
+      upgraded (0.29 has no `check()` helper; the invariant is enforced in the service).~~ —
+      **the premise was wrong**; constraint written 2026-07-30 as migration `0017`. Drizzle
+      lacking `check()` blocked *declaring* the constraint in TypeScript, never the constraint
+      itself — every migration here is hand-written SQL. The service keeps its
+      `assertAttachmentShape()` check, so the two agree. What's left is cosmetic: restate it in
+      `task.schema.ts` when drizzle is eventually upgraded.
 
 - **Exit:** a task has a ref, multiple assignees, labels, comments, subtasks, and a full audit
       trail — all org-scoped and permission-gated. ✅ **Verified against a live database

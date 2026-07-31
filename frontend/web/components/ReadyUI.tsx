@@ -97,17 +97,17 @@ export function ReadyUI({
     const showControls = Boolean(onSearch || onFilter);
 
     return (
-        <div className="flex flex-col h-full bg-white relative">
+        <div className="flex flex-col h-full bg-white dark:bg-slate-900 relative">
             <div className="flex flex-col gap-6 mb-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
                     <div className="space-y-1">
                         {moduleName && (
                             <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-primary-600 bg-primary-50 px-2 py-0.5 border border-primary-100">
                                 {moduleName}
                             </span>
                         )}
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{title}</h1>
-                        <p className="text-sm text-slate-500 font-medium">{description}</p>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{title}</h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 dark:text-slate-400 font-medium">{description}</p>
                     </div>
 
                     {(onExport || primaryAction) && (
@@ -116,7 +116,7 @@ export function ReadyUI({
                                 <button
                                     type="button"
                                     onClick={onExport}
-                                    className="inline-flex items-center justify-center h-10 px-5 text-[10px] font-bold uppercase tracking-widest rounded-none bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all active:scale-95"
+                                    className="inline-flex items-center justify-center h-10 px-5 text-[10px] font-bold uppercase tracking-widest rounded-none bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95"
                                 >
                                     <Download size={14} className="mr-2" />
                                     Export
@@ -137,11 +137,11 @@ export function ReadyUI({
                 </div>
 
                 {stats.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 border border-slate-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-0 border border-slate-100 dark:border-slate-800">
                         {stats.map((stat, index) => (
                             <div
                                 key={index}
-                                className={`p-8 bg-white border-slate-100 relative overflow-hidden ${
+                                className={`p-8 bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 relative overflow-hidden ${
                                     index !== stats.length - 1 ? 'lg:border-r' : ''
                                 } ${index >= 2 ? 'md:border-t lg:border-t-0' : ''}`}
                             >
@@ -158,8 +158,8 @@ export function ReadyUI({
                                     )}
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{stat.label}</p>
-                                    <h3 className="text-3xl font-bold text-slate-900 tracking-tighter">{stat.value}</h3>
+                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-[0.2em] mb-2">{stat.label}</p>
+                                    <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tighter">{stat.value}</h3>
                                 </div>
                             </div>
                         ))}
@@ -171,21 +171,21 @@ export function ReadyUI({
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
                     {onSearch && (
                         <form onSubmit={submitSearch} className="relative w-full sm:w-96">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-400" size={18} />
                             <input
                                 type="search"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 aria-label={`Search ${title.toLowerCase()}`}
                                 placeholder={searchPlaceholder ?? `Search ${title.toLowerCase()}...`}
-                                className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 transition-all placeholder:text-slate-400 uppercase tracking-wider"
+                                className="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 transition-all placeholder:text-slate-400 dark:text-slate-400 uppercase tracking-wider"
                             />
                             {query && (
                                 <button
                                     type="button"
                                     onClick={clearSearch}
                                     aria-label="Clear search"
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-900"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                                 >
                                     <X size={14} />
                                 </button>
@@ -196,7 +196,7 @@ export function ReadyUI({
                         <button
                             type="button"
                             onClick={onFilter}
-                            className="inline-flex items-center justify-center h-11 px-6 text-[10px] font-bold uppercase tracking-widest rounded-none bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm transition-all active:scale-95"
+                            className="inline-flex items-center justify-center h-11 px-6 text-[10px] font-bold uppercase tracking-widest rounded-none bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 shadow-sm transition-all active:scale-95"
                         >
                             <Filter size={16} className="mr-2" />
                             Filter
@@ -205,7 +205,7 @@ export function ReadyUI({
                 </div>
             )}
 
-            <div className="flex-1 bg-white border border-slate-200">
+            <div className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
                 <div className="relative h-full p-6">{children}</div>
             </div>
         </div>
