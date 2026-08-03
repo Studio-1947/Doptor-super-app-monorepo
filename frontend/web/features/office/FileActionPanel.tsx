@@ -61,9 +61,9 @@ export function FileActionPanel({
                 <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-500">Current Status:</span>
                     <span className={`font-medium px-2.5 py-0.5 rounded-full text-xs ${file.status === 'approved' ? 'bg-success-100 text-success-700' :
-                        file.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                        file.status === 'rejected' ? 'bg-danger-100 text-danger-700' :
                             file.status === 'closed' ? 'bg-slate-200 text-slate-700' :
-                                'bg-blue-100 text-blue-700'
+                                'bg-info-100 text-info-700'
                         }`}>
                         {file.status.charAt(0).toUpperCase() + file.status.slice(1)}
                     </span>
@@ -137,7 +137,7 @@ export function FileActionPanel({
                     <Button
                         variant="secondary"
                         onClick={onReject}
-                        className="w-full justify-center gap-2 text-red-700 border-red-200 bg-red-50 hover:bg-red-100 hover:border-red-300"
+                        className="w-full justify-center gap-2 text-danger-700 border-danger-200 bg-danger-50 hover:bg-danger-100 hover:border-danger-300"
                     >
                         <XCircle size={18} />
                         Reject

@@ -172,7 +172,7 @@ function RegisterForm() {
                                 <motion.div
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
-                                    className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 text-sm flex items-center gap-2"
+                                    className="p-3 rounded-lg bg-danger-50 dark:bg-danger-950/40 text-danger-600 dark:text-danger-300 text-sm flex items-center gap-2"
                                 >
                                     <AlertCircle size={16} />
                                     {error}

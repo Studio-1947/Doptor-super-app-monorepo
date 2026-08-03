@@ -79,7 +79,7 @@ export default function LoginPage() {
                                 <motion.div
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    className="p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 text-xs font-bold flex items-center gap-3 border border-red-100 dark:border-red-900/30 rounded-none uppercase tracking-wider"
+                                    className="p-4 bg-danger-50 dark:bg-danger-900/10 text-danger-600 dark:text-danger-400 text-xs font-bold flex items-center gap-3 border border-danger-100 dark:border-danger-900/30 rounded-none uppercase tracking-wider"
                                 >
                                     <AlertCircle size={18} />
                                     {error}

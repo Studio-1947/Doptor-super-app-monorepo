@@ -151,7 +151,7 @@ export function ReadyUI({
                                     </div>
                                     {stat.change && (
                                         <div className={`text-[11px] font-black ${
-                                            stat.trend === 'up' ? 'text-success-600' : 'text-rose-600'
+                                            stat.trend === 'up' ? 'text-success-600' : 'text-danger-600'
                                         }`}>
                                             {stat.change}
                                         </div>

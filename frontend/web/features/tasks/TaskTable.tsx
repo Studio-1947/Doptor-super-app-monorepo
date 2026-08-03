@@ -37,15 +37,15 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
 
 const statusStyles: Record<TaskStatus, string> = {
     'todo': 'bg-slate-100 text-slate-700 border-slate-200',
-    'in-progress': 'bg-blue-100 text-blue-700 border-blue-200',
-    'review': 'bg-orange-100 text-orange-700 border-orange-200',
+    'in-progress': 'bg-info-100 text-info-700 border-info-200',
+    'review': 'bg-warning-100 text-warning-700 border-warning-200',
     'done': 'bg-success-100 text-success-700 border-success-200',
 };
 
 const priorityStyles: Record<TaskPriority, string> = {
-    urgent: 'bg-red-100 text-red-700 border-red-200',
-    high: 'bg-orange-100 text-orange-700 border-orange-200',
-    medium: 'bg-blue-100 text-blue-700 border-blue-200',
+    urgent: 'bg-danger-100 text-danger-700 border-danger-200',
+    high: 'bg-warning-100 text-warning-700 border-warning-200',
+    medium: 'bg-info-100 text-info-700 border-info-200',
     low: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 

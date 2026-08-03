@@ -254,7 +254,7 @@ function AttendanceTab({ student }: { student: Student }) {
 
             <Card className="p-6 border-slate-200">
                 <h3 className="text-sm font-medium text-slate-500 mb-2">Absent Days</h3>
-                <p className="text-4xl font-bold text-orange-600">{absentDays}</p>
+                <p className="text-4xl font-bold text-warning-600">{absentDays}</p>
             </Card>
 
             <Card className="p-6 border-slate-200 lg:col-span-3">

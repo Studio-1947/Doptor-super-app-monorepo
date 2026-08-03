@@ -104,14 +104,14 @@ export default function AttendanceTracker({ classId, className, onClose }: Atten
                             </button>
                             <button
                                 onClick={() => updateStatus(record.student.id, 'late')}
-                                className={`p-2 rounded-md transition-all ${record.status === 'late' ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-400 hover:text-amber-600 hover:bg-white'}`}
+                                className={`p-2 rounded-md transition-all ${record.status === 'late' ? 'bg-warning-500 text-white shadow-sm' : 'text-slate-400 hover:text-warning-600 hover:bg-white'}`}
                                 title="Late"
                             >
                                 <Clock size={16} />
                             </button>
                             <button
                                 onClick={() => updateStatus(record.student.id, 'absent')}
-                                className={`p-2 rounded-md transition-all ${record.status === 'absent' ? 'bg-red-500 text-white shadow-sm' : 'text-slate-400 hover:text-red-600 hover:bg-white'}`}
+                                className={`p-2 rounded-md transition-all ${record.status === 'absent' ? 'bg-danger-500 text-white shadow-sm' : 'text-slate-400 hover:text-danger-600 hover:bg-white'}`}
                                 title="Absent"
                             >
                                 <X size={16} />

@@ -95,6 +95,71 @@ const config: Config = {
           900: "#312e81",
           950: "#1e1b4b",
         },
+
+        /*
+         * The other half of the semantic set.
+         *
+         * Unlike success/brand these are **not** pure renames. Each meaning had
+         * grown two palettes, so one had to win and the loser's sites move:
+         *   danger  = red    — `rose` also meant rejected/absent/delete (25 uses)
+         *   warning = orange — `amber` also meant pending/late/half-day (23)
+         *   success = emerald above — `green` also meant active/confirmed (7)
+         * `info` = blue has no rival and is a rename.
+         *
+         * Losing a duplicate is the point: `FileList`'s status map had `active`
+         * in green sitting directly above `approved` in emerald, while
+         * `office/team` and `StudentList` already drew "active" in emerald. Two
+         * greens for one state is drift, not design.
+         *
+         * `info` is the informational/in-progress state — active, in-progress,
+         * excused, medium priority, the hint panel above a bulk upload.
+         *
+         * Blue deliberately survives raw on /forgot-password, /reset-password
+         * and /verify-email, where it is the *action* colour, not information —
+         * those three pages are a separate brand treatment from the rest of the
+         * app and their buttons are `from-blue-600 to-indigo-600` gradients that
+         * would flatten to one flat indigo if converted. Unifying them is a
+         * visual redesign, not a rename, so it is left alone and noted.
+         */
+        danger: {
+          50: "#fef2f2",
+          100: "#fee2e2",
+          200: "#fecaca",
+          300: "#fca5a5",
+          400: "#f87171",
+          500: "#ef4444",
+          600: "#dc2626",
+          700: "#b91c1c",
+          800: "#991b1b",
+          900: "#7f1d1d",
+          950: "#450a0a",
+        },
+        warning: {
+          50: "#fff7ed",
+          100: "#ffedd5",
+          200: "#fed7aa",
+          300: "#fdba74",
+          400: "#fb923c",
+          500: "#f97316",
+          600: "#ea580c",
+          700: "#c2410c",
+          800: "#9a3412",
+          900: "#7c2d12",
+          950: "#431407",
+        },
+        info: {
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          800: "#1e40af",
+          900: "#1e3a8a",
+          950: "#172554",
+        },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "sans-serif"],

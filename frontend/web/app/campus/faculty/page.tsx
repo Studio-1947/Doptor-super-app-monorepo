@@ -69,7 +69,7 @@ export default function FacultyPage() {
                                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 border ${
                                         member.status === 'Available' ? 'text-success-600 border-success-100 bg-success-50' :
                                         member.status === 'In Class' ? 'text-indigo-600 border-indigo-100 bg-indigo-50' :
-                                        'text-orange-600 border-orange-100 bg-orange-50'
+                                        'text-warning-600 border-warning-100 bg-warning-50'
                                     }`}>
                                         {member.status}
                                     </span>

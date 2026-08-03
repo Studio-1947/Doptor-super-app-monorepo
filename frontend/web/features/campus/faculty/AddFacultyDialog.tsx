@@ -130,7 +130,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        First Name <span className="text-red-500">*</span>
+                                        First Name <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -144,7 +144,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Last Name <span className="text-red-500">*</span>
+                                        Last Name <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -158,7 +158,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Date of Birth <span className="text-red-500">*</span>
+                                        Date of Birth <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="date"
@@ -172,7 +172,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Gender <span className="text-red-500">*</span>
+                                        Gender <span className="text-danger-500">*</span>
                                     </label>
                                     <select
                                         name="gender"
@@ -203,7 +203,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div className="md:col-span-2">
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Address <span className="text-red-500">*</span>
+                                        Address <span className="text-danger-500">*</span>
                                     </label>
                                     <textarea
                                         name="address"
@@ -226,7 +226,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Email <span className="text-red-500">*</span>
+                                        Email <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="email"
@@ -240,7 +240,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Phone <span className="text-red-500">*</span>
+                                        Phone <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="tel"
@@ -264,7 +264,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Department <span className="text-red-500">*</span>
+                                        Department <span className="text-danger-500">*</span>
                                     </label>
                                     <select
                                         name="department"
@@ -288,7 +288,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Designation <span className="text-red-500">*</span>
+                                        Designation <span className="text-danger-500">*</span>
                                     </label>
                                     <select
                                         name="designation"
@@ -308,7 +308,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Qualification <span className="text-red-500">*</span>
+                                        Qualification <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -337,7 +337,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Experience (years) <span className="text-red-500">*</span>
+                                        Experience (years) <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="number"
@@ -352,7 +352,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Join Date <span className="text-red-500">*</span>
+                                        Join Date <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="date"
@@ -404,7 +404,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Name <span className="text-red-500">*</span>
+                                        Name <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -418,7 +418,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Relation <span className="text-red-500">*</span>
+                                        Relation <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -433,7 +433,7 @@ export function AddFacultyDialog({ isOpen, onClose, onSuccess }: AddFacultyDialo
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Phone <span className="text-red-500">*</span>
+                                        Phone <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="tel"

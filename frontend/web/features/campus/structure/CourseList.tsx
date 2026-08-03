@@ -93,7 +93,7 @@ export function CourseList() {
                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => handleDelete(course.id)}
-                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                    className="p-1.5 text-slate-400 hover:text-danger-600 hover:bg-danger-50 rounded"
                                     title="Delete Course"
                                 >
                                     <Trash2 size={18} />

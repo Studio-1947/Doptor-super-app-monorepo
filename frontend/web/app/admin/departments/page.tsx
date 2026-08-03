@@ -146,7 +146,7 @@ export default function DepartmentsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <label className="flex flex-col gap-2">
                                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                                    Name <span className="text-rose-500">*</span>
+                                    Name <span className="text-danger-500">*</span>
                                 </span>
                                 <input
                                     value={form.name}
@@ -184,7 +184,7 @@ export default function DepartmentsPage() {
                             once tasks exist.
                         </p>
                         {saveError && (
-                            <p className="mt-3 text-xs font-bold text-rose-600">{saveError}</p>
+                            <p className="mt-3 text-xs font-bold text-danger-600">{saveError}</p>
                         )}
                         <button
                             type="submit"

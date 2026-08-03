@@ -140,11 +140,11 @@ export function AttendanceCalendar() {
             case 'present':
                 return 'bg-success-100 border-success-300 text-success-900';
             case 'absent':
-                return 'bg-red-100 border-red-300 text-red-900';
+                return 'bg-danger-100 border-danger-300 text-danger-900';
             case 'late':
-                return 'bg-orange-100 border-orange-300 text-orange-900';
+                return 'bg-warning-100 border-warning-300 text-warning-900';
             case 'excused':
-                return 'bg-blue-100 border-blue-300 text-blue-900';
+                return 'bg-info-100 border-info-300 text-info-900';
             default:
                 return 'bg-white border-slate-200';
         }
@@ -201,17 +201,17 @@ export function AttendanceCalendar() {
                     <p className="text-xs text-success-700">Present</p>
                     <p className="text-2xl font-bold text-success-700 mt-1">{monthStats.present}</p>
                 </Card>
-                <Card className="p-4 border-red-200 bg-red-50">
-                    <p className="text-xs text-red-700">Absent</p>
-                    <p className="text-2xl font-bold text-red-700 mt-1">{monthStats.absent}</p>
+                <Card className="p-4 border-danger-200 bg-danger-50">
+                    <p className="text-xs text-danger-700">Absent</p>
+                    <p className="text-2xl font-bold text-danger-700 mt-1">{monthStats.absent}</p>
                 </Card>
-                <Card className="p-4 border-orange-200 bg-orange-50">
-                    <p className="text-xs text-orange-700">Late</p>
-                    <p className="text-2xl font-bold text-orange-700 mt-1">{monthStats.late}</p>
+                <Card className="p-4 border-warning-200 bg-warning-50">
+                    <p className="text-xs text-warning-700">Late</p>
+                    <p className="text-2xl font-bold text-warning-700 mt-1">{monthStats.late}</p>
                 </Card>
-                <Card className="p-4 border-blue-200 bg-blue-50">
-                    <p className="text-xs text-blue-700">Excused</p>
-                    <p className="text-2xl font-bold text-blue-700 mt-1">{monthStats.excused}</p>
+                <Card className="p-4 border-info-200 bg-info-50">
+                    <p className="text-xs text-info-700">Excused</p>
+                    <p className="text-2xl font-bold text-info-700 mt-1">{monthStats.excused}</p>
                 </Card>
                 <Card className="p-4 border-primary-200 bg-primary-50">
                     <p className="text-xs text-primary-700">Percentage</p>
@@ -319,15 +319,15 @@ export function AttendanceCalendar() {
                         <span className="text-xs text-slate-600">Present</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-red-100 border-2 border-red-300" />
+                        <div className="w-6 h-6 bg-danger-100 border-2 border-danger-300" />
                         <span className="text-xs text-slate-600">Absent</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-orange-100 border-2 border-orange-300" />
+                        <div className="w-6 h-6 bg-warning-100 border-2 border-warning-300" />
                         <span className="text-xs text-slate-600">Late</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-blue-100 border-2 border-blue-300" />
+                        <div className="w-6 h-6 bg-info-100 border-2 border-info-300" />
                         <span className="text-xs text-slate-600">Excused</span>
                     </div>
                     <div className="flex items-center gap-2">

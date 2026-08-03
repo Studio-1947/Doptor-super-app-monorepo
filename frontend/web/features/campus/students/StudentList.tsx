@@ -254,7 +254,7 @@ export function StudentList() {
                                             className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${student.status === 'active'
                                                 ? 'bg-success-50 text-success-700 border border-success-100'
                                                 : student.status === 'inactive'
-                                                    ? 'bg-orange-50 text-orange-700 border border-orange-100'
+                                                    ? 'bg-warning-50 text-warning-700 border border-warning-100'
                                                     : 'bg-slate-50 text-slate-700 border border-slate-100'
                                                 }`}
                                         >
@@ -273,14 +273,14 @@ export function StudentList() {
                                             {canEdit && (
                                                 <>
                                                     <button
-                                                        className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-blue-600 transition-colors rounded"
+                                                        className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-info-600 transition-colors rounded"
                                                         title="Edit"
                                                     >
                                                         <Edit2 size={16} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(student.id)}
-                                                        className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors rounded"
+                                                        className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-danger-600 transition-colors rounded"
                                                         title="Delete"
                                                     >
                                                         <Trash2 size={16} />

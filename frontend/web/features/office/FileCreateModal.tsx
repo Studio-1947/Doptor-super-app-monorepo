@@ -60,7 +60,7 @@ export default function FileCreateModal({ isOpen, onClose, onSuccess }: FileCrea
                 >
                     <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                            <FileText className="text-blue-600" />
+                            <FileText className="text-info-600" />
                             Create New File (e-Dak)
                         </h2>
                         <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -70,7 +70,7 @@ export default function FileCreateModal({ isOpen, onClose, onSuccess }: FileCrea
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-4">
                         {error && (
-                            <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2">
+                            <div className="p-3 rounded-lg bg-danger-50 text-danger-600 text-sm flex items-center gap-2">
                                 <AlertCircle size={16} />
                                 {error}
                             </div>
@@ -84,7 +84,7 @@ export default function FileCreateModal({ isOpen, onClose, onSuccess }: FileCrea
                                     required
                                     value={formData.file_number}
                                     onChange={e => setFormData({ ...formData, file_number: e.target.value })}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-info-500 focus:border-transparent outline-none"
                                     placeholder="e.g. FIN-2024-001"
                                 />
                             </div>
@@ -93,7 +93,7 @@ export default function FileCreateModal({ isOpen, onClose, onSuccess }: FileCrea
                                 <select
                                     value={formData.priority}
                                     onChange={e => setFormData({ ...formData, priority: e.target.value as any })}
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-info-500 focus:border-transparent outline-none"
                                 >
                                     <option value="normal">Normal</option>
                                     <option value="urgent">Urgent</option>
@@ -109,7 +109,7 @@ export default function FileCreateModal({ isOpen, onClose, onSuccess }: FileCrea
                                 required
                                 value={formData.subject}
                                 onChange={e => setFormData({ ...formData, subject: e.target.value })}
-                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-info-500 focus:border-transparent outline-none"
                                 placeholder="Brief subject of the file..."
                             />
                         </div>
@@ -119,7 +119,7 @@ export default function FileCreateModal({ isOpen, onClose, onSuccess }: FileCrea
                             <textarea
                                 value={formData.description}
                                 onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none h-24 resize-none"
+                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-info-500 focus:border-transparent outline-none h-24 resize-none"
                                 placeholder="Start typing details..."
                             />
                         </div>
@@ -145,7 +145,7 @@ export default function FileCreateModal({ isOpen, onClose, onSuccess }: FileCrea
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 disabled:opacity-70 flex items-center gap-2"
+                                className="px-4 py-2 bg-info-600 text-white font-medium rounded-lg hover:bg-info-700 transition-colors shadow-lg shadow-info-200 disabled:opacity-70 flex items-center gap-2"
                             >
                                 {isLoading && <Loader2 className="animate-spin" size={16} />}
                                 Create File

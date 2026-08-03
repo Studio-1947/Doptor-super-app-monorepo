@@ -73,8 +73,8 @@ function VerifyEmailForm() {
                     className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8"
                 >
                     <div className="text-center">
-                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <CheckCircle className="text-green-600" size={32} />
+                        <div className="w-16 h-16 bg-success-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <CheckCircle className="text-success-600" size={32} />
                         </div>
                         <h2 className="text-2xl font-bold text-slate-900 mb-2">Email Verified!</h2>
                         <p className="text-slate-600 mb-6">
@@ -105,8 +105,8 @@ function VerifyEmailForm() {
                 {/* Header */}
                 <div className="p-8">
                     <div className="text-center mb-8">
-                        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <AlertCircle className="text-red-600" size={24} />
+                        <div className="w-12 h-12 bg-danger-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <AlertCircle className="text-danger-600" size={24} />
                         </div>
                         <h1 className="text-2xl font-bold text-slate-900 mb-2">Verification Failed</h1>
                         <p className="text-slate-600 mb-6">

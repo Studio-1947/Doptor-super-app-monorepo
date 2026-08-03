@@ -166,7 +166,7 @@ function QueueRow({ label, count, href }: { label: string; count: number; href: 
             className="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-800 rounded-none hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
         >
             <span className="text-sm font-bold text-slate-900 dark:text-white">{label}</span>
-            <span className="px-2.5 py-1 text-[10px] font-black bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-800">
+            <span className="px-2.5 py-1 text-[10px] font-black bg-warning-50 dark:bg-warning-900/20 text-warning-600 dark:text-warning-400 border border-warning-100 dark:border-warning-800">
                 {count}
             </span>
         </Link>

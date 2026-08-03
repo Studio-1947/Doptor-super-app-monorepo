@@ -73,18 +73,18 @@ export function ApproveRejectModal({
             <div className="space-y-4">
                 <div className={`p-4 rounded-lg border flex flex-col gap-2 text-center ${isApprove
                         ? 'bg-success-50 border-success-100'
-                        : 'bg-red-50 border-red-100'
+                        : 'bg-danger-50 border-danger-100'
                     }`}>
-                    <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${isApprove ? 'bg-success-100 text-success-600' : 'bg-red-100 text-red-600'
+                    <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${isApprove ? 'bg-success-100 text-success-600' : 'bg-danger-100 text-danger-600'
                         }`}>
                         {isApprove ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
                     </div>
                     <div>
-                        <h3 className={`font-semibold ${isApprove ? 'text-success-900' : 'text-red-900'
+                        <h3 className={`font-semibold ${isApprove ? 'text-success-900' : 'text-danger-900'
                             }`}>
                             {isApprove ? 'Approve this file?' : 'Reject this file?'}
                         </h3>
-                        <p className={`text-sm mt-1 ${isApprove ? 'text-success-700' : 'text-red-700'
+                        <p className={`text-sm mt-1 ${isApprove ? 'text-success-700' : 'text-danger-700'
                             }`}>
                             {isApprove
                                 ? 'This check indicates your verification and agreement with the file contents.'
@@ -118,7 +118,7 @@ export function ApproveRejectModal({
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Remarks {isApprove ? '(Optional)' : <span className="text-red-500">*</span>}
+                        Remarks {isApprove ? '(Optional)' : <span className="text-danger-500">*</span>}
                     </label>
                     <textarea
                         value={remarks}
@@ -139,7 +139,7 @@ export function ApproveRejectModal({
                         disabled={isSubmitting}
                         className={`gap-2 text-white ${isApprove
                                 ? 'bg-success-600 hover:bg-success-700'
-                                : 'bg-red-600 hover:bg-red-700'
+                                : 'bg-danger-600 hover:bg-danger-700'
                             }`}
                     >
                         {isSubmitting ? (

@@ -49,15 +49,15 @@ export function FileMovementHistory({ movements, className = '' }: FileMovementH
     const getActionColor = (action: string) => {
         switch (action) {
             case 'create':
-                return 'bg-blue-100 text-blue-700 border-blue-200';
+                return 'bg-info-100 text-info-700 border-info-200';
             case 'forward':
                 return 'bg-violet-100 text-violet-700 border-violet-200';
             case 'return':
-                return 'bg-orange-100 text-orange-700 border-orange-200';
+                return 'bg-warning-100 text-warning-700 border-warning-200';
             case 'approve':
                 return 'bg-success-100 text-success-700 border-success-200';
             case 'reject':
-                return 'bg-red-100 text-red-700 border-red-200';
+                return 'bg-danger-100 text-danger-700 border-danger-200';
             case 'close':
                 return 'bg-slate-100 text-slate-700 border-slate-200';
             default:

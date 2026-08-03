@@ -22,12 +22,12 @@ function iconFor(type: string) {
         case 'task_attachment_added': return <Paperclip size={16} className="text-slate-500 dark:text-slate-400" />;
         case 'file_forwarded': return <Send size={16} className="text-indigo-500" />;
         case 'file_approved': return <ThumbsUp size={16} className="text-success-500" />;
-        case 'file_rejected': return <XCircle size={16} className="text-red-500" />;
-        case 'leave_requested': return <CalendarClock size={16} className="text-amber-500" />;
+        case 'file_rejected': return <XCircle size={16} className="text-danger-500" />;
+        case 'leave_requested': return <CalendarClock size={16} className="text-warning-500" />;
         case 'leave_approved': return <CalendarCheck size={16} className="text-success-500" />;
-        case 'leave_rejected': return <CalendarX size={16} className="text-red-500" />;
+        case 'leave_rejected': return <CalendarX size={16} className="text-danger-500" />;
         case 'document_approved': return <FileCheck size={16} className="text-success-500" />;
-        case 'document_rejected': return <FileX size={16} className="text-red-500" />;
+        case 'document_rejected': return <FileX size={16} className="text-danger-500" />;
         default: return <Bell size={16} className="text-slate-500 dark:text-slate-400" />;
     }
 }

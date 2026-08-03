@@ -205,7 +205,7 @@ export function FacultyList() {
                 </Card>
                 <Card className="p-4 border-slate-200">
                     <p className="text-xs text-slate-500">On Leave</p>
-                    <p className="text-2xl font-bold text-orange-600 mt-1">
+                    <p className="text-2xl font-bold text-warning-600 mt-1">
                         {loading ? '-' : facultyList.filter(f => f.status === 'on-leave').length}
                     </p>
                 </Card>
@@ -239,7 +239,7 @@ export function FacultyList() {
                                         <div onClick={(e) => e.stopPropagation()} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                             <button
                                                 onClick={(e) => handleDelete(faculty.id, e)}
-                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                className="p-1.5 text-slate-400 hover:text-danger-600 hover:bg-danger-50 rounded"
                                                 title="Delete"
                                             >
                                                 <Trash2 size={16} />
@@ -261,7 +261,7 @@ export function FacultyList() {
                                             className={`px-2 py-1 text-xs font-medium rounded ${faculty.status === 'active'
                                                 ? 'bg-success-50 text-success-700 border border-success-100'
                                                 : faculty.status === 'on-leave'
-                                                    ? 'bg-orange-50 text-orange-700 border border-orange-100'
+                                                    ? 'bg-warning-50 text-warning-700 border border-warning-100'
                                                     : 'bg-slate-50 text-slate-700 border border-slate-100'
                                                 }`}
                                         >

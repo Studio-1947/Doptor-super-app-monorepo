@@ -80,10 +80,31 @@ actually navigating anywhere, and `BottomNav` being a fully static tab list.
       is **ratcheted**, not banned, so a new status badge reaching for the palette
       fails while a decorative chip moving does not. Both were verified to fail by
       injecting each regression before being kept.
-      **Deliberately still raw and out of scope:** `red`+`rose` (196 uses) are two
-      families for one *danger* meaning, `orange`+`amber` (111) two for *warning*,
-      and `blue` (131) is *info*. Collapsing those duplicate pairs moves real pixels
-      and wants its own pass — the scope here was emerald/indigo only.
+      **Second pass, same day** — the rest of the palette, which the first pass had
+      left as out of scope. `danger` (red), `warning` (orange) and `info` (blue) join
+      `success` and `brand`: **372 more references across 51 files.**
+      Three meanings had each grown **two** palettes, so one had to win and the
+      loser's sites moved — this half is **not** pixel-neutral:
+      - `rose` → `danger` (24 sites) — it also meant rejected / absent / delete.
+      - `amber` → `warning` (17) — pending / late / half-day.
+      - `green` → `success` (8) — active / confirmed. `FileList`'s status map had
+        `active` in green sitting directly above `approved` in emerald, while
+        `office/team` and `StudentList` already drew "active" in emerald. Two
+        greens for one state is drift, not design.
+      **49 sites changed colour, and nothing else did.** Proven the same way as the
+      first pass: normalising both stylesheets back to palette names leaves exactly
+      13 rules dropped (rose 7, amber 4, green 2) and 6 added (orange 5, red 1) —
+      no `blue`, `emerald`, `indigo`, `slate` or `primary` difference at all, so
+      `info`←blue and the red/orange sites were pure renames. Every collapse lands
+      on **higher** contrast (amber-600 3.19→3.56, green-600 3.30→3.77,
+      rose-600 4.70→4.83 on white), and both AA dark-mode specs still pass.
+      **`red` and `green` are now at zero and the guard holds them there** — every
+      use of either was a state, so any reappearance is a regression, not a
+      judgement call. `blue` deliberately is not zero: `/forgot-password`,
+      `/reset-password` and `/verify-email` use it as their *action* colour inside
+      `from-blue-600 to-indigo-600` gradients that would flatten to one flat indigo
+      if converted. Those three pages are a separate brand treatment from the rest
+      of the app; unifying them is a redesign, not a rename, and is **not done**.
 - [x] ~~`middleware.ts` does no real server-side route protection~~ — done 2026-07-27.
       The token-storage change this was waiting on is made: the API issues httpOnly
       access/refresh cookies (`common/config/auth-cookies.ts`) and `JwtStrategy` accepts

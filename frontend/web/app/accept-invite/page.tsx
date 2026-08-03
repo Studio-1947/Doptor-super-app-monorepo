@@ -56,7 +56,7 @@ function AcceptInviteForm() {
                 <p className="text-slate-500 mb-8">Set a password to activate your account.</p>
 
                 {!token && (
-                    <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2 mb-4">
+                    <div className="p-3 rounded-lg bg-danger-50 text-danger-600 text-sm flex items-center gap-2 mb-4">
                         <AlertCircle size={16} />
                         This invitation link is missing a token.
                     </div>
@@ -67,7 +67,7 @@ function AcceptInviteForm() {
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
-                            className="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2"
+                            className="p-3 rounded-lg bg-danger-50 text-danger-600 text-sm flex items-center gap-2"
                         >
                             <AlertCircle size={16} />
                             {error}

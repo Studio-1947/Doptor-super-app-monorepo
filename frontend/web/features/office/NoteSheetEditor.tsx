@@ -127,7 +127,7 @@ export function NoteSheetEditor({
                                             <CheckCircle2 size={12} /> Final
                                         </span>
                                     ) : (
-                                        <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-100">
+                                        <span className="flex items-center gap-1 text-warning-600 bg-warning-50 px-2 py-0.5 rounded border border-warning-100">
                                             <Clock size={12} /> Draft
                                         </span>
                                     )}

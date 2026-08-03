@@ -25,9 +25,9 @@ const STATUS_TABS: { id: "all" | DocumentStatus; label: string }[] = [
 
 const statusChip: Record<DocumentStatus, string> = {
     draft: "text-slate-500 border-slate-100 bg-slate-50",
-    pending_review: "text-amber-600 border-amber-100 bg-amber-50",
+    pending_review: "text-warning-600 border-warning-100 bg-warning-50",
     approved: "text-success-600 border-success-100 bg-success-50",
-    rejected: "text-rose-600 border-rose-100 bg-rose-50",
+    rejected: "text-danger-600 border-danger-100 bg-danger-50",
 };
 
 function fmtSize(bytes: number | null): string {
@@ -210,7 +210,7 @@ export function DocumentExplorer() {
                                 {(doc.status === "draft" || doc.status === "rejected") && (
                                     <button onClick={() => act(doc.id, () => documentsService.submit(doc.id), "Submitted for review")}
                                         title="Submit for review" disabled={busyId === doc.id}
-                                        className="p-1.5 text-slate-400 hover:text-amber-600 transition-colors">
+                                        className="p-1.5 text-slate-400 hover:text-warning-600 transition-colors">
                                         <Send size={15} />
                                     </button>
                                 )}
@@ -223,7 +223,7 @@ export function DocumentExplorer() {
                                         </button>
                                         <button onClick={() => act(doc.id, () => documentsService.reject(doc.id), "Rejected")}
                                             title="Reject" disabled={busyId === doc.id}
-                                            className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors">
+                                            className="p-1.5 text-slate-400 hover:text-danger-600 transition-colors">
                                             <X size={15} />
                                         </button>
                                     </>
@@ -231,7 +231,7 @@ export function DocumentExplorer() {
                                 {canDelete && (
                                     <button onClick={() => act(doc.id, () => documentsService.remove(doc.id), "Deleted")}
                                         title="Delete" disabled={busyId === doc.id}
-                                        className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors">
+                                        className="p-1.5 text-slate-400 hover:text-danger-600 transition-colors">
                                         <Trash2 size={15} />
                                     </button>
                                 )}

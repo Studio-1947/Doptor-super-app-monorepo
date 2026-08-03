@@ -91,7 +91,7 @@ export function ClassManager() {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-red-600 hover:bg-red-50 hover:text-red-700 p-2"
+                                        className="text-danger-600 hover:bg-danger-50 hover:text-danger-700 p-2"
                                         onClick={(e) => handleDelete(cls.id, e)}
                                     >
                                         <Trash2 size={16} />
@@ -120,7 +120,7 @@ export function ClassManager() {
                                                     {section.teacherId ? (
                                                         <p className="text-sm font-medium text-slate-900">Mr. Anderson</p>
                                                     ) : (
-                                                        <p className="text-sm text-orange-600 italic">Not Assigned</p>
+                                                        <p className="text-sm text-warning-600 italic">Not Assigned</p>
                                                     )}
                                                 </div>
                                                 <Button
