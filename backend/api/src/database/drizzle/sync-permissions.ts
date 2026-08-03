@@ -25,6 +25,9 @@
  *   4. Grants `<action>:files` to any role that already holds the matching
  *      `<action>:documents`, because the e-file system used to borrow the
  *      `documents` permissions — this preserves existing access exactly.
+ *      `forward:files`/`approve:files` have no `documents` counterpart and are
+ *      mapped separately (4b) from `update:documents`/`approve:workflows`, so
+ *      that gating the e-file workflow routes does not strand older roles.
  *   5. Grants `tasks` permissions to every pre-existing role, because the tasks
  *      endpoints were previously ungated (any authenticated user could use
  *      them). This introduces enforcement without changing who can currently do
@@ -220,6 +223,26 @@ async function main() {
         if (roleKeys.has(`${action}:documents`)) {
           addGrant(role.id, permissionByKey.get(`${action}:files`)?.id);
         }
+      }
+
+      // 4b. `forward:files` and `approve:files` have no `documents` counterpart,
+      // so step 4 could never reach them — yet from 2026-08-03 the e-file
+      // workflow routes are gated on exactly those two. A role predating
+      // DEFAULT_OFFICE_ROLES would keep create/read/update/delete and silently
+      // lose the ability to move or approve a file, which is most of what the
+      // e-Dak system is for.
+      //
+      // These are mapped rather than granted wholesale, because unlike tasks in
+      // step 5 the intended access model for files already exists in
+      // `default-roles.ts` and flattening it would throw that away:
+      //   forward ← update:documents   (moving custody is a mutation)
+      //   approve ← approve:workflows  (the approval permission proper; it is
+      //                                 what already gates document approval)
+      if (roleKeys.has("update:documents")) {
+        addGrant(role.id, permissionByKey.get("forward:files")?.id);
+      }
+      if (roleKeys.has("approve:workflows")) {
+        addGrant(role.id, permissionByKey.get("approve:files")?.id);
       }
 
       // 5. tasks were previously ungated — preserve that access for everyone.

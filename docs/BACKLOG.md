@@ -217,6 +217,55 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 
 ### Critical — fix first
 
+- [x] **C-13** 🔴 ~~The e-Dak `files` module had no tenant scoping and almost no
+      permission gating~~ — found and fixed **2026-08-03**, during a full end-to-end audit.
+      **Verified by live exploit before the fix, not by inspection.**
+      This is the same defect class as **C-11**, in the module that *is* the Office
+      product, and it survived that 2026-07-27 sweep untouched.
+      - `findOne`, `forwardFile`, `returnFile`, `approveFile`, `rejectFile`, `closeFile`
+        and `addNote` all looked the row up by bare id (`where: eq(files.id, id)`), and
+        `files.controller.ts` passed **no `organisation_id` at all** to any of them.
+      - The class carried `@UseGuards(JwtAuthGuard, RolesGuard)` and only
+        `registry`/`analytics` named a permission. `RolesGuard` returns `true` when a
+        handler declares no `@Roles` — and none did — so **13 of 15 routes were
+        authentication-only**. The guard being present is what made this look covered.
+      - Measured against the pre-fix build via the new checks in
+        `06-tenancy.smoke.js`: org B's *Organisation Admin* could read org A's file
+        (200), and forward / return / approve / reject / close / annotate it (all 201).
+        The victim file's status really did change to `closed` and its note sheet really
+        did go from 1 note to 2 — the calls committed, they did not merely return 2xx.
+      - **Custody could also leave the tenant in the other direction**: `toUserId` was
+        never checked, so a file could be forwarded to a user in another organisation.
+        Scoping the file alone would not have closed this; `assertUserInOrg` does.
+      Fixed by routing every single-file operation through the `findFileInOrg`
+      chokepoint that already existed in the same file (and was used only by the three
+      attachment paths), adding `assertUserInOrg` for every custody hand-off, and moving
+      `PermissionsGuard` to class level so an ungated route is now a deliberate choice.
+      `inbox`/`outbox` stay ungated on purpose — they return only the caller's own files,
+      the same reasoning that leaves `GET /tasks/my-tasks` open (**M-11**).
+      `sync-permissions.ts` gained step **4b**: `forward:files`/`approve:files` have no
+      `documents` counterpart, so step 4 could never reach them and older roles would
+      have silently lost the ability to move or approve a file.
+      **Regression suite:** `06-tenancy.smoke.js` now covers files — 8 cross-tenant
+      probes, 2 state assertions, the outbound-custody check, and **2 positive controls**
+      (owner can still read and annotate), because a suite that 404s everything would
+      otherwise pass against a module that refused everyone.
+- [x] **C-14** 🔴 ~~Stored XSS on the e-file note sheet~~ — found and fixed **2026-08-03**,
+      while fixing C-13; the two share a code path. `NoteSheetEditor.tsx:138` rendered
+      every note body through `dangerouslySetInnerHTML`, and **nothing sanitises note
+      content anywhere in the stack** — not the API, not the client. Notes are authored in
+      a plain `<textarea>`, so the HTML path bought nothing and cost this.
+      Any note author could store script that ran for every colleague who later opened
+      the file; chained with C-13 it ran for every colleague **in any organisation**.
+      The auth cookies are httpOnly so no token was readable, but the script executed
+      same-origin with those cookies attached and could do whatever the viewer could.
+      Now rendered as text with `whitespace-pre-wrap` for the line breaks that were the
+      only thing the HTML path was really providing.
+      **Related, same commit:** the Bold/Italic/List/Align toolbar above that textarea had
+      **no `onClick` on any of its four buttons** — and it is what made notes look like
+      rich text, which is what makes rendering them as HTML look reasonable. The fake
+      toolbar and the XSS were one mistake seen from two ends. A `Share` button on
+      `FileActionPanel` was dead in the same way. Both removed per **M-17**.
 - [x] **C-1** ~~`campus.service.ts:71,91` fake password hash~~ — fixed 2026-07-03 via O-6
       (faculty creation now goes through the real invite flow; no placeholder hashes left).
 - [x] **C-2** ~~`campus.service.ts:166` `password_hash: "temp"`~~ — fixed 2026-07-03 via O-6.

@@ -75,13 +75,23 @@ export function hasDb(): boolean {
   return Boolean(process.env.E2E_PSQL_CMD);
 }
 
-/** Runs one statement and returns the first column of the first row. */
+/**
+ * Runs one statement and returns the first column of the first row.
+ *
+ * `-v ON_ERROR_STOP=1` is load-bearing, not tidiness. **psql running a script
+ * exits 0 even after an ERROR**, so without it `execFileSync` never throws: a
+ * failed statement just returns `''`, and a spec that seeds through here
+ * carries on against data that was never created. The identical bug was found
+ * and fixed in `backend/api/test/smoke/helpers.js` on 2026-07-30 — where it had
+ * made a working CHECK constraint look absent — but this copy was missed and
+ * kept the old behaviour until 2026-08-03.
+ */
 export function sql(query: string): string {
   const cmd = process.env.E2E_PSQL_CMD;
   if (!cmd) return '';
 
   const [bin, ...args] = cmd.split(' ');
-  const out = execFileSync(bin, [...args, '-t', '-A', '-f', '-'], {
+  const out = execFileSync(bin, [...args, '-v', 'ON_ERROR_STOP=1', '-t', '-A', '-f', '-'], {
     input: query,
     encoding: 'utf8',
   });

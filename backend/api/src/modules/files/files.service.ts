@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
 import * as fs from "fs";
 import * as path from "path";
 import {
@@ -6,6 +11,7 @@ import {
   fileMovements,
   noteSheets,
   fileAttachments,
+  users,
 } from "../../database/drizzle/schema";
 import { eq, desc, and, ilike, or, sql } from "drizzle-orm";
 import { DRIZZLE } from "../../database/drizzle/database.module";
@@ -76,11 +82,14 @@ export class FilesService {
     });
   }
 
-  async getInbox(userId: string) {
+  async getInbox(userId: string, organisationId: string) {
     // Note: Drizzle query builder requires 'files' to be in the schema object locally
     // If the schema passed to NodePgDatabase<typeof schema> includes 'files', this works.
     return await this.db.query.files.findMany({
-      where: eq(files.current_user_id, userId),
+      where: and(
+        eq(files.current_user_id, userId),
+        eq(files.organisation_id, organisationId),
+      ),
       orderBy: [desc(files.updated_at)],
       with: {
         initiator: { columns: USER_SUMMARY_COLUMNS },
@@ -88,9 +97,12 @@ export class FilesService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, organisationId: string) {
     const file = await this.db.query.files.findFirst({
-      where: eq(files.id, id),
+      where: and(
+        eq(files.id, id),
+        eq(files.organisation_id, organisationId),
+      ),
       with: {
         initiator: { columns: USER_SUMMARY_COLUMNS },
         currentHolder: { columns: USER_SUMMARY_COLUMNS },
@@ -136,10 +148,14 @@ export class FilesService {
 
   async forwardFile(
     fileId: string,
+    organisationId: string,
     fromUserId: string,
     toUserId: string,
     remarks?: string,
   ) {
+    await this.findFileInOrg(fileId, organisationId);
+    await this.assertUserInOrg(toUserId, organisationId);
+
     const movement = await this.db.transaction(async (tx) => {
       // Update file's current holder
       await tx
@@ -183,10 +199,14 @@ export class FilesService {
 
   async returnFile(
     fileId: string,
+    organisationId: string,
     fromUserId: string,
     toUserId: string,
     remarks?: string,
   ) {
+    await this.findFileInOrg(fileId, organisationId);
+    await this.assertUserInOrg(toUserId, organisationId);
+
     return await this.db.transaction(async (tx) => {
       // Update file's current holder
       await tx
@@ -213,7 +233,19 @@ export class FilesService {
     });
   }
 
-  async approveFile(fileId: string, userId: string, data: ApproveFileDto) {
+  async approveFile(
+    fileId: string,
+    organisationId: string,
+    userId: string,
+    data: ApproveFileDto,
+  ) {
+    await this.findFileInOrg(fileId, organisationId);
+    // `forwardTo` moves custody of the file, so it is the same trust decision
+    // as forwardFile's recipient — it must be checked identically.
+    if (data.forwardTo) {
+      await this.assertUserInOrg(data.forwardTo, organisationId);
+    }
+
     const { movement, nextHolder } = await this.db.transaction(async (tx) => {
       const holder = data.forwardTo || userId;
 
@@ -261,7 +293,14 @@ export class FilesService {
     return movement;
   }
 
-  async rejectFile(fileId: string, userId: string, data: RejectFileDto) {
+  async rejectFile(
+    fileId: string,
+    organisationId: string,
+    userId: string,
+    data: RejectFileDto,
+  ) {
+    await this.findFileInOrg(fileId, organisationId);
+
     const movement = await this.db.transaction(async (tx) => {
       await tx
         .update(files)
@@ -301,7 +340,14 @@ export class FilesService {
     return movement;
   }
 
-  async closeFile(fileId: string, userId: string, remarks?: string) {
+  async closeFile(
+    fileId: string,
+    organisationId: string,
+    userId: string,
+    remarks?: string,
+  ) {
+    await this.findFileInOrg(fileId, organisationId);
+
     return await this.db.transaction(async (tx) => {
       // Update file status to closed
       await tx
@@ -330,10 +376,13 @@ export class FilesService {
 
   async addNote(
     fileId: string,
+    organisationId: string,
     userId: string,
     content: string,
     isFinal?: boolean,
   ) {
+    await this.findFileInOrg(fileId, organisationId);
+
     const [note] = await this.db
       .insert(noteSheets)
       .values({
@@ -347,7 +396,7 @@ export class FilesService {
     return note;
   }
 
-  async getOutbox(userId: string) {
+  async getOutbox(userId: string, organisationId: string) {
     // Get all files where user was the sender
     const movements = await this.db
       .select()
@@ -360,9 +409,16 @@ export class FilesService {
 
     if (fileIds.length === 0) return [];
 
-    // Fetch the actual files
+    // Fetch the actual files. `file_movements` carries no organisation_id of
+    // its own, so the org filter has to be applied here rather than above —
+    // without it a movement row created before this module was scoped would
+    // still surface another tenant's file.
     const outboxFiles = await this.db.query.files.findMany({
-      where: (files, { inArray }) => inArray(files.id, fileIds),
+      where: (files, { inArray }) =>
+        and(
+          inArray(files.id, fileIds),
+          eq(files.organisation_id, organisationId),
+        ),
       orderBy: [desc(files.updated_at)],
       with: {
         initiator: { columns: USER_SUMMARY_COLUMNS },
@@ -470,8 +526,23 @@ export class FilesService {
     };
   }
 
-  // --- Attachments ---
+  // --- Tenancy chokepoints ---
 
+  /**
+   * Every single-file operation resolves the file through here first.
+   *
+   * Until 2026-08-03 only the three attachment paths did. `findOne`, `forward`,
+   * `return`, `approve`, `reject`, `close` and `addNote` all looked the row up
+   * by bare id, and the controller never passed an organisation at all — so any
+   * authenticated user could read another tenant's file (subject, number, the
+   * full note sheet and every movement, including other users' names and
+   * emails) and then drive its workflow. Same defect class as C-11, which was
+   * fixed across roles/users/organisations/analytics on 2026-07-27 and missed
+   * this module entirely.
+   *
+   * A 404 rather than a 403 is deliberate: a tenant should not be able to probe
+   * whether an id exists in someone else's organisation.
+   */
   private async findFileInOrg(fileId: string, organisationId: string) {
     const file = await this.db.query.files.findFirst({
       where: and(
@@ -482,6 +553,37 @@ export class FilesService {
     if (!file) throw new NotFoundException("File not found");
     return file;
   }
+
+  /**
+   * Custody hand-offs (`forward`, `return`, `approve` with `forwardTo`) name a
+   * recipient by id. Scoping the *file* is not enough on its own: an unchecked
+   * recipient lets a file be pushed into another tenant's inbox, which is the
+   * same boundary crossed in the opposite direction.
+   *
+   * `BadRequestException`, not `NotFoundException`, because the caller is
+   * already proven to hold the file — the id they supplied is the invalid part,
+   * and there is nothing to disclose by saying so.
+   */
+  private async assertUserInOrg(userId: string, organisationId: string) {
+    const [user] = await this.db
+      .select({ id: users.id })
+      .from(users)
+      .where(
+        and(
+          eq(users.id, userId),
+          eq(users.organisation_id, organisationId),
+        ),
+      )
+      .limit(1);
+    if (!user) {
+      throw new BadRequestException(
+        "Recipient is not a member of this organisation",
+      );
+    }
+    return user;
+  }
+
+  // --- Attachments ---
 
   async addAttachment(
     fileId: string,
