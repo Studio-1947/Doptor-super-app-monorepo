@@ -100,7 +100,7 @@ export default function CampusResultsPage() {
                     <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{row.average != null ? `${row.average}%` : '—'}</td>
                     <td className="px-4 py-4 text-slate-700 dark:text-slate-300">{row.passRate != null ? `${row.passRate}%` : '—'}</td>
                     <td className="px-4 py-4">
-                      <span className={`inline-flex items-center rounded-none px-2 py-1 text-[10px] font-black uppercase tracking-[0.28em] ${row.status === 'published' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-950/30 dark:text-slate-300'}`}>
+                      <span className={`inline-flex items-center rounded-none px-2 py-1 text-[10px] font-black uppercase tracking-[0.28em] ${row.status === 'published' ? 'bg-success-50 text-success-700 dark:bg-success-950/30 dark:text-success-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-950/30 dark:text-slate-300'}`}>
                         {row.status === 'published' ? 'Published' : 'Draft'}
                       </span>
                     </td>

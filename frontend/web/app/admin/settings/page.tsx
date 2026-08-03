@@ -148,7 +148,7 @@ export default function AdminSettingsPage() {
                                 <p className="text-xs font-bold text-rose-600">{saveError}</p>
                             )}
                             {saved && !dirty && (
-                                <p className="text-xs font-bold text-emerald-600">Saved.</p>
+                                <p className="text-xs font-bold text-success-600">Saved.</p>
                             )}
 
                             <button

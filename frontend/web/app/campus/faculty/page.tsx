@@ -67,7 +67,7 @@ export default function FacultyPage() {
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 border ${
-                                        member.status === 'Available' ? 'text-emerald-600 border-emerald-100 bg-emerald-50' :
+                                        member.status === 'Available' ? 'text-success-600 border-success-100 bg-success-50' :
                                         member.status === 'In Class' ? 'text-indigo-600 border-indigo-100 bg-indigo-50' :
                                         'text-orange-600 border-orange-100 bg-orange-50'
                                     }`}>

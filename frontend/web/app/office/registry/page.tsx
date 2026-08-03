@@ -8,7 +8,7 @@ import { filesService, File as RegistryFile, FileAnalytics } from '@/services/fi
 
 const STATUS_STYLES: Record<string, string> = {
     active: 'text-blue-600 border-blue-100 bg-blue-50',
-    approved: 'text-emerald-600 border-emerald-100 bg-emerald-50',
+    approved: 'text-success-600 border-success-100 bg-success-50',
     rejected: 'text-rose-600 border-rose-100 bg-rose-50',
     closed: 'text-slate-500 border-slate-100 bg-slate-50',
     archived: 'text-slate-400 border-slate-100 bg-slate-50',

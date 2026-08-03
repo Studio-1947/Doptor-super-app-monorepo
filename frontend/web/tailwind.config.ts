@@ -42,6 +42,59 @@ const config: Config = {
           900: "#0f172a", // Standard Dark
           950: "#020617", // Deep Dark
         },
+
+        /*
+         * Semantic tokens.
+         *
+         * These are **exactly** Tailwind's `emerald` and `indigo` ramps, hex for
+         * hex. That is deliberate: the migration off the ad-hoc classes was done
+         * as a pure rename so it could ship with a provably empty visual diff.
+         * Re-theming is now a change to these two blocks instead of a sweep
+         * across ~60 files.
+         *
+         * Pick by meaning, not by colour:
+         *   success — a positive *state*: approved, present, active, valid,
+         *             done, published, saved. Pairs with red for the negative
+         *             half (reject/absent), which is still raw pending the
+         *             wider migration.
+         *   brand   — a primary *action*: the filled button, the active tab,
+         *             the form focus ring, the interactive hover accent.
+         *             Distinct from `primary` (violet) above, which is the
+         *             product chrome and was never the action colour here.
+         *
+         * Decorative colour is NOT a token and must not be forced into one.
+         * Stat-tile swatches, avatar gradients and category chips (Holiday,
+         * "In Class", timetable cards) deliberately still use raw palette
+         * names — see `TONES` in features/dashboard/DashboardPrimitives.tsx
+         * and `verticalTheme` in contexts/VerticalContext.tsx, both of which
+         * are themselves token definitions and so legitimately hold raw values.
+         */
+        success: {
+          50: "#ecfdf5",
+          100: "#d1fae5",
+          200: "#a7f3d0",
+          300: "#6ee7b7",
+          400: "#34d399",
+          500: "#10b981",
+          600: "#059669",
+          700: "#047857",
+          800: "#065f46",
+          900: "#064e3b",
+          950: "#022c22",
+        },
+        brand: {
+          50: "#eef2ff",
+          100: "#e0e7ff",
+          200: "#c7d2fe",
+          300: "#a5b4fc",
+          400: "#818cf8",
+          500: "#6366f1",
+          600: "#4f46e5",
+          700: "#4338ca",
+          800: "#3730a3",
+          900: "#312e81",
+          950: "#1e1b4b",
+        },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "sans-serif"],

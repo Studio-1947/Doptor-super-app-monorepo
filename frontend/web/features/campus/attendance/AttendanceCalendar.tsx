@@ -138,7 +138,7 @@ export function AttendanceCalendar() {
         if (!status) return 'bg-white border-slate-200';
         switch (status) {
             case 'present':
-                return 'bg-emerald-100 border-emerald-300 text-emerald-900';
+                return 'bg-success-100 border-success-300 text-success-900';
             case 'absent':
                 return 'bg-red-100 border-red-300 text-red-900';
             case 'late':
@@ -197,9 +197,9 @@ export function AttendanceCalendar() {
                     <p className="text-xs text-slate-500">Total Days</p>
                     <p className="text-2xl font-bold text-slate-900 mt-1">{monthStats.total}</p>
                 </Card>
-                <Card className="p-4 border-emerald-200 bg-emerald-50">
-                    <p className="text-xs text-emerald-700">Present</p>
-                    <p className="text-2xl font-bold text-emerald-700 mt-1">{monthStats.present}</p>
+                <Card className="p-4 border-success-200 bg-success-50">
+                    <p className="text-xs text-success-700">Present</p>
+                    <p className="text-2xl font-bold text-success-700 mt-1">{monthStats.present}</p>
                 </Card>
                 <Card className="p-4 border-red-200 bg-red-50">
                     <p className="text-xs text-red-700">Absent</p>
@@ -315,7 +315,7 @@ export function AttendanceCalendar() {
                 <p className="text-xs font-semibold text-slate-700 mb-3">Legend</p>
                 <div className="flex flex-wrap gap-4">
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-emerald-100 border-2 border-emerald-300" />
+                        <div className="w-6 h-6 bg-success-100 border-2 border-success-300" />
                         <span className="text-xs text-slate-600">Present</span>
                     </div>
                     <div className="flex items-center gap-2">

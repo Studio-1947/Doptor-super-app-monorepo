@@ -127,7 +127,7 @@ function PunchState({ record }: { record: import('@/services/attendance.service'
     return (
         <div className="space-y-2 py-1">
             <div className="flex items-center gap-3">
-                <LogIn size={16} className="text-emerald-600 dark:text-emerald-400" />
+                <LogIn size={16} className="text-success-600 dark:text-success-400" />
                 <span className="text-sm text-slate-700 dark:text-slate-300">
                     In at <strong>{formatTime(record.check_in)}</strong>
                 </span>

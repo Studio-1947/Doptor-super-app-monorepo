@@ -46,9 +46,44 @@ actually navigating anywhere, and `BottomNav` being a fully static tab list.
       `AuthGuard.tsx` blocks the whole app shell behind a spinner until loading
       completes, so no user ever sees that state. Production build (`next build`)
       verified clean after fixes.
-- [ ] **Not yet done**: migrating existing ad-hoc emerald/indigo Tailwind classes
-      scattered across a few campus/office pages onto the shared token system (left
-      as-is this pass, flagged for new/touched pages going forward).
+- [x] ~~Migrate the ad-hoc emerald/indigo Tailwind classes onto the shared token
+      system~~ — done 2026-08-03, but **not as written**. The item assumed those two
+      colours were stray vertical accents. Reading all ~334 call sites showed they
+      were not: outside `verticalTheme` they were never vertical at all.
+      `features/office/` used emerald in **seven** files, none of them about Campus —
+      it meant *approved / present / active / valid / done*, paired with red for the
+      negative half. `TaskKanban` used it for the "Done" column, `NotificationCenter`
+      for `file_approved`/`leave_approved`. Indigo meant *primary action* — the filled
+      button, the active tab, the focus ring — and is not `primary` (violet), which is
+      the product chrome. Putting either on the vertical accent map would have made
+      every "Approved" badge change colour with the active vertical.
+      So they moved onto two **semantic** ramps instead — `success` and `brand` in
+      `tailwind.config.ts`, declared as exact hex copies of Tailwind's emerald and
+      indigo. That made the whole change a pure rename with a **provably empty visual
+      diff**: renaming `success`→`emerald` and `brand`→`indigo` in the compiled
+      stylesheet reproduces the pre-migration one exactly, 964 rules for 964, nothing
+      added and nothing lost. Re-theming is now those two blocks rather than 37 files.
+      **171 references across 37 files. ~165 stay raw on purpose**, because forcing
+      them into a semantic name would be a lie:
+      - **Token definitions.** `verticalTheme` (`contexts/VerticalContext.tsx`) and
+        `TONES` (`features/dashboard/DashboardPrimitives.tsx`) *are* the token layer.
+        Raw values are what a token definition is made of.
+      - **Decorative colour.** Stat-tile swatches, avatar-initial chips, the Holiday
+        marker, timetable cards, and the join/create accents on `/onboarding` and
+        `/register`. `tone="emerald"` sits on "Departments", "Total Tasks" and
+        "Roles"; `tone="indigo"` on "Pending Leave". None of that is state.
+      - **Domain colour.** The "Initial Green Sheet Note" field in `FileCreateModal`
+        is green because a green sheet is green.
+      Guarded by `e2e/design-tokens.spec.ts` (static, no server): every `success-*`/
+      `brand-*` shade must be declared — Tailwind emits nothing for a class it does
+      not know and neither `tsc` nor the build says a word — and raw emerald/indigo
+      is **ratcheted**, not banned, so a new status badge reaching for the palette
+      fails while a decorative chip moving does not. Both were verified to fail by
+      injecting each regression before being kept.
+      **Deliberately still raw and out of scope:** `red`+`rose` (196 uses) are two
+      families for one *danger* meaning, `orange`+`amber` (111) two for *warning*,
+      and `blue` (131) is *info*. Collapsing those duplicate pairs moves real pixels
+      and wants its own pass — the scope here was emerald/indigo only.
 - [x] ~~`middleware.ts` does no real server-side route protection~~ — done 2026-07-27.
       The token-storage change this was waiting on is made: the API issues httpOnly
       access/refresh cookies (`common/config/auth-cookies.ts`) and `JwtStrategy` accepts

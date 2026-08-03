@@ -115,7 +115,7 @@ export function StudentProfile() {
                             </div>
 
                             <div className="flex items-center gap-2 text-sm">
-                                <div className={`w-3 h-3 rounded-full ${student.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                <div className={`w-3 h-3 rounded-full ${student.status === 'active' ? 'bg-success-500' : 'bg-slate-400'}`} />
                                 <div>
                                     <p className="text-slate-500 text-xs">Status</p>
                                     <p className="text-slate-900 font-medium capitalize">{student.status}</p>
@@ -248,7 +248,7 @@ function AttendanceTab({ student }: { student: Student }) {
 
             <Card className="p-6 border-slate-200">
                 <h3 className="text-sm font-medium text-slate-500 mb-2">Present Days</h3>
-                <p className="text-4xl font-bold text-emerald-600">{presentDays}</p>
+                <p className="text-4xl font-bold text-success-600">{presentDays}</p>
                 <p className="text-sm text-slate-500 mt-2">out of {totalDays} days</p>
             </Card>
 

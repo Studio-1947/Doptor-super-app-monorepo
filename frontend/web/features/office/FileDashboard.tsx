@@ -66,7 +66,7 @@ export function FileDashboard() {
 
     const getStatusColor = (status: File['status']) => {
         switch (status) {
-            case 'approved': return 'bg-emerald-100 text-emerald-700';
+            case 'approved': return 'bg-success-100 text-success-700';
             case 'rejected': return 'bg-red-100 text-red-700';
             case 'closed': return 'bg-slate-100 text-slate-700';
             case 'archived': return 'bg-slate-100 text-slate-700';
@@ -126,9 +126,9 @@ export function FileDashboard() {
                 <Card className="p-4 border-slate-200 flex items-start justify-between">
                     <div>
                         <p className="text-sm text-slate-500">Approved</p>
-                        <h3 className="text-2xl font-bold text-emerald-600 mt-1">{stats.approved}</h3>
+                        <h3 className="text-2xl font-bold text-success-600 mt-1">{stats.approved}</h3>
                     </div>
-                    <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <div className="p-2 bg-success-50 text-success-600 rounded-lg">
                         <CheckCircle2 size={20} />
                     </div>
                 </Card>

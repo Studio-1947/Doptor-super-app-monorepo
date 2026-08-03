@@ -321,9 +321,9 @@ export function AttendanceReports() {
                         <p className="text-xs text-primary-700">Avg Attendance</p>
                         <p className="text-2xl font-bold text-primary-700 mt-1">{stats.avgAttendance}%</p>
                     </Card>
-                    <Card className="p-4 border-emerald-200 bg-emerald-50">
-                        <p className="text-xs text-emerald-700">Above 90%</p>
-                        <p className="text-2xl font-bold text-emerald-700 mt-1">{stats.above90}</p>
+                    <Card className="p-4 border-success-200 bg-success-50">
+                        <p className="text-xs text-success-700">Above 90%</p>
+                        <p className="text-2xl font-bold text-success-700 mt-1">{stats.above90}</p>
                     </Card>
                     <Card className="p-4 border-red-200 bg-red-50">
                         <p className="text-xs text-red-700">Below 75%</p>
@@ -342,9 +342,9 @@ export function AttendanceReports() {
                         <p className="text-xs text-primary-700">Avg Attendance</p>
                         <p className="text-2xl font-bold text-primary-700 mt-1">{stats.avgAttendance}%</p>
                     </Card>
-                    <Card className="p-4 border-emerald-200 bg-emerald-50">
-                        <p className="text-xs text-emerald-700">Total Present</p>
-                        <p className="text-2xl font-bold text-emerald-700 mt-1">{stats.totalPresent}</p>
+                    <Card className="p-4 border-success-200 bg-success-50">
+                        <p className="text-xs text-success-700">Total Present</p>
+                        <p className="text-2xl font-bold text-success-700 mt-1">{stats.totalPresent}</p>
                     </Card>
                     <Card className="p-4 border-red-200 bg-red-50">
                         <p className="text-xs text-red-700">Total Absent</p>
@@ -378,11 +378,11 @@ export function AttendanceReports() {
                                             <td className="py-3 px-4">{student.name}</td>
                                             <td className="py-3 px-4 text-slate-600">{student.class}</td>
                                             <td className="py-3 px-4 text-center">{student.totalDays}</td>
-                                            <td className="py-3 px-4 text-center text-emerald-700">{student.presentDays}</td>
+                                            <td className="py-3 px-4 text-center text-success-700">{student.presentDays}</td>
                                             <td className="py-3 px-4 text-center text-red-700">{student.absentDays}</td>
                                             <td className="py-3 px-4 text-center text-orange-700">{student.lateDays}</td>
                                             <td className="py-3 px-4 text-center">
-                                                <span className={`px-2 py-1 text-xs font-medium rounded ${student.percentage >= 90 ? 'bg-emerald-100 text-emerald-700' :
+                                                <span className={`px-2 py-1 text-xs font-medium rounded ${student.percentage >= 90 ? 'bg-success-100 text-success-700' :
                                                     student.percentage >= 75 ? 'bg-orange-100 text-orange-700' :
                                                         'bg-red-100 text-red-700'
                                                     }`}>
@@ -419,12 +419,12 @@ export function AttendanceReports() {
                                                 year: 'numeric', month: 'short', day: 'numeric'
                                             })}</td>
                                             <td className="py-3 px-4 text-center">{day.total}</td>
-                                            <td className="py-3 px-4 text-center text-emerald-700">{day.present}</td>
+                                            <td className="py-3 px-4 text-center text-success-700">{day.present}</td>
                                             <td className="py-3 px-4 text-center text-red-700">{day.absent}</td>
                                             <td className="py-3 px-4 text-center text-orange-700">{day.late}</td>
                                             <td className="py-3 px-4 text-center text-blue-700">{day.excused}</td>
                                             <td className="py-3 px-4 text-center">
-                                                <span className={`px-2 py-1 text-xs font-medium rounded ${day.percentage >= 90 ? 'bg-emerald-100 text-emerald-700' :
+                                                <span className={`px-2 py-1 text-xs font-medium rounded ${day.percentage >= 90 ? 'bg-success-100 text-success-700' :
                                                     day.percentage >= 75 ? 'bg-orange-100 text-orange-700' :
                                                         'bg-red-100 text-red-700'
                                                     }`}>

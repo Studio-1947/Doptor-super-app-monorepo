@@ -97,7 +97,7 @@ export default function AttendanceTracker({ classId, className, onClose }: Atten
                         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
                             <button
                                 onClick={() => updateStatus(record.student.id, 'present')}
-                                className={`p-2 rounded-md transition-all ${record.status === 'present' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-emerald-600 hover:bg-white'}`}
+                                className={`p-2 rounded-md transition-all ${record.status === 'present' ? 'bg-success-500 text-white shadow-sm' : 'text-slate-400 hover:text-success-600 hover:bg-white'}`}
                                 title="Present"
                             >
                                 <Check size={16} />
@@ -131,7 +131,7 @@ export default function AttendanceTracker({ classId, className, onClose }: Atten
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 disabled:opacity-70 font-medium"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200 disabled:opacity-70 font-medium"
                 >
                     {saving ? 'Saving...' : (
                         <>

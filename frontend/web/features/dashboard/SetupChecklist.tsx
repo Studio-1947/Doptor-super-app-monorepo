@@ -88,7 +88,7 @@ export function SetupChecklist({ stats }: { stats: OverviewStats }) {
                         key={step.label}
                         className={`flex items-start justify-between gap-4 p-3 border rounded-none ${
                             step.done
-                                ? 'border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-900/10'
+                                ? 'border-success-100 dark:border-success-900/50 bg-success-50/50 dark:bg-success-900/10'
                                 : 'border-slate-100 dark:border-slate-800'
                         }`}
                     >
@@ -96,7 +96,7 @@ export function SetupChecklist({ stats }: { stats: OverviewStats }) {
                             <div
                                 className={`mt-0.5 w-5 h-5 shrink-0 flex items-center justify-center border ${
                                     step.done
-                                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                                        ? 'bg-success-500 border-success-500 text-white'
                                         : 'border-slate-300 dark:border-slate-600'
                                 }`}
                                 aria-hidden
