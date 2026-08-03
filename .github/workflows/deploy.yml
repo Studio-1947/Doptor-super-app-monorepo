@@ -270,3 +270,32 @@ jobs:
           done
           echo "::error::deploy finished but dev is not serving healthy responses"
           exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Post-deploy check
+        # The step above proves the box answers. This proves the *right build*
+        # landed and works in the environment — which is a different question.
+        #
+        # Everything before this point runs against localhost, so an
+        # environment-only fault is invisible to it: `/app/uploads` was missing
+        # from the image, Docker made the volume root-owned against a uid-1001
+        # API, and no upload worked on dev for a week while every suite stayed
+        # green. This does a real multipart upload against the deployed box.
+        #
+        # It spends only two auth requests, because AUTH_THROTTLE is 5/minute
+        # per IP here and is deliberately NOT raised — the point is to exercise
+        # the environment as users meet it, not a loosened copy of it.
+        #
+        # This does NOT roll back. By the time it runs the containers are
+        # already live, so a failure here is an alarm, not a gate — it tells you
+        # dev is serving something broken right now. The gate is the `verify`
+        # job, which blocks the deploy from starting at all.
+        env:
+          CHECK_API_URL: https://api.dev.doptor.in
+          CHECK_WEB_URL: https://dev.doptor.in
+        run: node backend/api/test/smoke/post-deploy.check.js
