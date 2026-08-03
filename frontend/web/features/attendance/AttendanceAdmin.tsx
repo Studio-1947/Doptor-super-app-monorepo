@@ -117,7 +117,7 @@ export function AttendanceAdmin() {
         <div className="grid md:grid-cols-2 gap-6">
             {/* Leave types */}
             <section className="space-y-3">
-                <h3 className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <h3 className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
                     <Tags size={13} /> Leave Types
                 </h3>
 
@@ -182,7 +182,7 @@ export function AttendanceAdmin() {
             {/* Holidays */}
             <section className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <h3 className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    <h3 className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
                         <CalendarDays size={13} /> Public Holidays
                     </h3>
                     <select

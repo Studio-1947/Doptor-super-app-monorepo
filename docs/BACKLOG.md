@@ -217,6 +217,89 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 
 ### Critical — fix first
 
+- [ ] **C-15** 🔴 **The `campus` module has the same defect class as C-11 and C-13.**
+      Found **2026-08-03** while fixing C-13, and **verified by live exploit, not by
+      inspection**. The HTTP surface was closed the same day by unregistering
+      `CampusModule` from `app.module.ts`; **the defects below are still in the code**
+      and this item stays open until they are fixed. Do not re-register the module
+      first — `06-tenancy.smoke.js` asserts the routes 404 and will go red.
+      - `campus.controller.ts` carries `@UseGuards(JwtAuthGuard, RolesGuard)` and **not
+        one handler declares `@Roles`**. `RolesGuard` returns `true` when no roles are
+        declared, so every route was authentication-only — the same illusion of cover
+        that made C-13 survive the 2026-07-27 sweep.
+      - **Ungated destructive deletes.** `deleteFaculty`/`deleteStudent` are
+        `db.delete(users).where(eq(users.id, id))` on a bare id, and `deleteCourse` the
+        same shape; the controller passes no organisation. Measured: a **Staff** user in
+        org B hard deleted a user row in org A (`DELETE /campus/faculty/:id` → 200).
+        `updateClass` and `enrollStudent` are unscoped writes of the same shape.
+      - **Organisation taken from the request instead of the JWT.**
+        `GET /campus/academic-years` reads `organisation_id` from the **query string**;
+        `createAcademicYear` passes the body through and honours `data.organisation_id`.
+        Measured: org B read org A's academic years (200) and created a row inside org A
+        (201). That write also runs `UPDATE academic_years SET is_current=false WHERE
+        organisation_id=<caller-supplied>`, so it can clear the victim's current year.
+      - **Attendance is unscoped entirely.** `getClassAttendance` filters on `class_id`
+        alone, `getAttendanceReport` on dates alone. `markAttendance` looks the class up
+        by faculty and then **ignores the result** — the `ForbiddenException` is commented
+        out with "Assuming strict Check. Can relax for admins if needed."
+      - **No guard anywhere reads `enabled_verticals`.** Measured: an office-only tenant
+        that never bought Campus could call `/campus/students` (200). Campus being
+        "disabled" was a frontend navigation decision only.
+      Already correct, and not part of this item: exams, results, faculty/student *reads*,
+      courses, departments and `getAllClasses` are org-scoped (the 2026-07-24 pass).
+      When Campus returns, fix it the way C-13 was fixed — a `findInOrg` chokepoint for
+      every by-id operation, `organisation_id` removed from the DTOs and the query param
+      so it can only come from `req.user`, `PermissionsGuard` at class level, and a campus
+      block in `06-tenancy.smoke.js` that replaces the tripwire with real probes.
+- [x] **C-13** 🔴 ~~The e-Dak `files` module had no tenant scoping and almost no
+      permission gating~~ — found and fixed **2026-08-03**, during a full end-to-end audit.
+      **Verified by live exploit before the fix, not by inspection.**
+      This is the same defect class as **C-11**, in the module that *is* the Office
+      product, and it survived that 2026-07-27 sweep untouched.
+      - `findOne`, `forwardFile`, `returnFile`, `approveFile`, `rejectFile`, `closeFile`
+        and `addNote` all looked the row up by bare id (`where: eq(files.id, id)`), and
+        `files.controller.ts` passed **no `organisation_id` at all** to any of them.
+      - The class carried `@UseGuards(JwtAuthGuard, RolesGuard)` and only
+        `registry`/`analytics` named a permission. `RolesGuard` returns `true` when a
+        handler declares no `@Roles` — and none did — so **13 of 15 routes were
+        authentication-only**. The guard being present is what made this look covered.
+      - Measured against the pre-fix build via the new checks in
+        `06-tenancy.smoke.js`: org B's *Organisation Admin* could read org A's file
+        (200), and forward / return / approve / reject / close / annotate it (all 201).
+        The victim file's status really did change to `closed` and its note sheet really
+        did go from 1 note to 2 — the calls committed, they did not merely return 2xx.
+      - **Custody could also leave the tenant in the other direction**: `toUserId` was
+        never checked, so a file could be forwarded to a user in another organisation.
+        Scoping the file alone would not have closed this; `assertUserInOrg` does.
+      Fixed by routing every single-file operation through the `findFileInOrg`
+      chokepoint that already existed in the same file (and was used only by the three
+      attachment paths), adding `assertUserInOrg` for every custody hand-off, and moving
+      `PermissionsGuard` to class level so an ungated route is now a deliberate choice.
+      `inbox`/`outbox` stay ungated on purpose — they return only the caller's own files,
+      the same reasoning that leaves `GET /tasks/my-tasks` open (**M-11**).
+      `sync-permissions.ts` gained step **4b**: `forward:files`/`approve:files` have no
+      `documents` counterpart, so step 4 could never reach them and older roles would
+      have silently lost the ability to move or approve a file.
+      **Regression suite:** `06-tenancy.smoke.js` now covers files — 8 cross-tenant
+      probes, 2 state assertions, the outbound-custody check, and **2 positive controls**
+      (owner can still read and annotate), because a suite that 404s everything would
+      otherwise pass against a module that refused everyone.
+- [x] **C-14** 🔴 ~~Stored XSS on the e-file note sheet~~ — found and fixed **2026-08-03**,
+      while fixing C-13; the two share a code path. `NoteSheetEditor.tsx:138` rendered
+      every note body through `dangerouslySetInnerHTML`, and **nothing sanitises note
+      content anywhere in the stack** — not the API, not the client. Notes are authored in
+      a plain `<textarea>`, so the HTML path bought nothing and cost this.
+      Any note author could store script that ran for every colleague who later opened
+      the file; chained with C-13 it ran for every colleague **in any organisation**.
+      The auth cookies are httpOnly so no token was readable, but the script executed
+      same-origin with those cookies attached and could do whatever the viewer could.
+      Now rendered as text with `whitespace-pre-wrap` for the line breaks that were the
+      only thing the HTML path was really providing.
+      **Related, same commit:** the Bold/Italic/List/Align toolbar above that textarea had
+      **no `onClick` on any of its four buttons** — and it is what made notes look like
+      rich text, which is what makes rendering them as HTML look reasonable. The fake
+      toolbar and the XSS were one mistake seen from two ends. A `Share` button on
+      `FileActionPanel` was dead in the same way. Both removed per **M-17**.
 - [x] **C-1** ~~`campus.service.ts:71,91` fake password hash~~ — fixed 2026-07-03 via O-6
       (faculty creation now goes through the real invite flow; no placeholder hashes left).
 - [x] **C-2** ~~`campus.service.ts:166` `password_hash: "temp"`~~ — fixed 2026-07-03 via O-6.
@@ -725,6 +808,55 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       **resolved; verified 2026-07-29.** `features/verticals/` does not exist; only
       `features/office/*` remains. (Office roadmap Phase 6 already recorded this; the box
       here was simply never ticked.)
+- [x] **L-6** ~~The signed-out entry path was outside every dark-mode guarantee~~ — fixed
+      **2026-08-03**. L-5 closed "measured to zero" against **nine authenticated routes**;
+      `/login`, `/register` and `/onboarding` were never in that list, and `ThemeProvider`
+      writes `dark` onto `<html>` from localStorage before any of them render. The first
+      three screens anyone sees were the only ones nothing measured.
+      **Measured, then fixed** — 7 real AA failures:
+      - `/register`, **4 inputs at 1.10:1**: the card is `bg-white` with no dark pair while
+        `<body>` carries `dark:text-slate-100`, so **typed text was near-invisible**. The
+        exact `ReadyUI` root cause L-5 recorded — fix the surface before the text, which is
+        why `/register` and `/onboarding` are now dark-aware rather than having their text
+        pinned over a permanently white card.
+      - `/onboarding` "Get Started" 3.77:1 (emerald-600 on white — a **light-mode** failure
+        too; now emerald-700), `/login` 4.41:1 and 3.75:1 (slate-500), and two
+        `AttendanceAdmin` section headings at 4.24:1.
+      **The probe itself was wrong in two ways, and both had to be fixed first** — the
+      first run reported **22 failures of which 15 were artifacts**:
+      - It read only `backgroundColor`, so a `bg-gradient-to-br` panel (a gradient is
+        `background-IMAGE`; its background-color stays transparent) was walked straight
+        past and `/register`'s white-on-indigo promo panel was scored "white on white".
+        Now a gradient backdrop returns null and the element is skipped: a ratio that
+        cannot be computed honestly is not a failure, it is not a measurement.
+      - It judged an `<a>` wrapping an `<h3>` and a `<p>` on the colour it merely
+        *inherits*, which no pixel ever uses. Now only an element's **own** text nodes are
+        measured; the children are still checked on their own, so nothing lost coverage.
+        This correction also **found** the two `AttendanceAdmin` failures above, which the
+        old leaf rule had been skipping.
+      **Guard against the guard:** `check()` now fails a route whose probe examined **0
+      elements**. The public pages render no `<main>`, so the existing selector matched
+      nothing on them — extending the spec naively would have reported a confident green
+      while measuring nothing. Verified by pointing `PUBLIC_ROOT` at `main *` and watching
+      all three routes report "examined 0 elements".
+      **Also fixed here:** `/onboarding` still advertised "company, school, or **network**"
+      — a vertical deleted under M-18 on 2026-07-28, when `/register`'s picker was cleaned
+      and this page was missed. Three dead imports went with it.
+      **Also hardened (and a correction).** `register/page.tsx` built its input focus
+      classes by interpolation — `focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500`.
+      This entry first recorded that as "those focus styles have never existed". **That was
+      wrong**, and the error is worth keeping because of how it was made: the first check
+      grepped the built CSS with mangled backslash escaping and returned 0 matches for
+      *every* class it looked for, including ones plainly present. `grep -F` on the exact
+      strings finds all four — `.focus\:border-emerald-500:focus`,
+      `.focus\:ring-emerald-200:focus`, and the indigo pair. **The focus rings render.**
+      A count of zero from a pattern that has never returned a non-zero is not evidence.
+      What was real is the coupling: those classes only resolved because the org-name and
+      slug inputs spell out the emerald ones literally and the invite-code input spells out
+      the indigo ones, so Tailwind emitted them for unrelated reasons. Restyling either of
+      those fields would have silently stripped the focus ring off email and password.
+      Now a literal `FOCUS_ACCENT` map keyed by mode, so the classes are visible to
+      Tailwind's scanner on their own account.
 - [x] **L-5** ~~Dark mode is unevenly applied and, on some surfaces, unreadable.~~ —
       **closed 2026-07-30, measured to zero.** Found by computing WCAG contrast in the live
       DOM rather than reading classes: dark mode is a shipped feature (`darkMode: "class"`,

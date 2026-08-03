@@ -6,14 +6,11 @@ import {
     Save,
     Send,
     Clock,
-    CheckCircle2,
-    Bold,
-    Italic,
-    List,
-    AlignLeft
+    CheckCircle2
 } from 'lucide-react';
 import { Card, Button } from '@doptor/shared';
 import { NoteSheet } from '../../services/files.service';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface NoteSheetEditorProps {
@@ -23,6 +20,29 @@ interface NoteSheetEditorProps {
     className?: string;
 }
 
+/**
+ * The note sheet is the working record of an e-file: anyone who can see the
+ * file sees every note on it.
+ *
+ * Two things that were wrong here until 2026-08-03, and are worth stating so
+ * they are not reintroduced:
+ *
+ * 1. **Note bodies were rendered with `dangerouslySetInnerHTML`.** Nothing
+ *    sanitises them — not the API, not this component — and they arrive from a
+ *    plain `<textarea>`. So any note author could store script that ran in the
+ *    browser of every colleague who later opened the file. The auth cookies are
+ *    httpOnly, so a token could not be read, but the script ran same-origin
+ *    with those cookies attached and could do anything the viewer could.
+ *    Notes are plain text and always have been; they are rendered as text now,
+ *    with `whitespace-pre-wrap` preserving the line breaks that were the only
+ *    real reason the HTML path appeared to be needed.
+ *
+ * 2. **A Bold/Italic/List/Align toolbar sat above the textarea with no
+ *    `onClick` on any of the four buttons.** It formatted nothing. It also
+ *    implied notes were rich text, which is exactly the belief that makes
+ *    rendering them as HTML look reasonable — the fake toolbar and the XSS
+ *    were the same mistake seen from two ends. Removed, per M-17.
+ */
 export function NoteSheetEditor({
     initialNotes,
     currentUserId,
@@ -35,6 +55,8 @@ export function NoteSheetEditor({
     const [newNoteContent, setNewNoteContent] = useState('');
     const [isFinal, setIsFinal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const { hasPermission } = useAuth();
+    const canAddNote = hasPermission('create', 'files');
 
     useEffect(() => {
         setNotes([...initialNotes].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
@@ -112,35 +134,23 @@ export function NoteSheetEditor({
                                 </div>
                             </div>
 
-                            {/* Note Content */}
-                            <div
-                                className="p-4 text-sm text-slate-700 prose prose-sm max-w-none"
-                                dangerouslySetInnerHTML={{ __html: note.content }}
-                            />
+                            {/* Note Content — plain text by design; see the
+                                component docblock before changing this back. */}
+                            <div className="p-4 text-sm text-slate-700 whitespace-pre-wrap break-words">
+                                {note.content}
+                            </div>
                         </Card>
                     ))
                 )}
             </div>
 
-            {/* New Note Editor */}
+            {/* New Note Editor — only for roles the API will actually accept a
+                note from (`create:files`). An Auditor holds `read:files` alone
+                and would otherwise be shown a composer that 403s on submit. */}
+            {!canAddNote ? null : (
             <Card className="p-4 border-slate-200 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3">
                     <label className="text-sm font-semibold text-slate-700">Add Note</label>
-                    <div className="flex bg-slate-100 rounded-lg p-1 gap-1">
-                        <button className="p-1 hover:bg-white rounded text-slate-600" title="Bold">
-                            <Bold size={16} />
-                        </button>
-                        <button className="p-1 hover:bg-white rounded text-slate-600" title="Italic">
-                            <Italic size={16} />
-                        </button>
-                        <div className="w-px bg-slate-300 mx-1" />
-                        <button className="p-1 hover:bg-white rounded text-slate-600" title="List">
-                            <List size={16} />
-                        </button>
-                        <button className="p-1 hover:bg-white rounded text-slate-600" title="Align Left">
-                            <AlignLeft size={16} />
-                        </button>
-                    </div>
                 </div>
 
                 <textarea
@@ -185,6 +195,7 @@ export function NoteSheetEditor({
                     </div>
                 </div>
             </Card>
+            )}
         </div>
     );
 }

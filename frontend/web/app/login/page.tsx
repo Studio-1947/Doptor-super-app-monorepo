@@ -48,7 +48,7 @@ export default function LoginPage() {
                             Doptor <br/>
                             <span className="text-primary-500">OS v2.0</span>
                         </h2>
-                        <p className="text-slate-400 dark:text-slate-500 text-xs font-bold uppercase tracking-[0.2em] leading-loose max-w-[200px]">
+                        <p className="text-slate-400 dark:text-slate-400 text-xs font-bold uppercase tracking-[0.2em] leading-loose max-w-[200px]">
                             Secure digital infrastructure for the modern enterprise.
                         </p>
                     </div>
@@ -130,7 +130,7 @@ export default function LoginPage() {
                             </button>
                         </form>
 
-                        <p className="mt-12 text-center text-slate-500 dark:text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                        <p className="mt-12 text-center text-slate-500 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest">
                             New to the system?{' '}
                             <Link href="/onboarding" className="text-primary-600 dark:text-primary-400 hover:underline">
                                 Request Provisioning
