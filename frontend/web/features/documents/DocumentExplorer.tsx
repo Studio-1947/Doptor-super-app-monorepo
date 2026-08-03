@@ -26,7 +26,7 @@ const STATUS_TABS: { id: "all" | DocumentStatus; label: string }[] = [
 const statusChip: Record<DocumentStatus, string> = {
     draft: "text-slate-500 border-slate-100 bg-slate-50",
     pending_review: "text-amber-600 border-amber-100 bg-amber-50",
-    approved: "text-emerald-600 border-emerald-100 bg-emerald-50",
+    approved: "text-success-600 border-success-100 bg-success-50",
     rejected: "text-rose-600 border-rose-100 bg-rose-50",
 };
 
@@ -218,7 +218,7 @@ export function DocumentExplorer() {
                                     <>
                                         <button onClick={() => act(doc.id, () => documentsService.approve(doc.id), "Approved")}
                                             title="Approve" disabled={busyId === doc.id}
-                                            className="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors">
+                                            className="p-1.5 text-slate-400 hover:text-success-600 transition-colors">
                                             <Check size={15} />
                                         </button>
                                         <button onClick={() => act(doc.id, () => documentsService.reject(doc.id), "Rejected")}

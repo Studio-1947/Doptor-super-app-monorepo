@@ -20,10 +20,10 @@ import { displayName, formatDate } from "@/lib/display";
 
 const statusChip: Record<string, string> = {
     pending: "text-amber-600 border-amber-100 bg-amber-50",
-    approved: "text-emerald-600 border-emerald-100 bg-emerald-50",
+    approved: "text-success-600 border-success-100 bg-success-50",
     rejected: "text-rose-600 border-rose-100 bg-rose-50",
     cancelled: "text-slate-500 border-slate-100 bg-slate-50",
-    present: "text-emerald-600 border-emerald-100 bg-emerald-50",
+    present: "text-success-600 border-success-100 bg-success-50",
     late: "text-orange-600 border-orange-100 bg-orange-50",
 };
 
@@ -367,7 +367,7 @@ export default function AttendancePage() {
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                         <button onClick={() => review(r.id, "approve")}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest bg-success-600 text-white hover:bg-success-700 transition-colors">
                                             <Check size={13} /> Approve
                                         </button>
                                         <button onClick={() => review(r.id, "reject")}

@@ -199,7 +199,7 @@ export function FacultyList() {
                 </Card>
                 <Card className="p-4 border-slate-200">
                     <p className="text-xs text-slate-500">Active</p>
-                    <p className="text-2xl font-bold text-emerald-600 mt-1">
+                    <p className="text-2xl font-bold text-success-600 mt-1">
                         {loading ? '-' : facultyList.filter(f => f.status === 'active').length}
                     </p>
                 </Card>
@@ -259,7 +259,7 @@ export function FacultyList() {
                                         </div>
                                         <span
                                             className={`px-2 py-1 text-xs font-medium rounded ${faculty.status === 'active'
-                                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                                ? 'bg-success-50 text-success-700 border border-success-100'
                                                 : faculty.status === 'on-leave'
                                                     ? 'bg-orange-50 text-orange-700 border border-orange-100'
                                                     : 'bg-slate-50 text-slate-700 border border-slate-100'

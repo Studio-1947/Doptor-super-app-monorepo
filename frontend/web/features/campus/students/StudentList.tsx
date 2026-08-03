@@ -252,7 +252,7 @@ export function StudentList() {
                                     <td className="py-3 px-4">
                                         <span
                                             className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${student.status === 'active'
-                                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                                ? 'bg-success-50 text-success-700 border border-success-100'
                                                 : student.status === 'inactive'
                                                     ? 'bg-orange-50 text-orange-700 border border-orange-100'
                                                     : 'bg-slate-50 text-slate-700 border border-slate-100'

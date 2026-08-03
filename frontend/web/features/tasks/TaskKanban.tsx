@@ -13,7 +13,7 @@ const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
     { id: 'todo', title: 'To Do', color: 'bg-slate-500' },
     { id: 'in-progress', title: 'In Progress', color: 'bg-blue-500' },
     { id: 'review', title: 'Review', color: 'bg-orange-500' },
-    { id: 'done', title: 'Done', color: 'bg-emerald-500' },
+    { id: 'done', title: 'Done', color: 'bg-success-500' },
 ];
 
 // A board shows every open task at once, so request the server's max page

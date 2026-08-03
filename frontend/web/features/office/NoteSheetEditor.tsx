@@ -123,7 +123,7 @@ export function NoteSheetEditor({
                                         })}
                                     </span>
                                     {note.is_final ? (
-                                        <span className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                                        <span className="flex items-center gap-1 text-success-600 bg-success-50 px-2 py-0.5 rounded border border-success-100">
                                             <CheckCircle2 size={12} /> Final
                                         </span>
                                     ) : (

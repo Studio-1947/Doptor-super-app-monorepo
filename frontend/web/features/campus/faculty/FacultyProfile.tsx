@@ -115,7 +115,7 @@ export function FacultyProfile() {
                             </div>
 
                             <div className="flex items-center gap-2 text-sm">
-                                <div className={`w-3 h-3 rounded-full ${faculty.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                <div className={`w-3 h-3 rounded-full ${faculty.status === 'active' ? 'bg-success-500' : 'bg-slate-400'}`} />
                                 <div>
                                     <p className="text-slate-500 text-xs">Status</p>
                                     <p className="text-slate-900 font-medium capitalize">{faculty.status}</p>

@@ -72,19 +72,19 @@ export function ApproveRejectModal({
         >
             <div className="space-y-4">
                 <div className={`p-4 rounded-lg border flex flex-col gap-2 text-center ${isApprove
-                        ? 'bg-emerald-50 border-emerald-100'
+                        ? 'bg-success-50 border-success-100'
                         : 'bg-red-50 border-red-100'
                     }`}>
-                    <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${isApprove ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+                    <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${isApprove ? 'bg-success-100 text-success-600' : 'bg-red-100 text-red-600'
                         }`}>
                         {isApprove ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
                     </div>
                     <div>
-                        <h3 className={`font-semibold ${isApprove ? 'text-emerald-900' : 'text-red-900'
+                        <h3 className={`font-semibold ${isApprove ? 'text-success-900' : 'text-red-900'
                             }`}>
                             {isApprove ? 'Approve this file?' : 'Reject this file?'}
                         </h3>
-                        <p className={`text-sm mt-1 ${isApprove ? 'text-emerald-700' : 'text-red-700'
+                        <p className={`text-sm mt-1 ${isApprove ? 'text-success-700' : 'text-red-700'
                             }`}>
                             {isApprove
                                 ? 'This check indicates your verification and agreement with the file contents.'
@@ -138,7 +138,7 @@ export function ApproveRejectModal({
                         onClick={handleSubmit}
                         disabled={isSubmitting}
                         className={`gap-2 text-white ${isApprove
-                                ? 'bg-emerald-600 hover:bg-emerald-700'
+                                ? 'bg-success-600 hover:bg-success-700'
                                 : 'bg-red-600 hover:bg-red-700'
                             }`}
                     >

@@ -72,7 +72,7 @@ export default function StudentsPage() {
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                     <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 border ${
-                                        student.status === 'Active' ? 'text-emerald-600 border-emerald-100 bg-emerald-50' : 'text-orange-600 border-orange-100 bg-orange-50'
+                                        student.status === 'Active' ? 'text-success-600 border-success-100 bg-success-50' : 'text-orange-600 border-orange-100 bg-orange-50'
                                     }`}>
                                         {student.status}
                                     </span>

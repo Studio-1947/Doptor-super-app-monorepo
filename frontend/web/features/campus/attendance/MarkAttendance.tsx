@@ -215,9 +215,9 @@ export function MarkAttendance() {
                         <p className="text-xs text-slate-500">Total Students</p>
                         <p className="text-2xl font-bold text-slate-900 mt-1">{summary.total}</p>
                     </Card>
-                    <Card className="p-4 border-emerald-200 bg-emerald-50">
-                        <p className="text-xs text-emerald-700">Present</p>
-                        <p className="text-2xl font-bold text-emerald-700 mt-1">{summary.present}</p>
+                    <Card className="p-4 border-success-200 bg-success-50">
+                        <p className="text-xs text-success-700">Present</p>
+                        <p className="text-2xl font-bold text-success-700 mt-1">{summary.present}</p>
                     </Card>
                     <Card className="p-4 border-red-200 bg-red-50">
                         <p className="text-xs text-red-700">Absent</p>
@@ -240,7 +240,7 @@ export function MarkAttendance() {
                     <span className="text-sm text-slate-600">Quick Actions:</span>
                     <button
                         onClick={() => handleMarkAll('present')}
-                        className="px-3 py-1.5 text-xs bg-emerald-600 text-white hover:bg-emerald-700 transition-colors font-medium rounded"
+                        className="px-3 py-1.5 text-xs bg-success-600 text-white hover:bg-success-700 transition-colors font-medium rounded"
                     >
                         Mark All Present
                     </button>
@@ -297,8 +297,8 @@ export function MarkAttendance() {
                                                     <button
                                                         onClick={() => handleStatusChange(item.studentId, 'present')}
                                                         className={`px-3 py-1.5 text-xs font-medium transition-colors rounded ${item.status === 'present'
-                                                            ? 'bg-emerald-600 text-white'
-                                                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                                            ? 'bg-success-600 text-white'
+                                                            : 'bg-success-50 text-success-700 border border-success-200 hover:bg-success-100'
                                                             }`}
                                                     >
                                                         <Check size={14} className="inline mr-1" />

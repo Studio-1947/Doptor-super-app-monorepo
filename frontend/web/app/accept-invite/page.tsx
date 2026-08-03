@@ -80,14 +80,14 @@ function AcceptInviteForm() {
                             placeholder="First Name"
                             value={firstName}
                             onChange={(e) => setFirstName(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
                         />
                         <input
                             type="text"
                             placeholder="Last Name"
                             value={lastName}
                             onChange={(e) => setLastName(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
                         />
                     </div>
 
@@ -96,7 +96,7 @@ function AcceptInviteForm() {
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
                         required
                         minLength={8}
                     />
@@ -105,7 +105,7 @@ function AcceptInviteForm() {
                         placeholder="Confirm Password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none transition-all"
                         required
                         minLength={8}
                     />
@@ -130,7 +130,7 @@ function AcceptInviteForm() {
 
                     <p className="text-center text-slate-500">
                         Already activated?{' '}
-                        <Link href="/login" className="font-medium text-indigo-600 hover:underline">
+                        <Link href="/login" className="font-medium text-brand-600 hover:underline">
                             Sign in
                         </Link>
                     </p>

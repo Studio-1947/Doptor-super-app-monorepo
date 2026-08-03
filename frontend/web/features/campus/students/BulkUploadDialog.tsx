@@ -258,9 +258,9 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                                     <p className="text-xs text-slate-500 mb-1">Total Records</p>
                                     <p className="text-2xl font-bold text-slate-900">{parsedData.length}</p>
                                 </Card>
-                                <Card className="p-4 border-slate-200 border-emerald-200 bg-emerald-50">
-                                    <p className="text-xs text-emerald-700 mb-1">Valid</p>
-                                    <p className="text-2xl font-bold text-emerald-700">{validStudents.length}</p>
+                                <Card className="p-4 border-slate-200 border-success-200 bg-success-50">
+                                    <p className="text-xs text-success-700 mb-1">Valid</p>
+                                    <p className="text-2xl font-bold text-success-700">{validStudents.length}</p>
                                 </Card>
                                 <Card className="p-4 border-slate-200 border-red-200 bg-red-50">
                                     <p className="text-xs text-red-700 mb-1">Invalid</p>
@@ -306,7 +306,7 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                                                         {student.errors ? (
                                                             <AlertCircle size={16} className="text-red-600" />
                                                         ) : (
-                                                            <CheckCircle2 size={16} className="text-emerald-600" />
+                                                            <CheckCircle2 size={16} className="text-success-600" />
                                                         )}
                                                     </td>
                                                     <td className="py-3 px-4 font-medium">{student.rollNumber}</td>
@@ -333,8 +333,8 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
 
                     {step === 'success' && (
                         <div className="flex flex-col items-center justify-center py-12">
-                            <div className="w-16 h-16 bg-emerald-100 flex items-center justify-center mb-4">
-                                <CheckCircle2 size={32} className="text-emerald-600" />
+                            <div className="w-16 h-16 bg-success-100 flex items-center justify-center mb-4">
+                                <CheckCircle2 size={32} className="text-success-600" />
                             </div>
                             <h4 className="text-xl font-bold text-slate-900 mb-2">Invitations Sent!</h4>
                             <p className="text-sm text-slate-600">

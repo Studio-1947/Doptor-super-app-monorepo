@@ -55,7 +55,7 @@ export function FileMovementHistory({ movements, className = '' }: FileMovementH
             case 'return':
                 return 'bg-orange-100 text-orange-700 border-orange-200';
             case 'approve':
-                return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                return 'bg-success-100 text-success-700 border-success-200';
             case 'reject':
                 return 'bg-red-100 text-red-700 border-red-200';
             case 'close':

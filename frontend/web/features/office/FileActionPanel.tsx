@@ -60,7 +60,7 @@ export function FileActionPanel({
             <Card className={`p-4 border-slate-200 bg-slate-50 ${className}`}>
                 <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-500">Current Status:</span>
-                    <span className={`font-medium px-2.5 py-0.5 rounded-full text-xs ${file.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                    <span className={`font-medium px-2.5 py-0.5 rounded-full text-xs ${file.status === 'approved' ? 'bg-success-100 text-success-700' :
                         file.status === 'rejected' ? 'bg-red-100 text-red-700' :
                             file.status === 'closed' ? 'bg-slate-200 text-slate-700' :
                                 'bg-blue-100 text-blue-700'
@@ -104,7 +104,7 @@ export function FileActionPanel({
                     <Button
                         variant="primary"
                         onClick={onForward}
-                        className="w-full justify-center gap-2 bg-indigo-600 hover:bg-indigo-700"
+                        className="w-full justify-center gap-2 bg-brand-600 hover:bg-brand-700"
                     >
                         <ArrowRight size={18} />
                         Forward File
@@ -126,7 +126,7 @@ export function FileActionPanel({
                     <Button
                         variant="secondary"
                         onClick={onApprove}
-                        className="w-full justify-center gap-2 text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-300"
+                        className="w-full justify-center gap-2 text-success-700 border-success-200 bg-success-50 hover:bg-success-100 hover:border-success-300"
                     >
                         <CheckCircle2 size={18} />
                         Approve

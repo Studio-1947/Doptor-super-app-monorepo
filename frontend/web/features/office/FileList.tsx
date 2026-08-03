@@ -17,7 +17,7 @@ const priorityConfig = {
 
 const statusConfig = {
     active: { color: 'text-green-600 bg-green-100', label: 'Active' },
-    approved: { color: 'text-emerald-600 bg-emerald-100', label: 'Approved' },
+    approved: { color: 'text-success-600 bg-success-100', label: 'Approved' },
     rejected: { color: 'text-red-600 bg-red-100', label: 'Rejected' },
     closed: { color: 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800', label: 'Closed' },
     archived: { color: 'text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50', label: 'Archived' },
@@ -46,7 +46,7 @@ export default function FileList({ files, onFileClick }: FileListProps) {
                     <div
                         key={file.id}
                         onClick={() => onFileClick(file)}
-                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-sm p-4 hover:border-indigo-500/50 hover:shadow-sm transition-all cursor-pointer relative overflow-hidden"
+                        className="group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-sm p-4 hover:border-brand-500/50 hover:shadow-sm transition-all cursor-pointer relative overflow-hidden"
                     >
                         {/* Status Line */}
                         <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${priority.priorityColor}`} />
@@ -62,7 +62,7 @@ export default function FileList({ files, onFileClick }: FileListProps) {
                                     </span>
                                 </div>
 
-                                <h3 className="font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 transition-colors truncate text-base mb-1">
+                                <h3 className="font-medium text-slate-900 dark:text-slate-100 group-hover:text-brand-600 transition-colors truncate text-base mb-1">
                                     {file.subject}
                                 </h3>
 
@@ -94,7 +94,7 @@ export default function FileList({ files, onFileClick }: FileListProps) {
                             </div>
 
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity self-center">
-                                <div className="p-2 text-indigo-600 bg-indigo-50 rounded-sm">
+                                <div className="p-2 text-brand-600 bg-brand-50 rounded-sm">
                                     <FileText size={18} />
                                 </div>
                             </div>
