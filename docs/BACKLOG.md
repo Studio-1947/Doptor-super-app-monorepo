@@ -251,6 +251,21 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       every by-id operation, `organisation_id` removed from the DTOs and the query param
       so it can only come from `req.user`, `PermissionsGuard` at class level, and a campus
       block in `06-tenancy.smoke.js` that replaces the tripwire with real probes.
+      **No tenant was harmed by the removal — verified on dev, not assumed (2026-08-03).**
+      Unregistering the module 404s `/campus/*` for anyone genuinely using it, so this was
+      queried rather than reasoned about. 34 organisations carry `campus` in
+      `enabled_verticals`; **all 34 are test fixtures and all 34 have zero campus data** —
+      one user each, every one a `@verify.test` address, and `0` across students/faculty,
+      courses, academic years and exams. The slugs say the same thing
+      (`e2e-vertcampus-*`, `e2e-offcampus-*`, `e2e-railonly-*`, `e2e-vertrefuse-*`, plus
+      suite 01's `fin-org-*`), and all were created 27–31 July, the window the suites were
+      being run in. Not one organisation ever created a course, a year, an exam or a single
+      student. The vertical was ticked at signup by a fixture and never used.
+      Incidentally confirmed in the same result: several of those rows still carry
+      `"network"`, deleted under **M-18** on 2026-07-28. That is exactly the case
+      `SHIPPABLE_VERTICALS` in `contexts/VerticalContext.tsx` exists to absorb — a vertical
+      the build no longer knows about, still sitting in an organisation's row. The
+      mitigation was needed and is working.
 - [x] **C-13** 🔴 ~~The e-Dak `files` module had no tenant scoping and almost no
       permission gating~~ — found and fixed **2026-08-03**, during a full end-to-end audit.
       **Verified by live exploit before the fix, not by inspection.**
