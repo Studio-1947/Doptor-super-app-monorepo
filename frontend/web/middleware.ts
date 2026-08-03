@@ -91,6 +91,22 @@ export const config = {
      * Everything except Next internals, the favicon, and static assets. Matching
      * asset requests would redirect them to /login and break the login page's
      * own styling on a signed-out load.
+     *
+     * `sw.js` and `manifest.webmanifest` are excluded for the same reason, and
+     * both were being redirected until 2026-08-03 because the list only covered
+     * image extensions. Neither failure announces itself:
+     *
+     *  - the manifest 307'd to /login, so it parsed as HTML and the browser
+     *    simply never offered to install the app;
+     *  - a service worker script that redirects is rejected outright by the
+     *    spec, so registration failed silently and the offline page never
+     *    appeared.
+     *
+     * Both are public by nature — the manifest is name, colours and icon paths,
+     * and the worker is static code that caches nothing user-specific
+     * (see public/sw.js). There is nothing in either to protect.
      */
-    matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'],
+    matcher: [
+        '/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    ],
 };

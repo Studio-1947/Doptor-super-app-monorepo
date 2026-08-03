@@ -13,6 +13,14 @@ export const PUBLIC_ROUTES = [
   "/reset-password",
   "/verify-email",
   "/accept-invite",
+  // The service worker's offline fallback. It must be public for a reason the
+  // others are not: it is served when there is *no network*, so every response
+  // to being treated as private is impossible to complete. `middleware.ts`
+  // could not redirect it, `AuthGuard` would sit on "Authenticating..." forever
+  // because the session check cannot resolve, and the 401 handler would aim at
+  // a /login it also cannot fetch. The page shows no data, so there is nothing
+  // to protect. See public/sw.js.
+  "/offline",
 ] as const;
 
 export function isPublicRoute(pathname: string): boolean {
