@@ -1,7 +1,17 @@
 import axios from "axios";
 import { isPublicRoute, loginPathFor } from "./routes";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+/*
+ * 3001 matches `PORT` in `backend/api/.env` and the API's own fallback in
+ * `main.ts`. It was 4000, which no API has actually listened on locally.
+ *
+ * This value is **inlined at build time**, not read at runtime — a stale
+ * `NEXT_PUBLIC_API_URL` survives any number of server restarts and only a
+ * rebuild clears it. When login silently never completes, check what was baked
+ * in rather than what the env says:
+ *   grep -ohE 'http://localhost:[0-9]+' frontend/web/.next/static/chunks/*.js
+ */
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // These endpoints answer 401 as a normal outcome — wrong password, expired
 // invite token, unverified email. Treating those as "your session expired" and
