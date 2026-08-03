@@ -15,16 +15,24 @@ assert on real responses. They were used to verify each phase as it was built.
 | `01-office-core.smoke.js` | Onboarding roles, files registry pagination, task depth (refs, assignees, labels, comments, subtasks, audit), cross-org isolation | 56 |
 | `02-rbac.smoke.js` | Permission enforcement over HTTP — Auditor read-only, Staff can't delete/assign | 16 |
 | `03-notifications.smoke.js` | Task/file notification producers, read/unread, cross-user isolation | 15 |
-| `04-attendance.smoke.js` | Punch lifecycle, leave request → approve/reject/cancel, balance movement, admin/staff split, the relations the `/approvals` rows render | 35 |
+| `04-attendance.smoke.js` | Punch lifecycle, leave request → approve/reject/cancel, balance movement, admin/staff split, the relations the `/approvals` rows render | 38 |
 | `05-documents.smoke.js` | Document library, draft → pending_review → approved/rejected, resubmit, permission splits, cross-org isolation, the relations the `/approvals` rows render | 19 |
-| `06-tenancy.smoke.js` | Live exploit attempts against the C-11 privilege-escalation chain; reports findings by severity rather than pass/fail | — |
+| `06-tenancy.smoke.js` | Live exploit attempts against the C-11 chain, the C-13 e-Dak files chain, and a tripwire asserting the C-15 campus routes are not routed; reports findings by severity rather than pass/fail | — |
 | `07-dashboard-access.smoke.js` | Every endpoint a role dashboard calls is reachable *by that role*, and the gates its hidden panels rely on hold | 28 |
 | `08-cookie-auth.smoke.js` | httpOnly cookie auth — cookie alone authenticates, Bearer still works, refresh rotates, replay and logged-out tokens rejected | 24 |
 | `09-admin-access.smoke.js` | The `/admin` area — every endpoint its pages call, the field shapes they render, org rename, and the Staff denials the client-side guard mirrors | 25 |
+| `10-task-attachments-holidays.smoke.js` | Task attachments (file + link, download, audit rows, cross-org denial) and the holiday calendar's effect on leave day counts | 29 |
+| `11-rate-limit.smoke.js` | That `ThrottlerGuard` is actually enforcing, via `/auth/forgot-password`'s fixed 3/minute budget | 5 |
 
 `helpers.js` holds the shared transport (`req`, `sql`, `sqlRows`). Each suite keeps
 its own `check`/reporting block, because `06-tenancy` reports by severity and
 forcing one shape on it would obscure more than it saves.
+
+`post-deploy.check.js` sits in this directory but is **not** a smoke suite and is
+deliberately not named `*.smoke.js`, so `run-all.js` does not pick it up. The
+suites run against localhost in CI to prove the *build*; that one runs against
+the deployed environment afterwards to prove the right build landed and works
+*there*. See its header for why that is a different question.
 
 ## Prerequisites
 
@@ -67,5 +75,23 @@ stdin will do. `docker exec` needs `-i` for that reason.
 > (`Date.now()`-suffixed, `@verify.test` emails) and leaves them behind. That's
 > fine on a scratch database; don't point them at anything with real tenants.
 
-**Status:** all 9 suites ran green against `https://api.dev.doptor.in` on
-2026-07-28 — **218 checks, 0 failures**, plus `06-tenancy` reporting no findings.
+## Rate limiting will break the run if you forget it
+
+`ThrottlerGuard` has actually been enforcing since 2026-07-31, the whole run comes
+from one IP, and `register-organisation`/`login` share a **5/minute** budget with a
+300/minute global ceiling. Suites 01–02 spend it and every later suite is then
+refused. **Start the API with `THROTTLE_LIMIT=100000 THROTTLE_AUTH_LIMIT=100000`**,
+which is what `.github/workflows/deploy.yml` sets and why.
+
+It does not present as a rate-limit error. The organisation is never created, so
+`sql()` returns `""` and psql reports `invalid input syntax for type uuid: ""` —
+which reads like a broken migration or a bad fixture. Measured 2026-08-03: **3/11
+suites without the overrides, 11/11 with**. `11-rate-limit.smoke.js` still proves
+the limiter, because it targets the one budget CI cannot raise.
+
+Expect one *printed* psql ERROR inside suite 10
+(`task_attachments_file_or_link`): that is the negative test passing.
+
+**Status:** all 11 suites ran green on 2026-08-03 — **255 checks, 0 failures**,
+`06-tenancy` reporting no findings, and the same run passing in CI against a
+clean runner.

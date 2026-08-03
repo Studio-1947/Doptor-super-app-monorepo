@@ -808,6 +808,47 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       **resolved; verified 2026-07-29.** `features/verticals/` does not exist; only
       `features/office/*` remains. (Office roadmap Phase 6 already recorded this; the box
       here was simply never ticked.)
+- [x] **L-7** ~~Nothing verified the deployed environment~~ — closed **2026-08-03**.
+      Everything in CI ran against localhost, and the deploy job's only live assertion was
+      a single `curl /health`. That leaves environment-only faults invisible, which is not
+      hypothetical: `/app/uploads` was absent from the image, so Docker created the named
+      volume root-owned while the API runs as uid 1001, and **no upload worked on dev
+      between 2026-07-24 and 07-31** — presenting as an nginx 502 — while every suite
+      stayed green throughout.
+      Added `backend/api/test/smoke/post-deploy.check.js`, run by the `deploy` job after
+      the health gate. It asserts the *shape* of the live surface (campus 404, chat and
+      network 404, `/files/*` 401 — 401 vs 404 is the whole point, since "not 200" would
+      pass for both) and then does a **real multipart upload** against the deployed
+      filesystem, a cross-tenant read that must 404, and a positive control that the owner
+      can still read their own file.
+      **Budget, not laziness:** `AUTH_THROTTLE` is 5/minute per IP on a
+      production-configured box and is deliberately **not** raised for this — the point is
+      to exercise the environment as users meet it. So the check spends exactly two auth
+      requests: two `register-organisation` calls, whose responses already carry tokens, so
+      no separate login is needed. This is also why the full suites cannot simply be pointed
+      at dev — they would collapse against that ceiling, exactly as they did locally before
+      the `THROTTLE_*` overrides were understood.
+      Verified both ways before wiring: 17/17 against a healthy target, and against a dead
+      port it reports every check failed and **exits 1** rather than throwing a stack trace
+      — an unreachable host being the most likely thing it meets on a bad deploy.
+      Not named `*.smoke.js` on purpose: `run-all.js` globs that suffix, and this answers a
+      different question from the suites.
+- [x] **L-8** ~~Orphaned components accumulating as landmines~~ — swept **2026-08-03**;
+      the finding is that there are no longer any. The sweep returns five: three under
+      `features/campus/`, which **must** stay — campus is frozen and
+      `e2e/product-isolation.spec.ts` requires it intact and compiling — and two benign
+      presentational shells. Neither of those is the landmine the 2026-07-29 sweep found:
+      `ComingSoon.tsx` invents no data, states plainly that a feature is unbuilt and has
+      working buttons, which makes it the honest alternative to fabricating a page — kept
+      deliberately, given this repo's history. `DashboardHeader.tsx` was 24 lines
+      superseded by `ReadyUI` and is deleted.
+      **The orphan risk was never "unused code" — it was specifically that re-importing one
+      silently ships fake data.** Grade future orphans on that, not on line count.
+      Also corrected here: `test/smoke/README.md` claimed "9 suites, 218 checks" from
+      2026-07-28 while 11 suites and 255 checks existed, and did not mention that
+      `THROTTLE_LIMIT`/`THROTTLE_AUTH_LIMIT` must be raised for a local run — an omission
+      that presents as `invalid input syntax for type uuid: ""` and reads like a broken
+      migration. Measured: 3/11 suites without the overrides, 11/11 with.
 - [x] **L-6** ~~The signed-out entry path was outside every dark-mode guarantee~~ — fixed
       **2026-08-03**. L-5 closed "measured to zero" against **nine authenticated routes**;
       `/login`, `/register` and `/onboarding` were never in that list, and `ThemeProvider`
