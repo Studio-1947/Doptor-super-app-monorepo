@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { registerOrg, API_URL } from './fixtures/org';
 import { login } from './helpers';
+
+const repoRoot = path.resolve(__dirname, '..');
 
 /**
  * The shared page shell (`components/ReadyUI.tsx`) must not render controls
@@ -22,7 +26,64 @@ import { login } from './helpers';
  * the one control that survived is a real one that actually reaches the server.
  */
 
-test('the shell renders no dead controls on a real page', async ({ page, request }) => {
+/**
+ * Static guard over the *app* shell — the header and the left rail that render
+ * on every authenticated page.
+ *
+ * The browser test below cannot do this job. React attaches handlers at the
+ * root, so a dead `<button>` is indistinguishable from a live one in the DOM;
+ * you can only tell by clicking and asserting a consequence, which needs a
+ * known consequence per control. Reading the source does tell you, so this
+ * reads the source — the same tactic `product-isolation.spec.ts` uses.
+ *
+ * It exists because M-17 cleaned `components/ReadyUI.tsx` (the *page* shell)
+ * and never looked one layer up, leaving three dead controls live for months:
+ * an org switcher whose ChevronDown promised a dropdown the single-org data
+ * model cannot support, a Settings gear beside a `/settings` route that
+ * existed all along, and a header search box you could type into that had no
+ * `onChange` at all.
+ *
+ * That last one is why this checks inputs too, and why it does not rely on
+ * roles: the existing browser test asserts `getByRole('searchbox')` is absent,
+ * and never matched the search box because `type="text"` has the role
+ * `textbox`. A guard that misses the thing it was written for is worse than
+ * none, because it is quoted as evidence.
+ */
+test('no control in the app shell is inert', () => {
+  const shell = [
+    'frontend/web/components/layout/Header.tsx',
+    'frontend/web/components/layout/VerticalSwitcher.tsx',
+    'frontend/web/components/layout/Sidebar.tsx',
+  ];
+
+  const offenders: string[] = [];
+
+  for (const rel of shell) {
+    const src = readFileSync(path.join(repoRoot, rel), 'utf8');
+
+    // Strip comments first, or the explanations of *removed* controls in these
+    // very files register as offenders.
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+    for (const m of code.matchAll(/<button\b[^>]*?>/gs)) {
+      const tag = m[0];
+      if (!/onClick|type="submit"|disabled/.test(tag)) {
+        offenders.push(`${rel}: <button> with no onClick — ${tag.replace(/\s+/g, ' ').slice(0, 70)}`);
+      }
+    }
+
+    for (const m of code.matchAll(/<input\b[^>]*?\/?>/gs)) {
+      const tag = m[0];
+      if (!/onChange|onKeyDown|onInput|readOnly|type="hidden"/.test(tag)) {
+        offenders.push(`${rel}: <input> with no handler — ${tag.replace(/\s+/g, ' ').slice(0, 70)}`);
+      }
+    }
+  }
+
+  expect(offenders, `inert controls in the app shell:\n  ${offenders.join('\n  ')}`).toEqual([]);
+});
+
+test('the ReadyUI page shell renders no dead chrome', async ({ page, request }) => {
   const org = await registerOrg(request, 'shellchrome');
   await login(page, org.email, org.password);
   await page.goto('/admin/roles');

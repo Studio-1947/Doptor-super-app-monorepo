@@ -7,6 +7,7 @@ import {
     LayoutGrid,
     Settings
 } from 'lucide-react';
+import Link from 'next/link';
 import { useVertical, VerticalType, verticalTheme } from '../../contexts/VerticalContext';
 
 const VERTICAL_ICONS: Record<VerticalType, any> = {
@@ -70,13 +71,22 @@ export function VerticalSwitcher() {
                 })}
             </div>
 
+            {/*
+              This was a <button title="Settings"> with no onClick — it sat in
+              the rail on every authenticated page and did nothing, while
+              `/settings` existed the whole time and is reachable by every role.
+              A Link rather than a router.push: it is a navigation, so it should
+              be middle-clickable and open in a new tab like any other.
+            */}
             <div className="mt-auto px-2">
-                <button
-                    className="w-12 h-12 rounded-none flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors mx-auto border border-transparent hover:border-slate-100 dark:hover:border-slate-800"
+                <Link
+                    href="/settings"
+                    aria-label="Settings"
                     title="Settings"
+                    className="w-12 h-12 rounded-none flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors mx-auto border border-transparent hover:border-slate-100 dark:hover:border-slate-800"
                 >
                     <Settings size={20} />
-                </button>
+                </Link>
             </div>
         </div>
     );
