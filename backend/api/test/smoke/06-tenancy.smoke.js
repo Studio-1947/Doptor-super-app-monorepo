@@ -163,6 +163,51 @@ const F = (sev, what) => { findings.push(`  [${sev}] ${what}`); };
     else console.log("  ok: owner can still read their own file");
   }
 
+  // -------------------------------------------------------------------------
+  // 10. Campus must stay off the HTTP surface (added 2026-08-03, backlog C-15).
+  //
+  // This is a tripwire, not a tenancy check. `CampusModule` was unregistered
+  // from `app.module.ts` because it carries the same defect class as everything
+  // above and Office is the only product we ship — the code is frozen, not
+  // fixed. Confirmed by live exploit before it was unregistered: a Staff user in
+  // org B hard deleted a user in org A via DELETE /campus/faculty/:id, and org B
+  // read and wrote org A's academic years by passing organisation_id in the
+  // query string and the body.
+  //
+  // So re-registering the module re-opens all of it. These checks go red the
+  // moment that happens, which is the point: whoever brings Campus back has to
+  // fix C-15 first rather than discovering it in production.
+  //
+  // 404 is the assertion. A 401/403 would mean the routes still exist and
+  // something else refused the call — which is exactly the state we are trying
+  // not to be in, because that "something else" was the gate that never held.
+  // -------------------------------------------------------------------------
+  const campusRoutes = [
+    ["GET",    "/campus/students"],
+    ["GET",    "/campus/faculty"],
+    ["GET",    "/campus/academic-years?organisation_id=" + orgA],
+    ["DELETE", "/campus/faculty/" + attackerId],
+  ];
+
+  for (const [method, path] of campusRoutes) {
+    const res = await req(method, path, { token: atk });
+    if (res.status !== 404) {
+      F("CRITICAL", `${method} ${path.split("?")[0]} answered ${res.status}, not 404 — CampusModule is registered again and C-15 is open`);
+    } else {
+      console.log(`  ok: ${method} ${path.split("?")[0]} is not routed (404)`);
+    }
+  }
+
+  // The delete probe above names a real user id. If the route came back it would
+  // have deleted them, so prove it did not — a 404 from a route that still ran
+  // its handler would be the worst possible pass.
+  const attackerStillExists = sql(`select count(*) from users where id='${attackerId}'`);
+  if (Number(attackerStillExists) !== 1) {
+    F("CRITICAL", "The campus delete probe removed a user — the route is live and unscoped");
+  } else {
+    console.log("  ok: campus delete probe removed nobody");
+  }
+
   console.log("\n=== FINDINGS ===");
   console.log(findings.length ? findings.join("\n") : "  none — module is safe");
 })();

@@ -14,7 +14,6 @@ import { WorkflowsModule } from "./modules/workflows/workflows.module";
 import { DocumentsModule } from "./modules/documents/documents.module";
 import { AttendanceModule } from "./modules/attendance/attendance.module";
 import { FilesModule } from "./modules/files/files.module";
-import { CampusModule } from "./modules/campus/campus.module";
 import { AnalyticsModule } from "./modules/analytics/analytics.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 
@@ -33,6 +32,31 @@ import { AppController } from "./app.controller";
 //
 // If chat returns, do not restore the old gateway — port the task-tracker's
 // gateway-auth-in-middleware approach instead (see docs/PORTING-GAPS.md § G-4).
+//
+// ---------------------------------------------------------------------------
+// Campus is likewise not registered here (backlog C-15, unregistered 2026-08-03).
+// Unlike chat it is NOT deleted: it stays frozen and compiling for a future
+// product, exactly as `e2e/product-isolation.spec.ts` requires.
+//
+// It was unregistered because the module was still serving on dev while Office
+// is the only product, and it carries the same defect class as C-11/C-13 —
+// confirmed by live exploit on 2026-08-03, not by inspection:
+//   - `DELETE /campus/faculty|students|courses/:id` take a bare id with no
+//     organisation and no permission. A **Staff user in another tenant** hard
+//     deleted a user row in the victim org (200).
+//   - `GET/POST /campus/academic-years` take the organisation from the query
+//     string and the request body. Another tenant read the victim's academic
+//     years and created a row inside the victim org (200 / 201).
+//   - The controller carries `@UseGuards(JwtAuthGuard, RolesGuard)` and no
+//     handler declares `@Roles`, and RolesGuard returns true when none is
+//     declared — so every route was authentication-only. Nothing reads
+//     `enabled_verticals`, so this was reachable by every Office tenant too.
+//
+// Unregistering deletes the whole HTTP surface without touching the code, which
+// is why it beats scoping ten service methods on a product we do not sell.
+// **The defects are still in `modules/campus/`.** Re-adding the line below
+// re-opens all of them, so `06-tenancy.smoke.js` asserts the routes are gone and
+// turns red the moment it comes back. Fix C-15 first, then re-register.
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -67,7 +91,6 @@ import { AppController } from "./app.controller";
     DocumentsModule,
     AttendanceModule,
     FilesModule,
-    CampusModule,
     AnalyticsModule,
     NotificationsModule,
   ],

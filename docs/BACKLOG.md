@@ -217,6 +217,40 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 
 ### Critical — fix first
 
+- [ ] **C-15** 🔴 **The `campus` module has the same defect class as C-11 and C-13.**
+      Found **2026-08-03** while fixing C-13, and **verified by live exploit, not by
+      inspection**. The HTTP surface was closed the same day by unregistering
+      `CampusModule` from `app.module.ts`; **the defects below are still in the code**
+      and this item stays open until they are fixed. Do not re-register the module
+      first — `06-tenancy.smoke.js` asserts the routes 404 and will go red.
+      - `campus.controller.ts` carries `@UseGuards(JwtAuthGuard, RolesGuard)` and **not
+        one handler declares `@Roles`**. `RolesGuard` returns `true` when no roles are
+        declared, so every route was authentication-only — the same illusion of cover
+        that made C-13 survive the 2026-07-27 sweep.
+      - **Ungated destructive deletes.** `deleteFaculty`/`deleteStudent` are
+        `db.delete(users).where(eq(users.id, id))` on a bare id, and `deleteCourse` the
+        same shape; the controller passes no organisation. Measured: a **Staff** user in
+        org B hard deleted a user row in org A (`DELETE /campus/faculty/:id` → 200).
+        `updateClass` and `enrollStudent` are unscoped writes of the same shape.
+      - **Organisation taken from the request instead of the JWT.**
+        `GET /campus/academic-years` reads `organisation_id` from the **query string**;
+        `createAcademicYear` passes the body through and honours `data.organisation_id`.
+        Measured: org B read org A's academic years (200) and created a row inside org A
+        (201). That write also runs `UPDATE academic_years SET is_current=false WHERE
+        organisation_id=<caller-supplied>`, so it can clear the victim's current year.
+      - **Attendance is unscoped entirely.** `getClassAttendance` filters on `class_id`
+        alone, `getAttendanceReport` on dates alone. `markAttendance` looks the class up
+        by faculty and then **ignores the result** — the `ForbiddenException` is commented
+        out with "Assuming strict Check. Can relax for admins if needed."
+      - **No guard anywhere reads `enabled_verticals`.** Measured: an office-only tenant
+        that never bought Campus could call `/campus/students` (200). Campus being
+        "disabled" was a frontend navigation decision only.
+      Already correct, and not part of this item: exams, results, faculty/student *reads*,
+      courses, departments and `getAllClasses` are org-scoped (the 2026-07-24 pass).
+      When Campus returns, fix it the way C-13 was fixed — a `findInOrg` chokepoint for
+      every by-id operation, `organisation_id` removed from the DTOs and the query param
+      so it can only come from `req.user`, `PermissionsGuard` at class level, and a campus
+      block in `06-tenancy.smoke.js` that replaces the tripwire with real probes.
 - [x] **C-13** 🔴 ~~The e-Dak `files` module had no tenant scoping and almost no
       permission gating~~ — found and fixed **2026-08-03**, during a full end-to-end audit.
       **Verified by live exploit before the fix, not by inspection.**
