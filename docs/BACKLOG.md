@@ -842,10 +842,21 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       **Also fixed here:** `/onboarding` still advertised "company, school, or **network**"
       — a vertical deleted under M-18 on 2026-07-28, when `/register`'s picker was cleaned
       and this page was missed. Three dead imports went with it.
-      **Known and not fixed:** `register/page.tsx` builds focus classes by interpolation
-      (`focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500`). Tailwind cannot see
-      those at build time, so **those focus styles have never existed**. Left alone because
-      fixing it properly means a static class map, not a class-string edit.
+      **Also hardened (and a correction).** `register/page.tsx` built its input focus
+      classes by interpolation — `focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500`.
+      This entry first recorded that as "those focus styles have never existed". **That was
+      wrong**, and the error is worth keeping because of how it was made: the first check
+      grepped the built CSS with mangled backslash escaping and returned 0 matches for
+      *every* class it looked for, including ones plainly present. `grep -F` on the exact
+      strings finds all four — `.focus\:border-emerald-500:focus`,
+      `.focus\:ring-emerald-200:focus`, and the indigo pair. **The focus rings render.**
+      A count of zero from a pattern that has never returned a non-zero is not evidence.
+      What was real is the coupling: those classes only resolved because the org-name and
+      slug inputs spell out the emerald ones literally and the invite-code input spells out
+      the indigo ones, so Tailwind emitted them for unrelated reasons. Restyling either of
+      those fields would have silently stripped the focus ring off email and password.
+      Now a literal `FOCUS_ACCENT` map keyed by mode, so the classes are visible to
+      Tailwind's scanner on their own account.
 - [x] **L-5** ~~Dark mode is unevenly applied and, on some surfaces, unreadable.~~ —
       **closed 2026-07-30, measured to zero.** Found by computing WCAG contrast in the live
       DOM rather than reading classes: dark mode is a shipped feature (`darkMode: "class"`,

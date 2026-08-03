@@ -10,6 +10,24 @@ import { RegisterData, RegisterOrganisationData } from '@/services/auth.service'
 
 type RegisterMode = 'join' | 'create';
 
+/**
+ * The accent applied to a focused input, per mode.
+ *
+ * These must stay **literal strings**. Tailwind finds classes by scanning source
+ * text, so a class assembled at runtime -- `focus:border-${accent}-500` -- is
+ * invisible to it and no rule is generated.
+ *
+ * Written that way, these three inputs rendered correctly anyway, but only by
+ * accident: the org-name and slug inputs spell out the emerald classes and the
+ * invite-code input spells out the indigo ones, so the CSS happened to exist.
+ * Restyling either of those unrelated fields would have silently stripped the
+ * focus ring off the email and password inputs, with nothing to catch it.
+ */
+const FOCUS_ACCENT: Record<RegisterMode, string> = {
+    create: 'focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200',
+    join: 'focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200',
+};
+
 import { Suspense } from 'react';
 
 function RegisterForm() {
@@ -245,7 +263,7 @@ function RegisterForm() {
                                     placeholder="Email Address"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500 focus:ring-2 focus:ring-${mode === 'create' ? 'emerald' : 'indigo'}-200 outline-none transition-all`}
+                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 ${FOCUS_ACCENT[mode]} outline-none transition-all`}
                                     required
                                 />
                             </div>
@@ -256,7 +274,7 @@ function RegisterForm() {
                                     placeholder="Password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500 focus:ring-2 focus:ring-${mode === 'create' ? 'emerald' : 'indigo'}-200 outline-none transition-all`}
+                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 ${FOCUS_ACCENT[mode]} outline-none transition-all`}
                                     required
                                 />
                                 <input
@@ -264,7 +282,7 @@ function RegisterForm() {
                                     placeholder="Confirm Password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500 focus:ring-2 focus:ring-${mode === 'create' ? 'emerald' : 'indigo'}-200 outline-none transition-all`}
+                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 ${FOCUS_ACCENT[mode]} outline-none transition-all`}
                                     required
                                 />
                             </div>
