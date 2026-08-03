@@ -11,8 +11,8 @@ import { initials, displayName } from '@/lib/display';
 
 const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
     { id: 'todo', title: 'To Do', color: 'bg-slate-500' },
-    { id: 'in-progress', title: 'In Progress', color: 'bg-blue-500' },
-    { id: 'review', title: 'Review', color: 'bg-orange-500' },
+    { id: 'in-progress', title: 'In Progress', color: 'bg-info-500' },
+    { id: 'review', title: 'Review', color: 'bg-warning-500' },
     { id: 'done', title: 'Done', color: 'bg-success-500' },
 ];
 
@@ -21,9 +21,9 @@ const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
 const BOARD_LIMIT = 200;
 
 const priorityStyles: Record<Task['priority'], string> = {
-    urgent: 'bg-red-100 text-red-700 border-red-200',
-    high: 'bg-orange-100 text-orange-700 border-orange-200',
-    medium: 'bg-blue-100 text-blue-700 border-blue-200',
+    urgent: 'bg-danger-100 text-danger-700 border-danger-200',
+    high: 'bg-warning-100 text-warning-700 border-warning-200',
+    medium: 'bg-info-100 text-info-700 border-info-200',
     low: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
@@ -193,7 +193,7 @@ export function TaskKanban() {
                                             <div className="flex items-center justify-between pt-3 border-t border-slate-50">
                                                 <div className="flex items-center gap-3 text-slate-400 dark:text-slate-400">
                                                     {task.due_date && (
-                                                        <span className={`text-[10px] font-medium ${new Date(task.due_date) < new Date() && task.status !== 'done' ? 'text-red-500' : 'text-slate-400'}`}>
+                                                        <span className={`text-[10px] font-medium ${new Date(task.due_date) < new Date() && task.status !== 'done' ? 'text-danger-500' : 'text-slate-400'}`}>
                                                             {new Date(task.due_date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
                                                         </span>
                                                     )}

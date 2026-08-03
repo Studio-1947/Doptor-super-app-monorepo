@@ -11,14 +11,14 @@ interface FileListProps {
 
 const priorityConfig = {
     normal: { color: 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800', priorityColor: 'bg-slate-300', label: 'NORMAL' },
-    urgent: { color: 'text-orange-600 bg-orange-50', priorityColor: 'bg-orange-500', label: 'URGENT' },
-    immediate: { color: 'text-red-600 bg-red-50', priorityColor: 'bg-red-500', label: 'IMMEDIATE' },
+    urgent: { color: 'text-warning-600 bg-warning-50', priorityColor: 'bg-warning-500', label: 'URGENT' },
+    immediate: { color: 'text-danger-600 bg-danger-50', priorityColor: 'bg-danger-500', label: 'IMMEDIATE' },
 };
 
 const statusConfig = {
-    active: { color: 'text-green-600 bg-green-100', label: 'Active' },
+    active: { color: 'text-success-600 bg-success-100', label: 'Active' },
     approved: { color: 'text-success-600 bg-success-100', label: 'Approved' },
-    rejected: { color: 'text-red-600 bg-red-100', label: 'Rejected' },
+    rejected: { color: 'text-danger-600 bg-danger-100', label: 'Rejected' },
     closed: { color: 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800', label: 'Closed' },
     archived: { color: 'text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50', label: 'Archived' },
 };

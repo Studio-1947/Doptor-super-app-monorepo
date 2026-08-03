@@ -7,27 +7,39 @@ const webRoot = path.join(repoRoot, 'frontend/web');
 const CONFIG = path.join(webRoot, 'tailwind.config.ts');
 
 /**
- * Static guards over the semantic colour tokens (`success`, `brand`).
+ * Static guards over the semantic colour tokens.
  *
  * Backlog §0 asked for the ad-hoc emerald/indigo classes to move onto "the
  * shared token system". Reading the call sites showed the premise was wrong:
- * outside `verticalTheme` those two colours were never vertical accents.
- * emerald meant *approved / present / active / done* — `features/office/`
- * used it in seven files, none of them about Campus — and indigo meant
- * *primary action*. Moving them onto the vertical accent map would have made
- * every "Approved" badge change colour with the active vertical.
+ * outside `verticalTheme` those two were never vertical accents. emerald meant
+ * *approved / present / active / done* — `features/office/` used it in seven
+ * files, none of them about Campus — and indigo meant *primary action*.
  *
- * So they moved onto two new semantic ramps instead, defined in
- * `tailwind.config.ts` as exact copies of Tailwind's emerald and indigo. That
- * made the migration a pure rename with a provably empty visual diff: renaming
- * success->emerald and brand->indigo in the compiled stylesheet reproduced the
- * pre-migration one rule for rule, 964 for 964.
+ * They moved onto semantic ramps instead, and a second pass did the same for
+ * the rest of the palette:
  *
- * Both guards below exist because Tailwind fails *silently*. A class it does
- * not recognise is not an error — no rule is generated and the element simply
- * renders unstyled, which no type checker and no build sees. That is the same
- * trap already documented for dynamic class names in `app/register/page.tsx`.
+ *   success  emerald   approved, present, active, valid, done, published
+ *   brand    indigo    primary action: filled button, active tab, focus ring
+ *   danger   red       rejected, absent, error, delete, overdue, immediate
+ *   warning  orange    pending, late, half-day, review, urgent, high
+ *   info     blue      in-progress, excused, medium priority, hint panels
+ *
+ * success and brand were pure renames — the compiled stylesheet was identical
+ * rule for rule, 964 for 964. danger, warning and success were **not**: three
+ * meanings had grown two palettes each (`rose`, `amber`, `green`), and 49 sites
+ * changed colour when the duplicates collapsed. `FileList`'s status map had
+ * `active` in green directly above `approved` in emerald, while `office/team`
+ * and `StudentList` already drew "active" in emerald. Two greens for one state
+ * is drift, not design.
+ *
+ * Both guards exist because Tailwind fails *silently*. A class it does not
+ * recognise is not an error — no rule is generated and the element renders
+ * unstyled, which no type checker and no build sees. Same trap already
+ * documented for dynamic class names in `app/register/page.tsx`.
  */
+
+const TOKENS = ['success', 'brand', 'danger', 'warning', 'info'] as const;
+type Token = (typeof TOKENS)[number];
 
 const SOURCE_DIRS = ['app', 'components', 'features', 'contexts', 'hooks', 'services'];
 
@@ -58,28 +70,27 @@ function declaredShades(colour: string): Set<string> {
 }
 
 test('every semantic colour token resolves to a declared shade', () => {
-  const declared = {
-    success: declaredShades('success'),
-    brand: declaredShades('brand'),
-  };
-
-  expect(declared.success.size, '`success` ramp missing from tailwind.config.ts').toBeGreaterThan(0);
-  expect(declared.brand.size, '`brand` ramp missing from tailwind.config.ts').toBeGreaterThan(0);
+  const declared = {} as Record<Token, Set<string>>;
+  for (const t of TOKENS) {
+    declared[t] = declaredShades(t);
+    expect(declared[t].size, `\`${t}\` ramp missing from tailwind.config.ts`).toBeGreaterThan(0);
+  }
 
   const offenders: string[] = [];
+  const pattern = new RegExp(`\\b(${TOKENS.join('|')})-(\\d+)\\b`, 'g');
 
   for (const file of sourceFiles()) {
-    const src = readFileSync(file, 'utf8');
     const rel = path.relative(repoRoot, file).replace(/\\/g, '/');
-
-    src.split('\n').forEach((line, i) => {
-      for (const m of line.matchAll(/\b(success|brand)-(\d+)\b/g)) {
-        const [, colour, shade] = m;
-        if (!declared[colour as 'success' | 'brand'].has(shade)) {
-          offenders.push(`${rel}:${i + 1} uses ${colour}-${shade}, which is not declared`);
+    readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        for (const m of line.matchAll(pattern)) {
+          const [, colour, shade] = m;
+          if (!declared[colour as Token].has(shade)) {
+            offenders.push(`${rel}:${i + 1} uses ${colour}-${shade}, which is not declared`);
+          }
         }
-      }
-    });
+      });
   }
 
   expect(
@@ -89,53 +100,82 @@ test('every semantic colour token resolves to a declared shade', () => {
 });
 
 /**
- * A ratchet, not a ban.
+ * A ratchet, not a ban — except where the count is already zero.
  *
- * Raw emerald and indigo legitimately survive in three places, and forcing
- * them into a semantic name would be a lie in every one:
+ * Raw palette colour legitimately survives in three kinds of place, and
+ * forcing any of them into a semantic name would be a lie:
  *
  *   - **Token definitions.** `verticalTheme` (contexts/VerticalContext.tsx)
  *     and `TONES` (features/dashboard/DashboardPrimitives.tsx) *are* the token
  *     layer; raw values are what a token definition is made of.
- *   - **Decorative colour.** Stat-tile swatches, avatar-initial chips and the
- *     join/create accents on /onboarding and /register carry no state. A tile
- *     counting "Total Members" is not `brand`, and one counting "Departments"
- *     is not `success`.
+ *   - **Decorative colour.** Stat-tile swatches, avatar chips, nav-card
+ *     rotations, the Holiday marker, timetable cards, the join/create accents
+ *     on /onboarding and /register. `tone="emerald"` sits on "Departments";
+ *     `tone="indigo"` on "Pending Leave". A tile counting "Total Members" is
+ *     not `brand` and one counting "Roles" is not `success`.
  *   - **Domain colour.** The "Initial Green Sheet Note" field in
- *     `FileCreateModal.tsx` is green because a green sheet is green.
+ *     `FileCreateModal` is green because a green sheet is green.
  *
- * What must not happen is a *new* status badge or primary button reaching for
- * the raw palette again. Pinning the count catches that without an allow-list
- * that would need editing every time a decorative chip moves. Removing raw
- * usages is always fine — lower the numbers when you do.
+ * `red` and `green` are at **0** and must stay there: every use of both was a
+ * state, so any reappearance is a regression rather than a judgement call.
+ * `blue` is not zero because /forgot-password, /reset-password and
+ * /verify-email use it as their *action* colour inside `from-blue-600
+ * to-indigo-600` gradients that would flatten to one flat indigo if converted.
+ * Unifying those three pages is a redesign, not a rename.
+ *
+ * Removing raw usages is always fine — lower the numbers when you do.
  */
-test('raw emerald/indigo usage does not grow', () => {
-  const BASELINE = { emerald: 61, indigo: 106 };
+test('raw palette usage does not grow', () => {
+  const BASELINE: Record<string, number> = {
+    emerald: 61,
+    indigo: 106,
+    red: 0,
+    green: 0,
+    rose: 1,
+    orange: 7,
+    amber: 6,
+    blue: 60,
+    teal: 3,
+    sky: 1,
+    violet: 8,
+    purple: 11,
+  };
 
-  const counts = { emerald: 0, indigo: 0 };
-  const perFile: Record<string, number> = {};
+  const families = Object.keys(BASELINE);
+  const pattern = new RegExp(`\\b(${families.join('|')})-\\d+\\b`, 'g');
+
+  const counts: Record<string, number> = Object.fromEntries(families.map((f) => [f, 0]));
+  const sites: Record<string, string[]> = Object.fromEntries(families.map((f) => [f, []]));
 
   for (const file of sourceFiles()) {
-    const src = readFileSync(file, 'utf8');
     const rel = path.relative(repoRoot, file).replace(/\\/g, '/');
-    const found = [...src.matchAll(/\b(emerald|indigo)-\d+\b/g)];
-    for (const m of found) counts[m[1] as 'emerald' | 'indigo']++;
-    if (found.length) perFile[rel] = found.length;
+    readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        for (const m of line.matchAll(pattern)) {
+          counts[m[1]]++;
+          sites[m[1]].push(`${rel}:${i + 1}`);
+        }
+      });
   }
 
-  const worst = Object.entries(perFile)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
-    .map(([f, n]) => `${n.toString().padStart(3)}  ${f}`)
-    .join('\n  ');
+  const grown = families.filter((f) => counts[f] > BASELINE[f]);
 
-  for (const colour of ['emerald', 'indigo'] as const) {
-    expect(
-      counts[colour],
-      `raw ${colour} grew from ${BASELINE[colour]} to ${counts[colour]}.\n` +
-        `If this is a status or a primary action, use success-*/brand-* instead.\n` +
-        `If it is genuinely decorative, raise the baseline in this test.\n` +
-        `Heaviest files:\n  ${worst}`,
-    ).toBeLessThanOrEqual(BASELINE[colour]);
-  }
+  const detail = grown
+    .map((f) => {
+      const added = counts[f] - BASELINE[f];
+      const where = [...new Set(sites[f])].slice(0, 10).join('\n      ');
+      return `  ${f}: ${BASELINE[f]} -> ${counts[f]} (+${added})\n      ${where}`;
+    })
+    .join('\n');
+
+  expect(
+    grown,
+    'raw palette colour grew:\n' +
+      detail +
+      '\n\nIf it encodes a state or a primary action, use the semantic token:\n' +
+      '  success | brand | danger | warning | info\n' +
+      'If it is genuinely decorative, a token definition, or domain colour,\n' +
+      'raise that baseline here and say which in the commit.',
+  ).toEqual([]);
 });

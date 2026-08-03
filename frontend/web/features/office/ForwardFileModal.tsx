@@ -66,7 +66,7 @@ export default function ForwardFileModal({ isOpen, onClose, onSuccess, fileId, c
                 >
                     <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                            <Share2 className="text-blue-600" />
+                            <Share2 className="text-info-600" />
                             Forward File
                         </h2>
                         <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -75,9 +75,9 @@ export default function ForwardFileModal({ isOpen, onClose, onSuccess, fileId, c
                     </div>
 
                     <div className="p-6 space-y-6">
-                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                            <p className="text-xs text-blue-600 font-bold uppercase">Moving File</p>
-                            <p className="text-sm font-medium text-blue-900 truncate">{currentSubject}</p>
+                        <div className="bg-info-50 p-3 rounded-lg border border-info-100">
+                            <p className="text-xs text-info-600 font-bold uppercase">Moving File</p>
+                            <p className="text-sm font-medium text-info-900 truncate">{currentSubject}</p>
                         </div>
 
                         <div>
@@ -90,7 +90,7 @@ export default function ForwardFileModal({ isOpen, onClose, onSuccess, fileId, c
                                     if (selectedUser) setSelectedUser(null);
                                 }}
                                 placeholder="Search by name or email..."
-                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-info-500 focus:border-transparent outline-none"
                             />
 
                             {/* Search Results Dropdown */}
@@ -124,7 +124,7 @@ export default function ForwardFileModal({ isOpen, onClose, onSuccess, fileId, c
                             <textarea
                                 value={remarks}
                                 onChange={e => setRemarks(e.target.value)}
-                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none h-24 resize-none"
+                                className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-info-500 focus:border-transparent outline-none h-24 resize-none"
                                 placeholder="Any specific instructions for the receiver..."
                             />
                         </div>
@@ -140,7 +140,7 @@ export default function ForwardFileModal({ isOpen, onClose, onSuccess, fileId, c
                         <button
                             onClick={handleForward}
                             disabled={!selectedUser}
-                            className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-4 py-2 bg-info-600 text-white font-medium rounded-lg hover:bg-info-700 transition-colors shadow-lg shadow-info-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {isLoading && <Loader2 className="animate-spin" size={16} />}
                             Forward File

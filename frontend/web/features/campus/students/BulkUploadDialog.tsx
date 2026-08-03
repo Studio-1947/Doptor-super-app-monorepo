@@ -183,9 +183,9 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                     {step === 'upload' && (
                         <div className="space-y-6">
                             {/* Download Template */}
-                            <Card className="p-6 border-slate-200 bg-blue-50 border-blue-100">
+                            <Card className="p-6 border-slate-200 bg-info-50 border-info-100">
                                 <div className="flex items-start gap-4">
-                                    <FileSpreadsheet size={24} className="text-blue-600 shrink-0 mt-1" />
+                                    <FileSpreadsheet size={24} className="text-info-600 shrink-0 mt-1" />
                                     <div className="flex-1">
                                         <h4 className="font-semibold text-slate-900 mb-1">Download Template First</h4>
                                         <p className="text-sm text-slate-600 mb-3">
@@ -193,7 +193,7 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                                         </p>
                                         <button
                                             onClick={handleDownloadTemplate}
-                                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-medium"
+                                            className="inline-flex items-center gap-2 px-4 py-2 bg-info-600 text-white hover:bg-info-700 transition-colors text-sm font-medium"
                                         >
                                             <Download size={16} />
                                             Download Template
@@ -262,22 +262,22 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                                     <p className="text-xs text-success-700 mb-1">Valid</p>
                                     <p className="text-2xl font-bold text-success-700">{validStudents.length}</p>
                                 </Card>
-                                <Card className="p-4 border-slate-200 border-red-200 bg-red-50">
-                                    <p className="text-xs text-red-700 mb-1">Invalid</p>
-                                    <p className="text-2xl font-bold text-red-700">{invalidStudents.length}</p>
+                                <Card className="p-4 border-slate-200 border-danger-200 bg-danger-50">
+                                    <p className="text-xs text-danger-700 mb-1">Invalid</p>
+                                    <p className="text-2xl font-bold text-danger-700">{invalidStudents.length}</p>
                                 </Card>
                             </div>
 
                             {/* Error Alert */}
                             {invalidStudents.length > 0 && (
-                                <Card className="p-4 border-red-200 bg-red-50">
+                                <Card className="p-4 border-danger-200 bg-danger-50">
                                     <div className="flex items-start gap-3">
-                                        <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
+                                        <AlertCircle size={20} className="text-danger-600 shrink-0 mt-0.5" />
                                         <div>
-                                            <p className="font-semibold text-red-900 mb-1">
+                                            <p className="font-semibold text-danger-900 mb-1">
                                                 {invalidStudents.length} record(s) have errors
                                             </p>
-                                            <p className="text-sm text-red-700">
+                                            <p className="text-sm text-danger-700">
                                                 Invalid rows will be skipped. Fix the source CSV and re-upload if you need them included.
                                             </p>
                                         </div>
@@ -301,10 +301,10 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
                                             {parsedData.map((student, idx) => (
-                                                <tr key={idx} className={student.errors ? 'bg-red-50' : ''}>
+                                                <tr key={idx} className={student.errors ? 'bg-danger-50' : ''}>
                                                     <td className="py-3 px-4">
                                                         {student.errors ? (
-                                                            <AlertCircle size={16} className="text-red-600" />
+                                                            <AlertCircle size={16} className="text-danger-600" />
                                                         ) : (
                                                             <CheckCircle2 size={16} className="text-success-600" />
                                                         )}
@@ -315,7 +315,7 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                                                     <td className="py-3 px-4">{student.parentName}</td>
                                                     <td className="py-3 px-4">
                                                         {student.errors && (
-                                                            <ul className="text-xs text-red-700 space-y-1">
+                                                            <ul className="text-xs text-danger-700 space-y-1">
                                                                 {student.errors.map((error, i) => (
                                                                     <li key={i}>• {error}</li>
                                                                 ))}

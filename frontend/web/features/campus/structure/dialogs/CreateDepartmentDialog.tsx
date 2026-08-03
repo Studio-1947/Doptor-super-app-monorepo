@@ -71,7 +71,7 @@ export function CreateDepartmentDialog({ isOpen, onClose, onSuccess }: CreateDep
                 <form onSubmit={handleSubmit} className="p-4 space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Department Name <span className="text-red-500">*</span>
+                            Department Name <span className="text-danger-500">*</span>
                         </label>
                         <input
                             type="text"
@@ -85,7 +85,7 @@ export function CreateDepartmentDialog({ isOpen, onClose, onSuccess }: CreateDep
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Code <span className="text-red-500">*</span>
+                            Code <span className="text-danger-500">*</span>
                         </label>
                         <input
                             type="text"

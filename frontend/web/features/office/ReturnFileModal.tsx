@@ -56,9 +56,9 @@ export function ReturnFileModal({ isOpen, onClose, fileId, movements, onSuccess 
     return (
         <Dialog isOpen={isOpen} onClose={onClose} title="Return File" maxWidth="max-w-md">
             <div className="space-y-4">
-                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 flex items-start gap-3">
-                    <AlertCircle className="text-orange-600 shrink-0 mt-0.5" size={18} />
-                    <div className="text-sm text-orange-800">
+                <div className="bg-warning-50 p-3 rounded-lg border border-warning-100 flex items-start gap-3">
+                    <AlertCircle className="text-warning-600 shrink-0 mt-0.5" size={18} />
+                    <div className="text-sm text-warning-800">
                         <p className="font-semibold">Returning a file sends it back</p>
                         <p className="mt-1">The workflow will be paused until the issues are resolved and the file is re-submitted.</p>
                     </div>
@@ -98,7 +98,7 @@ export function ReturnFileModal({ isOpen, onClose, fileId, movements, onSuccess 
                                 type="button"
                                 onClick={() => setReason(type.id)}
                                 className={`px-3 py-2 text-sm border rounded-lg transition-colors ${reason === type.id
-                                        ? 'bg-orange-50 border-orange-200 text-orange-700 font-medium'
+                                        ? 'bg-warning-50 border-warning-200 text-warning-700 font-medium'
                                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                                     }`}
                             >
@@ -110,7 +110,7 @@ export function ReturnFileModal({ isOpen, onClose, fileId, movements, onSuccess 
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Remarks <span className="text-red-500">*</span>
+                        Remarks <span className="text-danger-500">*</span>
                     </label>
                     <textarea
                         value={remarks}
@@ -129,7 +129,7 @@ export function ReturnFileModal({ isOpen, onClose, fileId, movements, onSuccess 
                         variant="primary"
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className="bg-orange-600 hover:bg-orange-700 text-white gap-2"
+                        className="bg-warning-600 hover:bg-warning-700 text-white gap-2"
                     >
                         {isSubmitting ? (
                             <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -169,7 +169,7 @@ export function AttendanceAdmin() {
                                 <button
                                     onClick={() => removeLeaveType(t)}
                                     title="Remove"
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors shrink-0"
+                                    className="p-1.5 text-slate-400 hover:text-danger-600 transition-colors shrink-0"
                                 >
                                     <Trash2 size={14} />
                                 </button>
@@ -246,7 +246,7 @@ export function AttendanceAdmin() {
                                 <button
                                     onClick={() => removeHoliday(h)}
                                     title="Remove"
-                                    className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors shrink-0"
+                                    className="p-1.5 text-slate-400 hover:text-danger-600 transition-colors shrink-0"
                                 >
                                     <Trash2 size={14} />
                                 </button>

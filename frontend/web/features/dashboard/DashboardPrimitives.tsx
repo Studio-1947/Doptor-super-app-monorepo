@@ -111,7 +111,7 @@ export function LoadingRows({ count = 3 }: { count?: number }) {
 
 export function ErrorNote({ message }: { message: string }) {
     return (
-        <p className="text-sm text-rose-600 dark:text-rose-400 py-6 text-center">{message}</p>
+        <p className="text-sm text-danger-600 dark:text-danger-400 py-6 text-center">{message}</p>
     );
 }
 

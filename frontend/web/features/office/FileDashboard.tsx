@@ -67,10 +67,10 @@ export function FileDashboard() {
     const getStatusColor = (status: File['status']) => {
         switch (status) {
             case 'approved': return 'bg-success-100 text-success-700';
-            case 'rejected': return 'bg-red-100 text-red-700';
+            case 'rejected': return 'bg-danger-100 text-danger-700';
             case 'closed': return 'bg-slate-100 text-slate-700';
             case 'archived': return 'bg-slate-100 text-slate-700';
-            default: return 'bg-blue-100 text-blue-700';
+            default: return 'bg-info-100 text-info-700';
         }
     };
 
@@ -116,9 +116,9 @@ export function FileDashboard() {
                 <Card className="p-4 border-slate-200 flex items-start justify-between">
                     <div>
                         <p className="text-sm text-slate-500">Pending</p>
-                        <h3 className="text-2xl font-bold text-orange-600 mt-1">{stats.pending}</h3>
+                        <h3 className="text-2xl font-bold text-warning-600 mt-1">{stats.pending}</h3>
                     </div>
-                    <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                    <div className="p-2 bg-warning-50 text-warning-600 rounded-lg">
                         <Clock size={20} />
                     </div>
                 </Card>
@@ -136,9 +136,9 @@ export function FileDashboard() {
                 <Card className="p-4 border-slate-200 flex items-start justify-between">
                     <div>
                         <p className="text-sm text-slate-500">Direct/Urgent</p>
-                        <h3 className="text-2xl font-bold text-red-600 mt-1">{stats.urgency}</h3>
+                        <h3 className="text-2xl font-bold text-danger-600 mt-1">{stats.urgency}</h3>
                     </div>
-                    <div className="p-2 bg-red-50 text-red-600 rounded-lg">
+                    <div className="p-2 bg-danger-50 text-danger-600 rounded-lg">
                         <Inbox size={20} />
                     </div>
                 </Card>

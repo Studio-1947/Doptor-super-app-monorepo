@@ -100,7 +100,7 @@ export function CreateTaskDialog({ isOpen, onClose, onSuccess, parentTaskId }: C
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                        Task Title <span className="text-red-500">*</span>
+                        Task Title <span className="text-danger-500">*</span>
                     </label>
                     <input
                         type="text"
@@ -129,7 +129,7 @@ export function CreateTaskDialog({ isOpen, onClose, onSuccess, parentTaskId }: C
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                            Department <span className="text-red-500">*</span>
+                            Department <span className="text-danger-500">*</span>
                         </label>
                         <div className="relative">
                             <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

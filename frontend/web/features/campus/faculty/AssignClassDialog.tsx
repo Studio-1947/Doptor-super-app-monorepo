@@ -159,7 +159,7 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
                             {/* Faculty Selection */}
                             <div>
                                 <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    Select Faculty <span className="text-red-500">*</span>
+                                    Select Faculty <span className="text-danger-500">*</span>
                                 </label>
                                 <select
                                     name="facultyId"
@@ -181,7 +181,7 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Class <span className="text-red-500">*</span>
+                                        Class <span className="text-danger-500">*</span>
                                     </label>
                                     <select
                                         name="classId"
@@ -230,7 +230,7 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
                             {/* Schedule */}
                             <div>
                                 <label className="block text-xs font-medium text-slate-700 mb-2">
-                                    Days <span className="text-red-500">*</span>
+                                    Days <span className="text-danger-500">*</span>
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
                                     {weekDays.map(day => (
@@ -253,7 +253,7 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        Start Time <span className="text-red-500">*</span>
+                                        Start Time <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="time"
@@ -267,7 +267,7 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
 
                                 <div>
                                     <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                        End Time <span className="text-red-500">*</span>
+                                        End Time <span className="text-danger-500">*</span>
                                     </label>
                                     <input
                                         type="time"
@@ -282,9 +282,9 @@ export function AssignClassDialog({ isOpen, onClose, onSuccess }: AssignClassDia
 
                             {/* Summary */}
                             {formData.facultyId && formData.classId && (
-                                <div className="p-4 bg-blue-50 border border-blue-100">
-                                    <p className="text-sm font-medium text-blue-900 mb-2">Assignment Summary</p>
-                                    <div className="text-xs text-blue-700 space-y-1">
+                                <div className="p-4 bg-info-50 border border-info-100">
+                                    <p className="text-sm font-medium text-info-900 mb-2">Assignment Summary</p>
+                                    <div className="text-xs text-info-700 space-y-1">
                                         <p><strong>Faculty:</strong> {selectedFaculty?.first_name} {selectedFaculty?.last_name}</p>
                                         <p><strong>Class:</strong> {selectedClass?.name}</p>
                                         <p><strong>Subject:</strong> {selectedClass?.course?.name}</p>

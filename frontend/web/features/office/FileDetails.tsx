@@ -85,7 +85,7 @@ export default function FileDetails({ fileId, onClose, onUpdate }: FileDetailsPr
         return (
             <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50">
                 <Card className="p-8 text-center text-slate-500">
-                    <AlertCircle size={32} className="mx-auto mb-2 text-red-500" />
+                    <AlertCircle size={32} className="mx-auto mb-2 text-danger-500" />
                     File not found
                 </Card>
             </div>
@@ -104,8 +104,8 @@ export default function FileDetails({ fileId, onClose, onUpdate }: FileDetailsPr
                                 #{file.file_number}
                             </span>
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
-                                ${file.priority === 'urgent' ? 'bg-orange-50 text-orange-600 border border-orange-100' :
-                                    file.priority === 'immediate' ? 'bg-red-50 text-red-600 border border-red-100' :
+                                ${file.priority === 'urgent' ? 'bg-warning-50 text-warning-600 border border-warning-100' :
+                                    file.priority === 'immediate' ? 'bg-danger-50 text-danger-600 border border-danger-100' :
                                         'bg-slate-100 text-slate-600 border border-slate-200'}`}>
                                 {file.priority}
                             </span>

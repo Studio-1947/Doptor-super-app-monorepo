@@ -7,9 +7,9 @@ import { FileText, Archive, Clock, CheckCircle2, ArrowRight, ChevronLeft, Chevro
 import { filesService, File as RegistryFile, FileAnalytics } from '@/services/files.service';
 
 const STATUS_STYLES: Record<string, string> = {
-    active: 'text-blue-600 border-blue-100 bg-blue-50',
+    active: 'text-info-600 border-info-100 bg-info-50',
     approved: 'text-success-600 border-success-100 bg-success-50',
-    rejected: 'text-rose-600 border-rose-100 bg-rose-50',
+    rejected: 'text-danger-600 border-danger-100 bg-danger-50',
     closed: 'text-slate-500 border-slate-100 bg-slate-50',
     archived: 'text-slate-400 border-slate-100 bg-slate-50',
 };

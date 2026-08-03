@@ -75,13 +75,29 @@ async function bootstrap() {
     SwaggerModule.setup("api-docs", app, document);
   }
 
-  await app.listen(process.env.PORT || 4000);
-  console.log(
-    `🚀 API server running on http://localhost:${process.env.PORT || 4000}`,
-  );
+  /*
+   * 3001, not 4000.
+   *
+   * Every environment sets `PORT` explicitly — 3001 in `backend/api/.env` and
+   * `.github/workflows/deploy.yml`, 5000 in `docker-compose.prod.yml` — so this
+   * fallback is only ever reached by a bare local `node dist/main.js`. It used
+   * to be 4000, which matched nothing: the web client's own fallback said 4000
+   * too, but `.env` has put the real server on 3001 for as long as anyone has
+   * run it locally, and `e2e/README.md` documents 3001.
+   *
+   * That mismatch is not theoretical. It cost a session on 2026-08-03: with a
+   * stale `NEXT_PUBLIC_API_URL=http://localhost:4000` baked into the web build,
+   * the browser posted every login to a dead port and all 59 authenticated e2e
+   * specs failed at `helpers.ts:24` waiting to leave `/login` — which reads as
+   * an auth regression, not a port typo. One number, in one place.
+   */
+  const port = process.env.PORT || 3001;
+
+  await app.listen(port);
+  console.log(`🚀 API server running on http://localhost:${port}`);
   console.log(
     docs
-      ? `📖 Swagger documentation available at http://localhost:${process.env.PORT || 4000}/api-docs`
+      ? `📖 Swagger documentation available at http://localhost:${port}/api-docs`
       : `📖 Swagger disabled (set ENABLE_API_DOCS=1 to serve /api-docs)`,
   );
 }

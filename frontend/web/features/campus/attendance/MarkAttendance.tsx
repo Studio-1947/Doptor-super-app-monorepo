@@ -171,7 +171,7 @@ export function MarkAttendance() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                            Class <span className="text-red-500">*</span>
+                            Class <span className="text-danger-500">*</span>
                         </label>
                         <select
                             value={selectedClass}
@@ -192,7 +192,7 @@ export function MarkAttendance() {
 
                     <div>
                         <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                            Date <span className="text-red-500">*</span>
+                            Date <span className="text-danger-500">*</span>
                         </label>
                         <div className="relative">
                             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -219,17 +219,17 @@ export function MarkAttendance() {
                         <p className="text-xs text-success-700">Present</p>
                         <p className="text-2xl font-bold text-success-700 mt-1">{summary.present}</p>
                     </Card>
-                    <Card className="p-4 border-red-200 bg-red-50">
-                        <p className="text-xs text-red-700">Absent</p>
-                        <p className="text-2xl font-bold text-red-700 mt-1">{summary.absent}</p>
+                    <Card className="p-4 border-danger-200 bg-danger-50">
+                        <p className="text-xs text-danger-700">Absent</p>
+                        <p className="text-2xl font-bold text-danger-700 mt-1">{summary.absent}</p>
                     </Card>
-                    <Card className="p-4 border-orange-200 bg-orange-50">
-                        <p className="text-xs text-orange-700">Late</p>
-                        <p className="text-2xl font-bold text-orange-700 mt-1">{summary.late}</p>
+                    <Card className="p-4 border-warning-200 bg-warning-50">
+                        <p className="text-xs text-warning-700">Late</p>
+                        <p className="text-2xl font-bold text-warning-700 mt-1">{summary.late}</p>
                     </Card>
-                    <Card className="p-4 border-blue-200 bg-blue-50">
-                        <p className="text-xs text-blue-700">Attendance %</p>
-                        <p className="text-2xl font-bold text-blue-700 mt-1">{summary.percentage}%</p>
+                    <Card className="p-4 border-info-200 bg-info-50">
+                        <p className="text-xs text-info-700">Attendance %</p>
+                        <p className="text-2xl font-bold text-info-700 mt-1">{summary.percentage}%</p>
                     </Card>
                 </div>
             )}
@@ -246,7 +246,7 @@ export function MarkAttendance() {
                     </button>
                     <button
                         onClick={() => handleMarkAll('absent')}
-                        className="px-3 py-1.5 text-xs bg-red-600 text-white hover:bg-red-700 transition-colors font-medium rounded"
+                        className="px-3 py-1.5 text-xs bg-danger-600 text-white hover:bg-danger-700 transition-colors font-medium rounded"
                     >
                         Mark All Absent
                     </button>
@@ -307,8 +307,8 @@ export function MarkAttendance() {
                                                     <button
                                                         onClick={() => handleStatusChange(item.studentId, 'absent')}
                                                         className={`px-3 py-1.5 text-xs font-medium transition-colors rounded ${item.status === 'absent'
-                                                            ? 'bg-red-600 text-white'
-                                                            : 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+                                                            ? 'bg-danger-600 text-white'
+                                                            : 'bg-danger-50 text-danger-700 border border-danger-200 hover:bg-danger-100'
                                                             }`}
                                                     >
                                                         <X size={14} className="inline mr-1" />
@@ -317,8 +317,8 @@ export function MarkAttendance() {
                                                     <button
                                                         onClick={() => handleStatusChange(item.studentId, 'late')}
                                                         className={`px-3 py-1.5 text-xs font-medium transition-colors rounded ${item.status === 'late'
-                                                            ? 'bg-orange-600 text-white'
-                                                            : 'bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100'
+                                                            ? 'bg-warning-600 text-white'
+                                                            : 'bg-warning-50 text-warning-700 border border-warning-200 hover:bg-warning-100'
                                                             }`}
                                                     >
                                                         <Clock size={14} className="inline mr-1" />

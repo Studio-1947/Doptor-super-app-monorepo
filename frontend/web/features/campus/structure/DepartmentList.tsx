@@ -68,7 +68,7 @@ export function DepartmentList() {
                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => handleDelete(dept.id)}
-                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                    className="p-1.5 text-slate-400 hover:text-danger-600 hover:bg-danger-50 rounded"
                                     title="Delete Department"
                                 >
                                     <Trash2 size={18} />
@@ -76,7 +76,7 @@ export function DepartmentList() {
                             </div>
 
                             <div className="flex items-start justify-between mb-4">
-                                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                                <div className="p-3 bg-info-50 text-info-600 rounded-xl">
                                     <BookOpen size={24} />
                                 </div>
                             </div>

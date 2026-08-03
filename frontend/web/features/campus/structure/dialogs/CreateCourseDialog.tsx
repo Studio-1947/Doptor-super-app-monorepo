@@ -61,7 +61,7 @@ export function CreateCourseDialog({ isOpen, onClose, onSuccess }: CreateCourseD
                 <form onSubmit={handleSubmit} className="p-5 space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                            Course Code <span className="text-red-500">*</span>
+                            Course Code <span className="text-danger-500">*</span>
                         </label>
                         <input
                             type="text"
@@ -75,7 +75,7 @@ export function CreateCourseDialog({ isOpen, onClose, onSuccess }: CreateCourseD
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                            Course Name <span className="text-red-500">*</span>
+                            Course Name <span className="text-danger-500">*</span>
                         </label>
                         <input
                             type="text"

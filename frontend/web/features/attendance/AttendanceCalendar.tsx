@@ -36,9 +36,9 @@ function fmtTime(iso: string | null): string {
 
 const statusDot: Record<string, string> = {
     present: 'bg-success-500',
-    late: 'bg-orange-500',
-    absent: 'bg-rose-500',
-    half_day: 'bg-amber-500',
+    late: 'bg-warning-500',
+    absent: 'bg-danger-500',
+    half_day: 'bg-warning-500',
 };
 
 export function AttendanceCalendar() {
@@ -185,7 +185,7 @@ export function AttendanceCalendar() {
 
             <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-400">
                 <Legend className="bg-success-500" label="Present" />
-                <Legend className="bg-orange-500" label="Late" />
+                <Legend className="bg-warning-500" label="Late" />
                 <Legend className="bg-indigo-400" label="Holiday" />
                 <span>Weekends are shaded. Empty weekdays have no punch recorded.</span>
             </div>

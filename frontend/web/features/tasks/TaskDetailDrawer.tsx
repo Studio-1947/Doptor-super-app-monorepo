@@ -331,12 +331,12 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
                                                 'Failed to remove assignee',
                                             )}
                                             title={`Remove ${fullName(a)}`}
-                                            className="group flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-full pl-1 pr-2 py-0.5 transition-colors"
+                                            className="group flex items-center gap-1.5 text-xs bg-slate-100 hover:bg-danger-50 border border-slate-200 hover:border-danger-200 rounded-full pl-1 pr-2 py-0.5 transition-colors"
                                         >
                                             <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[9px] font-bold">
                                                 {initials(a)}
                                             </span>
-                                            <span className="text-slate-700 group-hover:text-red-600">{fullName(a)}</span>
+                                            <span className="text-slate-700 group-hover:text-danger-600">{fullName(a)}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -446,7 +446,7 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
                                             <button
                                                 onClick={() => removeAttachment(a)}
                                                 title="Remove"
-                                                className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                                                className="p-1.5 text-slate-400 hover:text-danger-600 transition-colors"
                                             >
                                                 <Trash2 size={14} />
                                             </button>
@@ -588,7 +588,7 @@ export function TaskDetailDrawer({ taskId, onClose, onChanged, onDeleted }: Task
                             </button>
                             <button
                                 onClick={handleDelete}
-                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700"
+                                className="inline-flex items-center gap-1.5 text-xs font-semibold text-danger-600 hover:text-danger-700"
                             >
                                 <Trash2 size={14} /> Delete
                             </button>

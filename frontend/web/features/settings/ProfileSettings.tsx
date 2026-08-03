@@ -130,7 +130,7 @@ export function ProfileSettings() {
                             <div className="space-y-3">
                                 <label className="flex items-center justify-between p-3 rounded-lg border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-blue-50 text-blue-600 rounded">
+                                        <div className="p-2 bg-info-50 text-info-600 rounded">
                                             <Mail size={16} />
                                         </div>
                                         <div>

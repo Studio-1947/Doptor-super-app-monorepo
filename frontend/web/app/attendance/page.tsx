@@ -19,12 +19,12 @@ import { AttendanceAdmin } from "@/features/attendance/AttendanceAdmin";
 import { displayName, formatDate } from "@/lib/display";
 
 const statusChip: Record<string, string> = {
-    pending: "text-amber-600 border-amber-100 bg-amber-50",
+    pending: "text-warning-600 border-warning-100 bg-warning-50",
     approved: "text-success-600 border-success-100 bg-success-50",
-    rejected: "text-rose-600 border-rose-100 bg-rose-50",
+    rejected: "text-danger-600 border-danger-100 bg-danger-50",
     cancelled: "text-slate-500 border-slate-100 bg-slate-50",
     present: "text-success-600 border-success-100 bg-success-50",
-    late: "text-orange-600 border-orange-100 bg-orange-50",
+    late: "text-warning-600 border-warning-100 bg-warning-50",
 };
 
 function fmtTime(iso: string | null): string {
@@ -339,7 +339,7 @@ export default function AttendancePage() {
                                         </span>
                                         {(r.status === "pending" || r.status === "approved") && (
                                             <button onClick={() => cancelMine(r.id)} title="Cancel"
-                                                className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors">
+                                                className="p-1.5 text-slate-400 hover:text-danger-600 transition-colors">
                                                 <Ban size={14} />
                                             </button>
                                         )}
@@ -371,7 +371,7 @@ export default function AttendancePage() {
                                             <Check size={13} /> Approve
                                         </button>
                                         <button onClick={() => review(r.id, "reject")}
-                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:border-rose-500 hover:text-rose-600 transition-colors">
+                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:border-danger-500 hover:text-danger-600 transition-colors">
                                             <X size={13} /> Reject
                                         </button>
                                     </div>
