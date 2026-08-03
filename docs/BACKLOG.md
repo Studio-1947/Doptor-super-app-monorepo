@@ -808,6 +808,44 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       **resolved; verified 2026-07-29.** `features/verticals/` does not exist; only
       `features/office/*` remains. (Office roadmap Phase 6 already recorded this; the box
       here was simply never ticked.)
+- [x] **L-6** ~~The signed-out entry path was outside every dark-mode guarantee~~ — fixed
+      **2026-08-03**. L-5 closed "measured to zero" against **nine authenticated routes**;
+      `/login`, `/register` and `/onboarding` were never in that list, and `ThemeProvider`
+      writes `dark` onto `<html>` from localStorage before any of them render. The first
+      three screens anyone sees were the only ones nothing measured.
+      **Measured, then fixed** — 7 real AA failures:
+      - `/register`, **4 inputs at 1.10:1**: the card is `bg-white` with no dark pair while
+        `<body>` carries `dark:text-slate-100`, so **typed text was near-invisible**. The
+        exact `ReadyUI` root cause L-5 recorded — fix the surface before the text, which is
+        why `/register` and `/onboarding` are now dark-aware rather than having their text
+        pinned over a permanently white card.
+      - `/onboarding` "Get Started" 3.77:1 (emerald-600 on white — a **light-mode** failure
+        too; now emerald-700), `/login` 4.41:1 and 3.75:1 (slate-500), and two
+        `AttendanceAdmin` section headings at 4.24:1.
+      **The probe itself was wrong in two ways, and both had to be fixed first** — the
+      first run reported **22 failures of which 15 were artifacts**:
+      - It read only `backgroundColor`, so a `bg-gradient-to-br` panel (a gradient is
+        `background-IMAGE`; its background-color stays transparent) was walked straight
+        past and `/register`'s white-on-indigo promo panel was scored "white on white".
+        Now a gradient backdrop returns null and the element is skipped: a ratio that
+        cannot be computed honestly is not a failure, it is not a measurement.
+      - It judged an `<a>` wrapping an `<h3>` and a `<p>` on the colour it merely
+        *inherits*, which no pixel ever uses. Now only an element's **own** text nodes are
+        measured; the children are still checked on their own, so nothing lost coverage.
+        This correction also **found** the two `AttendanceAdmin` failures above, which the
+        old leaf rule had been skipping.
+      **Guard against the guard:** `check()` now fails a route whose probe examined **0
+      elements**. The public pages render no `<main>`, so the existing selector matched
+      nothing on them — extending the spec naively would have reported a confident green
+      while measuring nothing. Verified by pointing `PUBLIC_ROOT` at `main *` and watching
+      all three routes report "examined 0 elements".
+      **Also fixed here:** `/onboarding` still advertised "company, school, or **network**"
+      — a vertical deleted under M-18 on 2026-07-28, when `/register`'s picker was cleaned
+      and this page was missed. Three dead imports went with it.
+      **Known and not fixed:** `register/page.tsx` builds focus classes by interpolation
+      (`focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500`). Tailwind cannot see
+      those at build time, so **those focus styles have never existed**. Left alone because
+      fixing it properly means a static class map, not a class-string edit.
 - [x] **L-5** ~~Dark mode is unevenly applied and, on some surfaces, unreadable.~~ —
       **closed 2026-07-30, measured to zero.** Found by computing WCAG contrast in the live
       DOM rather than reading classes: dark mode is a shipped feature (`darkMode: "class"`,

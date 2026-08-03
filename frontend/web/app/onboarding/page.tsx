@@ -1,18 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Building2, Users, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Building2, Users, ArrowRight } from 'lucide-react';
 
 export default function OnboardingChoice() {
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md mb-8 text-center">
-                <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
                     Welcome to Doptor
                 </h2>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                     How would you like to get started?
                 </p>
             </div>
@@ -21,33 +19,35 @@ export default function OnboardingChoice() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 sm:px-0">
 
                     {/* Join Existing Team Option */}
-                    <Link href="/register?mode=join" className="group relative block p-8 bg-white border-2 border-slate-200 rounded-2xl hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300">
-                        <div className="absolute top-6 right-6 text-slate-300 group-hover:text-indigo-500 transition-colors">
+                    <Link href="/register?mode=join" className="group relative block p-8 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl hover:border-indigo-500 dark:hover:border-indigo-400 hover:shadow-xl hover:shadow-indigo-50/50 dark:hover:shadow-none transition-all duration-300">
+                        <div className="absolute top-6 right-6 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 transition-colors">
                             <Users size={28} />
                         </div>
                         <div className="mt-4">
-                            <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Join a Team</h3>
-                            <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Join a Team</h3>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                                 I have an invite code or email from my administrator. I want to join an existing workspace.
                             </p>
                         </div>
-                        <div className="mt-8 flex items-center text-sm font-medium text-indigo-600 group-hover:translate-x-1 transition-transform">
+                        <div className="mt-8 flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400 group-hover:translate-x-1 transition-transform">
                             Continue <ArrowRight size={16} className="ml-2" />
                         </div>
                     </Link>
 
                     {/* Create New Organisation Option */}
-                    <Link href="/register?mode=create" className="group relative block p-8 bg-white border-2 border-slate-200 rounded-2xl hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-50/50 transition-all duration-300">
-                        <div className="absolute top-6 right-6 text-slate-300 group-hover:text-emerald-500 transition-colors">
+                    <Link href="/register?mode=create" className="group relative block p-8 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500 dark:hover:border-emerald-400 hover:shadow-xl hover:shadow-emerald-50/50 dark:hover:shadow-none transition-all duration-300">
+                        <div className="absolute top-6 right-6 text-slate-300 dark:text-slate-600 group-hover:text-emerald-500 transition-colors">
                             <Building2 size={28} />
                         </div>
                         <div className="mt-4">
-                            <h3 className="text-xl font-bold text-slate-900 group-hover:text-emerald-600 transition-colors">Create Organisation</h3>
-                            <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-                                I want to set up a new workspace for my company, school, or network.
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Create Organisation</h3>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                                I want to set up a new workspace for my company or school.
                             </p>
                         </div>
-                        <div className="mt-8 flex items-center text-sm font-medium text-emerald-600 group-hover:translate-x-1 transition-transform">
+                        {/* emerald-600 on white is 3.77:1 — below AA. emerald-700 clears it
+                            at 5.3:1 and is indistinguishable at this weight. */}
+                        <div className="mt-8 flex items-center text-sm font-medium text-emerald-700 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
                             Get Started <ArrowRight size={16} className="ml-2" />
                         </div>
                     </Link>
@@ -55,8 +55,8 @@ export default function OnboardingChoice() {
                 </div>
 
                 <div className="mt-10 text-center">
-                    <span className="text-slate-500 text-sm">Already have an account? </span>
-                    <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+                    <span className="text-slate-500 dark:text-slate-400 text-sm">Already have an account? </span>
+                    <Link href="/login" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors">
                         Sign in
                     </Link>
                 </div>

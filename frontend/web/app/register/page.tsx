@@ -101,11 +101,11 @@ function RegisterForm() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row"
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row"
             >
                 {/* Visual Side */}
                 <div className={`
@@ -142,10 +142,10 @@ function RegisterForm() {
                 {/* Form Side */}
                 <div className="flex-1 p-8 md:p-12">
                     <div className="max-w-md mx-auto">
-                        <h1 className="text-2xl font-bold text-slate-900 mb-2">
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                             {mode === 'create' ? 'Create Account & Organisation' : 'Create your Account'}
                         </h1>
-                        <p className="text-slate-500 mb-8">
+                        <p className="text-slate-500 dark:text-slate-400 mb-8">
                             {mode === 'create' ? 'Get started with a new workspace.' : 'Enter your details to join.'}
                         </p>
 
@@ -154,7 +154,7 @@ function RegisterForm() {
                                 <motion.div
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
-                                    className="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2"
+                                    className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 text-sm flex items-center gap-2"
                                 >
                                     <AlertCircle size={16} />
                                     {error}
@@ -164,7 +164,7 @@ function RegisterForm() {
                             {/* Organisation Details (Only for Create Mode) */}
                             {mode === 'create' && (
                                 <div className="space-y-4">
-                                    <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">Organisation Details</h3>
+                                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Organisation Details</h3>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <input
@@ -172,7 +172,7 @@ function RegisterForm() {
                                                 placeholder="Organisation Name"
                                                 value={orgName}
                                                 onChange={(e) => setOrgName(e.target.value)}
-                                                className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
+                                                className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
                                                 required
                                             />
                                         </div>
@@ -182,16 +182,16 @@ function RegisterForm() {
                                                 placeholder="Workspace Slug"
                                                 value={orgSlug}
                                                 onChange={(e) => setOrgSlug(e.target.value)}
-                                                className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
+                                                className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all"
                                                 required
                                             />
-                                            <p className="mt-1 text-xs text-slate-400">doptor.com/{orgSlug || 'slug'}</p>
+                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">doptor.com/{orgSlug || 'slug'}</p>
                                         </div>
                                     </div>
 
                                     {/* Vertical Selection */}
                                     <div className="py-2">
-                                        <label className="block text-sm font-medium text-slate-700 mb-3">Enable Verticals</label>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Enable Verticals</label>
                                         <div className="grid gap-3">
                                             {verticals.map((v) => {
                                                 const isSelected = enabledVerticals.includes(v.id);
@@ -201,7 +201,7 @@ function RegisterForm() {
                                                         onClick={() => toggleVertical(v.id)}
                                                         className={`
                                                             cursor-pointer relative flex items-start p-3 rounded-xl border-2 transition-all duration-200
-                                                            ${isSelected ? v.border + ' ' + v.bg : 'border-slate-100 hover:border-slate-200 bg-slate-50/50'}
+                                                            ${isSelected ? v.border + ' ' + v.bg : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 bg-slate-50/50 dark:bg-slate-800/40'}
                                                         `}
                                                     >
                                                         <div className={`mr-4 mt-0.5 p-2 rounded-lg ${isSelected ? 'bg-white shadow-sm' : 'bg-slate-200'}`}>
@@ -209,17 +209,17 @@ function RegisterForm() {
                                                         </div>
                                                         <div className="flex-1">
                                                             <div className="flex items-center justify-between">
-                                                                <h4 className={`text-sm font-semibold ${isSelected ? 'text-slate-900' : 'text-slate-500'}`}>{v.label}</h4>
+                                                                <h4 className={`text-sm font-semibold ${isSelected ? 'text-slate-900' : 'text-slate-500 dark:text-slate-400'}`}>{v.label}</h4>
                                                                 {isSelected && <CheckCircle2 size={16} className={v.color} />}
                                                             </div>
-                                                            <p className="text-xs text-slate-500 mt-0.5">{v.description}</p>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{v.description}</p>
                                                         </div>
                                                     </div>
                                                 );
                                             })}
                                         </div>
                                     </div>
-                                    <div className="h-px bg-slate-100 my-4" />
+                                    <div className="h-px bg-slate-100 dark:bg-slate-800 my-4" />
                                 </div>
                             )}
 
@@ -231,21 +231,21 @@ function RegisterForm() {
                                         placeholder="Organisation ID / Invite Code"
                                         value={organisationId}
                                         onChange={(e) => setOrganisationId(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+                                        className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
                                         required
                                     />
                                 </div>
                             )}
 
                             {/* User Account Fields (Common) */}
-                            <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider">Account Details</h3>
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Account Details</h3>
                             <div>
                                 <input
                                     type="email"
                                     placeholder="Email Address"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500 focus:ring-2 focus:ring-${mode === 'create' ? 'emerald' : 'indigo'}-200 outline-none transition-all`}
+                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500 focus:ring-2 focus:ring-${mode === 'create' ? 'emerald' : 'indigo'}-200 outline-none transition-all`}
                                     required
                                 />
                             </div>
@@ -256,7 +256,7 @@ function RegisterForm() {
                                     placeholder="Password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500 focus:ring-2 focus:ring-${mode === 'create' ? 'emerald' : 'indigo'}-200 outline-none transition-all`}
+                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500 focus:ring-2 focus:ring-${mode === 'create' ? 'emerald' : 'indigo'}-200 outline-none transition-all`}
                                     required
                                 />
                                 <input
@@ -264,7 +264,7 @@ function RegisterForm() {
                                     placeholder="Confirm Password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500 focus:ring-2 focus:ring-${mode === 'create' ? 'emerald' : 'indigo'}-200 outline-none transition-all`}
+                                    className={`w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-${mode === 'create' ? 'emerald' : 'indigo'}-500 focus:ring-2 focus:ring-${mode === 'create' ? 'emerald' : 'indigo'}-200 outline-none transition-all`}
                                     required
                                 />
                             </div>
@@ -291,9 +291,9 @@ function RegisterForm() {
                                 )}
                             </button>
 
-                            <p className="text-center text-slate-500">
+                            <p className="text-center text-slate-500 dark:text-slate-400">
                                 Already have an account?{' '}
-                                <Link href="/login" className={`font-medium hover:underline ${mode === 'create' ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                                <Link href="/login" className={`font-medium hover:underline ${mode === 'create' ? 'text-emerald-700 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
                                     Sign in
                                 </Link>
                             </p>
@@ -308,7 +308,7 @@ function RegisterForm() {
 export default function RegisterPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
                 <Loader2 className="animate-spin text-slate-400" size={32} />
             </div>
         }>
