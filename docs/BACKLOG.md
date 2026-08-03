@@ -816,17 +816,37 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       question this entry asked ("scope it as its own project if mobile is in scope") is
       answered — there is no native project to scope. `frontend/web` *is* the mobile
       target.
-      **This is a decision, not delivered work.** The web app is not yet installable:
-      there is no manifest, no service worker, no offline handling and no icon set, so
-      nothing about today's build makes it a PWA. Tracked as its own piece of work rather
-      than left implied here, because the difference between "we decided on PWA" and "the
-      app installs" is exactly the kind of gap this backlog has repeatedly recorded as
-      closed while it was open.
-      When it is picked up, the non-obvious constraint is already known: auth is httpOnly
-      cookies with `SameSite=Lax` (S-1), so anything a service worker fetches must stay
-      same-site — see the note in [[vps-deployment]] about `COOKIE_DOMAIN`. Deleting
-      `frontend/mobile/` is deferred until that work starts, so the decision is not
-      silently reversed by someone finding an empty directory.
+      **Built the same day.** `app/manifest.ts`, `public/sw.js`, an `/offline` fallback,
+      a generated icon set, and the `metadata`/`viewport` exports the app had never had —
+      it shipped with **no title and no favicon**, so every tab and bookmark showed the
+      bare URL.
+      **The service worker caches nothing user-specific, and that is the design.** Cache
+      Storage is keyed by origin, not by user, and signing out clears cookies rather than
+      caches — so a worker that cached a file registry would hand one tenant's data to the
+      next person on a shared device. That would be a fourth cross-tenant read after C-11,
+      C-13 and C-15, and the only one with no server-side fix available, because no request
+      would reach the server to be refused. Cross-origin (the API) is returned before any
+      caching decision, non-GET is never touched, navigations are network-only with the
+      offline page as fallback, and the single runtime `cache.put` is restricted to
+      content-hashed `/_next/static/`. `e2e/pwa.spec.ts` asserts each of those statically
+      and fails if a second cache write appears.
+      **It found a live bug on the way in.** `middleware.ts`'s matcher excluded image
+      extensions but not `.webmanifest` or `sw.js`, so both **307'd to `/login`**. Neither
+      failure announces itself: the manifest parsed as HTML and the browser simply never
+      offered to install, and a redirecting worker script is rejected outright by the
+      spec, so registration failed silently. The app would have looked installable in the
+      source and been non-installable in fact.
+      Other integration details worth not rediscovering: `/offline` had to join
+      `PUBLIC_ROUTES`, because it is served when there is *no network* — the middleware
+      could not redirect it, `AuthGuard` would sit on "Authenticating…" forever, and the
+      401 handler would aim at a `/login` it also could not fetch. The maskable icon is
+      **separate artwork**, not the full-bleed one relabelled, since launchers crop to the
+      middle 80%. Registration is skipped in development, where unhashed `next dev` assets
+      make a caching worker serve yesterday's chunk.
+      Still open: `frontend/mobile/` remains an empty skeleton, kept deliberately so the
+      PWA decision is not silently reversed by someone finding an empty directory. Install
+      prompt UX, push notifications and any real offline data story are **not** built —
+      this is an installable, offline-aware shell, not an offline-capable app.
 - [x] **L-2** ~~Reconcile duplicate guard implementations~~ — **stale entry**; checked
       2026-07-28, only `src/common/guards/` exists. `src/modules/auth/guards/` is gone.
 - [x] **L-3** ~~Reconcile duplicate `audit.schema.ts` / `audit-log.schema.ts`~~ — **stale
