@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, ChevronDown, Building2, Shield } from 'lucide-react';
+import { Building2, Shield } from 'lucide-react';
 import { useRole } from '@/features/auth/RoleContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVertical, verticalTheme } from '@/contexts/VerticalContext';
@@ -45,9 +45,18 @@ export function Header() {
 
     return (
         <header className="h-16 px-4 md:px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl sticky top-0 z-10">
-            {/* Left: Org Switcher - SHARP */}
+            {/*
+              Organisation identity, not a switcher.
+              This was a <button> with a ChevronDown and no onClick — clicking it
+              did nothing on every authenticated page in the product. The chevron
+              was the worse half: `users.organisation_id` is a single non-null
+              column and there is no membership join table, so a user belongs to
+              exactly one organisation and there is nothing to switch to. It
+              advertised a capability the data model cannot support.
+              Now a plain element that states which organisation you are in.
+            */}
             <div className="flex items-center gap-4">
-                <button className={`flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-900 p-2 rounded-none transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-800`}>
+                <div className="flex items-center gap-2 p-2">
                     <div className={`w-8 h-8 rounded-none flex items-center justify-center border ${theme.bgClass} ${theme.textClass} ${theme.borderClass}`}>
                         <Building2 size={18} />
                     </div>
@@ -59,21 +68,24 @@ export function Header() {
                             {activeVertical === 'core' ? 'Organisation' : theme.label}
                         </p>
                     </div>
-                    <ChevronDown size={14} className="text-slate-400 dark:text-slate-500" />
-                </button>
-            </div>
-
-            {/* Center: Search (Desktop) - SHARP */}
-            <div className="hidden md:flex items-center gap-4 w-96">
-                <div className="relative w-full group">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-primary-500 transition-colors" size={16} />
-                    <input
-                        type="text"
-                        placeholder="SEARCH DOPTOR OS..."
-                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-none py-2 pl-10 pr-4 text-[10px] font-black text-slate-900 dark:text-white focus:outline-none focus:ring-0 focus:border-primary-500 transition-all placeholder:text-slate-500 dark:placeholder:text-slate-500 uppercase tracking-widest"
-                    />
                 </div>
             </div>
+
+            {/*
+              A global search box lived here. It had no `value`, no `onChange`,
+              no `onKeyDown` and no surrounding form: you could type "SEARCH
+              DOPTOR OS..." into it on every authenticated page and nothing
+              whatsoever happened. There is no global search endpoint to wire it
+              to — the searches that exist are per-page and reach the server on
+              their own (see the registry search in `page-shell.spec.ts`).
+
+              This is the same defect M-17 removed from `ReadyUI`, and it
+              survived that sweep twice over: M-17 only looked at the page shell,
+              and the guard it left behind asserts `getByRole('searchbox')` is
+              absent — which never matched this, because `type="text"` has the
+              role `textbox`. Removed rather than stubbed, per the M-17 rule
+              that a control must do something or not be shipped.
+            */}
 
             {/* Right: Actions & Profile */}
             <div className="flex items-center gap-3">

@@ -796,9 +796,22 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
 
 ### Low / cleanup
 
-- [ ] **L-1** 🔵 `frontend/mobile/` has no application code beyond `package.json` — needs
-      to be scoped as its own project (not a quick add-on) if mobile is in-scope for
-      this milestone.
+- [x] **L-1** ~~`frontend/mobile/` has no application code beyond `package.json`~~ —
+      **closed by decision, 2026-08-03: mobile ships as a PWA, not a native app.** The
+      question this entry asked ("scope it as its own project if mobile is in scope") is
+      answered — there is no native project to scope. `frontend/web` *is* the mobile
+      target.
+      **This is a decision, not delivered work.** The web app is not yet installable:
+      there is no manifest, no service worker, no offline handling and no icon set, so
+      nothing about today's build makes it a PWA. Tracked as its own piece of work rather
+      than left implied here, because the difference between "we decided on PWA" and "the
+      app installs" is exactly the kind of gap this backlog has repeatedly recorded as
+      closed while it was open.
+      When it is picked up, the non-obvious constraint is already known: auth is httpOnly
+      cookies with `SameSite=Lax` (S-1), so anything a service worker fetches must stay
+      same-site — see the note in [[vps-deployment]] about `COOKIE_DOMAIN`. Deleting
+      `frontend/mobile/` is deferred until that work starts, so the decision is not
+      silently reversed by someone finding an empty directory.
 - [x] **L-2** ~~Reconcile duplicate guard implementations~~ — **stale entry**; checked
       2026-07-28, only `src/common/guards/` exists. `src/modules/auth/guards/` is gone.
 - [x] **L-3** ~~Reconcile duplicate `audit.schema.ts` / `audit-log.schema.ts`~~ — **stale
@@ -808,6 +821,37 @@ Legend: 🔴 Critical (broken/insecure today) · 🟠 High (blocks "fully functi
       **resolved; verified 2026-07-29.** `features/verticals/` does not exist; only
       `features/office/*` remains. (Office roadmap Phase 6 already recorded this; the box
       here was simply never ticked.)
+- [x] **L-9** ~~Three inert controls in the *app* shell~~ — found and fixed **2026-08-03**
+      by audit. **M-17 cleaned `components/ReadyUI.tsx` — the *page* shell — and never
+      looked one layer up.** These sat in the header and left rail of every authenticated
+      page, for months, after the sweep that was supposed to have ended this class:
+      - **Org switcher** (`Header.tsx`): a `<button>` with no `onClick`. The `ChevronDown`
+        was the worse half — `users.organisation_id` is a single non-null column with no
+        membership join table, so a user belongs to exactly one organisation and there is
+        **nothing to switch to**. It advertised a capability the data model cannot support.
+        Now a plain element stating which organisation you are in.
+      - **Header search** (`Header.tsx`): an `<input>` with no `value`, `onChange`,
+        `onKeyDown` or surrounding form. You could type "SEARCH DOPTOR OS…" into it on
+        every page and nothing happened. There is no global search endpoint; the searches
+        that exist are per-page. Removed, per the M-17 rule that a control does something
+        or is not shipped.
+      - **Settings gear** (`VerticalSwitcher.tsx`): `title="Settings"`, no `onClick`, while
+        `/settings` existed all along and is reachable by every role. Now a `Link`.
+      **Why the existing guard missed them, which is the part worth keeping.**
+      `page-shell.spec.ts` had a test named *"the shell renders no dead controls on a real
+      page"* that passed throughout — it only asserted the absence of specific `ReadyUI`
+      controls, and all three of these render on `/admin/roles`, the page it loads. Its
+      searchbox assertion could never have matched the search box either: it queries
+      `getByRole('searchbox')`, and `type="text"` has the role `textbox`. **A guard whose
+      name is broader than its assertions is worse than none, because it gets quoted as
+      evidence.** That test is renamed to what it actually checks.
+      Replaced with a **static** guard (`no control in the app shell is inert`) over
+      `Header`/`VerticalSwitcher`/`Sidebar`, asserting every `<button>` has an `onClick`,
+      submit type or disabled state and every `<input>` has a handler. Static because React
+      attaches handlers at the root, so a dead button is indistinguishable from a live one
+      in the DOM — same tactic as `product-isolation.spec.ts`. It strips comments first, or
+      the notes describing the *removed* controls register as offenders. Verified by
+      stashing the two component fixes and watching it name all three.
 - [x] **L-7** ~~Nothing verified the deployed environment~~ — closed **2026-08-03**.
       Everything in CI ran against localhost, and the deploy job's only live assertion was
       a single `curl /health`. That leaves environment-only faults invisible, which is not
